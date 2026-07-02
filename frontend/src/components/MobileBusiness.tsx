@@ -39,6 +39,13 @@ import {
 } from "lucide-react";
 import { Labour, Vehicle, FuelEntry, SalaryPayment, AdvanceEntry, AttendanceRecord } from "../types";
 import { downloadSalarySlipPDF, downloadAttendanceReportPDF, downloadSingleLabourAttendancePDF } from "../utils/pdfGenerator";
+import {
+  mapLabourFromApi,
+  mapVehicleFromApi,
+  requestJson,
+  toLabourApiPayload,
+  toVehicleApiPayload,
+} from "../lib/sharedApi";
 const borewellLogo = "/src/assets/images/borewell_machine_logo_1782797350175.jpg";
 
 export interface ServiceRecord {
@@ -67,6 +74,7 @@ export interface MaterialPurchase {
 
 interface MobileBusinessProps {
   key?: string;
+  apiBaseUrl: string;
   labours: Labour[];
   setLabours: React.Dispatch<React.SetStateAction<Labour[]>>;
   vehicles: Vehicle[];
@@ -79,10 +87,12 @@ interface MobileBusinessProps {
   setAttendance?: React.Dispatch<React.SetStateAction<AttendanceRecord[]>>;
   isOnline: boolean;
   triggerOnlineSync: (op: string) => void;
+  onSharedDataChanged?: () => Promise<void> | void;
   initialSubSection?: "labour" | "attendance" | "vehicles" | "salaries";
 }
 
 export default function MobileBusiness({
+  apiBaseUrl,
   labours,
   setLabours,
   vehicles,
@@ -95,6 +105,7 @@ export default function MobileBusiness({
   setAttendance = () => {},
   isOnline,
   triggerOnlineSync,
+  onSharedDataChanged,
   initialSubSection = "labour"
 }: MobileBusinessProps) {
   // Navigation tabs inside Business Section
@@ -102,21 +113,59 @@ export default function MobileBusiness({
   const [activeMainSection, setActiveMainSection] = React.useState<"management" | "bill" >("management");
   const [deleteConfirmation, setDeleteConfirmation] = useState<{ id: string; name: string; type: "bill" | "labour" | "vehicle" | "service" | "material"; } | null>(null);
 
-  const executeDelete = () => {
+  const persistLabour = async (record: Labour, method: "POST" | "PUT") => {
+    const response = await requestJson(
+      apiBaseUrl,
+      method === "POST" ? "/api/v1/labours" : `/api/v1/labours/${record.id}`,
+      {
+        method,
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(toLabourApiPayload(record)),
+      }
+    );
+    return mapLabourFromApi(response);
+  };
+
+  const persistVehicle = async (record: Vehicle, method: "POST" | "PUT") => {
+    const response = await requestJson(
+      apiBaseUrl,
+      method === "POST" ? "/api/v1/vehicles" : `/api/v1/vehicles/${record.id}`,
+      {
+        method,
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(toVehicleApiPayload(record)),
+      }
+    );
+    return mapVehicleFromApi(response);
+  };
+
+  const executeDelete = async () => {
     if (!deleteConfirmation) return;
     const { id, name, type } = deleteConfirmation;
     if (type === "bill") {
       setBusinessBills(prev => prev.filter(b => b.id !== id));
       triggerOnlineSync(`DELETED BILL FOR ${name}`);
     } else if (type === "labour") {
-      setLabours(prev => prev.filter(l => l.id !== id));
-      if (selectedLabourForProfile?.id === id) {
-        setSelectedLabourForProfile(null);
+      try {
+        await requestJson(apiBaseUrl, `/api/v1/labours/${id}`, { method: "DELETE" });
+        setLabours(prev => prev.filter(l => l.id !== id));
+        if (selectedLabourForProfile?.id === id) {
+          setSelectedLabourForProfile(null);
+        }
+        await onSharedDataChanged?.();
+        triggerOnlineSync(`REMOVED WORKER: ${name}`);
+      } catch (error) {
+        console.error(error);
       }
-      triggerOnlineSync(`REMOVED WORKER: ${name}`);
     } else if (type === "vehicle") {
-      setVehicles(prev => prev.filter(v => v.id !== id));
-      triggerOnlineSync(`DELETED VEHICLE: ${id}`);
+      try {
+        await requestJson(apiBaseUrl, `/api/v1/vehicles/${id}`, { method: "DELETE" });
+        setVehicles(prev => prev.filter(v => v.id !== id));
+        await onSharedDataChanged?.();
+        triggerOnlineSync(`DELETED VEHICLE: ${id}`);
+      } catch (error) {
+        console.error(error);
+      }
     } else if (type === "service") {
       setServices(prev => prev.filter(s => s.id !== id));
       triggerOnlineSync(`DELETED SERVICE LOG: ${id}`);
@@ -1249,89 +1298,50 @@ export default function MobileBusiness({
     setIsLabourFormOpen(true);
   };
 
-  const handleSaveLabour = (e: React.FormEvent) => {
+  const handleSaveLabour = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!fullName || !phone) return;
 
-    if (editingLabourId) {
-      // Edit
-      setLabours(prev => prev.map(lab => {
-        if (lab.id === editingLabourId) {
-          return {
-            ...lab,
-            fullName,
-            phone,
-            aadhaarNumber,
-            address,
-            joiningDate,
-            licenseNumber: activeLabourTab === "Driver" ? licenseNumber : undefined,
-            licenseExpiryDate: activeLabourTab === "Driver" ? licenseExpiryDate : undefined,
-            emergencyContact,
-            salaryPerMonth: Number(salaryPerMonth),
-            aadhaarPdfName,
-            aadhaarPdfData,
-            licensePdfName: activeLabourTab === "Driver" ? licensePdfName : undefined,
-            licensePdfData: activeLabourTab === "Driver" ? licensePdfData : undefined,
-            customDocuments: customDocs
-          };
-        }
-        return lab;
-      }));
-      
-      const found = labours.find(l => l.id === editingLabourId);
-      if (found) {
-        const updated = {
-          ...found,
-          fullName,
-          phone,
-          aadhaarNumber,
-          address,
-          joiningDate,
-          licenseNumber: activeLabourTab === "Driver" ? licenseNumber : undefined,
-          licenseExpiryDate: activeLabourTab === "Driver" ? licenseExpiryDate : undefined,
-          emergencyContact,
-          salaryPerMonth: Number(salaryPerMonth),
-          aadhaarPdfName,
-          aadhaarPdfData,
-          licensePdfName: activeLabourTab === "Driver" ? licensePdfName : undefined,
-          licensePdfData: activeLabourTab === "Driver" ? licensePdfData : undefined,
-          customDocuments: customDocs
-        };
-        if (selectedLabourForProfile?.id === editingLabourId) {
-          setSelectedLabourForProfile(updated);
-        }
+    const next: Labour = {
+      id: editingLabourId || `LAB-${Date.now()}`,
+      fullName,
+      phone,
+      skillType: activeLabourTab,
+      dailyWage: 800,
+      joiningDate,
+      aadhaarNumber,
+      address,
+      emergencyContact,
+      isActive: true,
+      isFreezed: labours.find((lab) => lab.id === editingLabourId)?.isFreezed ?? false,
+      licenseNumber: activeLabourTab === "Driver" ? licenseNumber : undefined,
+      licenseExpiryDate: activeLabourTab === "Driver" ? licenseExpiryDate : undefined,
+      salaryPerMonth: Number(salaryPerMonth),
+      advanceEntries: labours.find((lab) => lab.id === editingLabourId)?.advanceEntries ?? [],
+      pdfAttachmentName: "Driver-Kyc.pdf",
+      profilePhoto: "https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&q=80&w=120&h=120",
+      aadhaarPdfName,
+      aadhaarPdfData,
+      licensePdfName: activeLabourTab === "Driver" ? licensePdfName : undefined,
+      licensePdfData: activeLabourTab === "Driver" ? licensePdfData : undefined,
+      customDocuments: customDocs,
+    };
+
+    try {
+      const saved = await persistLabour(next, editingLabourId ? "PUT" : "POST");
+      setLabours(prev => editingLabourId
+        ? prev.map(lab => lab.id === editingLabourId ? saved : lab)
+        : [saved, ...prev]
+      );
+      if (selectedLabourForProfile?.id === editingLabourId) {
+        setSelectedLabourForProfile(saved);
       }
-      triggerOnlineSync(`UPDATED LABOUR PROFILE: ${fullName}`);
-    } else {
-      // Add
-      const newId = `LAB-${Date.now()}`;
-      const newLab: Labour = {
-        id: newId,
-        fullName,
-        phone,
-        skillType: activeLabourTab,
-        dailyWage: 800, // compat
-        joiningDate,
-        aadhaarNumber,
-        address,
-        emergencyContact,
-        isActive: true,
-        licenseNumber: activeLabourTab === "Driver" ? licenseNumber : undefined,
-        licenseExpiryDate: activeLabourTab === "Driver" ? licenseExpiryDate : undefined,
-        salaryPerMonth: Number(salaryPerMonth),
-        advanceEntries: [],
-        pdfAttachmentName: "Driver-Kyc.pdf",
-        profilePhoto: "https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&q=80&w=120&h=120",
-        aadhaarPdfName,
-        aadhaarPdfData,
-        licensePdfName: activeLabourTab === "Driver" ? licensePdfName : undefined,
-        licensePdfData: activeLabourTab === "Driver" ? licensePdfData : undefined,
-        customDocuments: customDocs
-      };
-      setLabours(prev => [...prev, newLab]);
-      triggerOnlineSync(`ADDED LABOUR: ${fullName}`);
+      await onSharedDataChanged?.();
+      triggerOnlineSync(editingLabourId ? `UPDATED LABOUR PROFILE: ${fullName}` : `ADDED LABOUR: ${fullName}`);
+      setIsLabourFormOpen(false);
+    } catch (error) {
+      console.error(error);
     }
-    setIsLabourFormOpen(false);
   };
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>, field: "aadhaar" | "license" | "custom") => {
@@ -1399,36 +1409,38 @@ export default function MobileBusiness({
     setDeleteConfirmation({ id, name, type: "labour" });
   };
 
-  const handleQuitWork = (id: string) => {
-    setLabours(prev => prev.map(l => {
-      if (l.id === id) {
-        return { ...l, isFreezed: true };
-      }
-      return l;
-    }));
+  const handleQuitWork = async (id: string) => {
     const found = labours.find(l => l.id === id);
-    if (found) {
-      setSelectedLabourForProfile({ ...found, isFreezed: true });
+    if (!found) return;
+    const next = { ...found, isFreezed: true };
+    try {
+      const saved = await persistLabour(next, "PUT");
+      setLabours(prev => prev.map(l => l.id === id ? saved : l));
+      setSelectedLabourForProfile(saved);
+      await onSharedDataChanged?.();
+      triggerOnlineSync(`WORKER QUIT WORK / FREEZED: ${id}`);
+    } catch (error) {
+      console.error(error);
     }
-    triggerOnlineSync(`WORKER QUIT WORK / FREEZED: ${id}`);
   };
 
-  const handleRejoin = (id: string) => {
-    setLabours(prev => prev.map(l => {
-      if (l.id === id) {
-        return { ...l, isFreezed: false };
-      }
-      return l;
-    }));
+  const handleRejoin = async (id: string) => {
     const found = labours.find(l => l.id === id);
-    if (found) {
-      setSelectedLabourForProfile({ ...found, isFreezed: false });
+    if (!found) return;
+    const next = { ...found, isFreezed: false };
+    try {
+      const saved = await persistLabour(next, "PUT");
+      setLabours(prev => prev.map(l => l.id === id ? saved : l));
+      setSelectedLabourForProfile(saved);
+      await onSharedDataChanged?.();
+      triggerOnlineSync(`WORKER REJOINED ACTIVE ROSTER: ${id}`);
+    } catch (error) {
+      console.error(error);
     }
-    triggerOnlineSync(`WORKER REJOINED ACTIVE ROSTER: ${id}`);
   };
 
   // ADVANCE CRUD ACTIONS inside Labour Profiles
-  const handleAddAdvanceEntry = (e: React.FormEvent) => {
+  const handleAddAdvanceEntry = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!selectedLabourForProfile) return;
 
@@ -1439,44 +1451,37 @@ export default function MobileBusiness({
       amount: Number(advanceAmount)
     };
 
-    setLabours(prev => prev.map(l => {
-      if (l.id === selectedLabourForProfile.id) {
-        return { ...l, advanceEntries: [...(l.advanceEntries || []), newAdvance] };
-      }
-      return l;
-    }));
-
-    setSelectedLabourForProfile(prev => {
-      if (!prev) return null;
-      return {
-        ...prev,
-        advanceEntries: [...(prev.advanceEntries || []), newAdvance]
-      };
-    });
-
-    setIsAdvanceFormOpen(false);
-    triggerOnlineSync(`DEDUCTED SALARY ADVANCE FOR ${selectedLabourForProfile.fullName}`);
+    const next = {
+      ...selectedLabourForProfile,
+      advanceEntries: [...(selectedLabourForProfile.advanceEntries || []), newAdvance],
+    };
+    try {
+      const saved = await persistLabour(next, "PUT");
+      setLabours(prev => prev.map(l => l.id === selectedLabourForProfile.id ? saved : l));
+      setSelectedLabourForProfile(saved);
+      setIsAdvanceFormOpen(false);
+      await onSharedDataChanged?.();
+      triggerOnlineSync(`DEDUCTED SALARY ADVANCE FOR ${selectedLabourForProfile.fullName}`);
+    } catch (error) {
+      console.error(error);
+    }
   };
 
-  const handleDeleteAdvanceEntry = (advId: string) => {
+  const handleDeleteAdvanceEntry = async (advId: string) => {
     if (!selectedLabourForProfile) return;
-
-    setLabours(prev => prev.map(l => {
-      if (l.id === selectedLabourForProfile.id) {
-        return { ...l, advanceEntries: (l.advanceEntries || []).filter(adv => adv.id !== advId) };
-      }
-      return l;
-    }));
-
-    setSelectedLabourForProfile(prev => {
-      if (!prev) return null;
-      return {
-        ...prev,
-        advanceEntries: (prev.advanceEntries || []).filter(adv => adv.id !== advId)
-      };
-    });
-
-    triggerOnlineSync("DELETED ADVANCE ENTRY");
+    const next = {
+      ...selectedLabourForProfile,
+      advanceEntries: (selectedLabourForProfile.advanceEntries || []).filter(adv => adv.id !== advId),
+    };
+    try {
+      const saved = await persistLabour(next, "PUT");
+      setLabours(prev => prev.map(l => l.id === selectedLabourForProfile.id ? saved : l));
+      setSelectedLabourForProfile(saved);
+      await onSharedDataChanged?.();
+      triggerOnlineSync("DELETED ADVANCE ENTRY");
+    } catch (error) {
+      console.error(error);
+    }
   };
 
   // --- ACTIONS VEHICLE CRUD ---
@@ -1549,61 +1554,42 @@ export default function MobileBusiness({
     setIsVehicleFormOpen(true);
   };
 
-  const handleSaveVehicle = (e: React.FormEvent) => {
+  const handleSaveVehicle = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!vehId || !vehName) return;
 
-    if (editingVehicleId) {
-      setVehicles(prev => prev.map(v => {
-        if (v.id === editingVehicleId) {
-          return {
-            ...v,
-            id: vehId,
-            vehicleName: vehName,
-            vehicleType: vehType,
-            brand: vehBrand,
-            model: vehModel,
-            registrationDate: vehRegDate,
-            insuranceExpiry: vehInsExpiry,
-            fitnessExpiry: vehFitExpiry,
-            pollutionExpiry: vehPolExpiry,
-            rcBookPdf: vehRcBookFile || v.rcBookPdf || "RC-Verified.pdf",
-            rcBookData: vehRcBookData || v.rcBookData,
-            insurancePdf: vehInsuranceFile || v.insurancePdf || "Insurance-Receipt.pdf",
-            insuranceData: vehInsuranceData || v.insuranceData,
-            permitPdf: vehPermitFile || v.permitPdf || "All-India-Permit.pdf",
-            permitData: vehPermitData || v.permitData,
-            fitnessPdf: vehFitnessFile || v.fitnessPdf || "FC-Certificate.pdf",
-            fitnessData: vehFitnessData || v.fitnessData
-          };
-        }
-        return v;
-      }));
-      triggerOnlineSync(`UPDATED VEHICLE DETAILS: ${vehName}`);
-    } else {
-      const newV: Vehicle = {
-        id: vehId,
-        vehicleName: vehName,
-        vehicleType: vehType,
-        brand: vehBrand,
-        model: vehModel,
-        registrationDate: vehRegDate,
-        insuranceExpiry: vehInsExpiry,
-        fitnessExpiry: vehFitExpiry,
-        pollutionExpiry: vehPolExpiry,
-        rcBookPdf: vehRcBookFile || "RC-Verified.pdf",
-        rcBookData: vehRcBookData || undefined,
-        insurancePdf: vehInsuranceFile || "Insurance-Receipt.pdf",
-        insuranceData: vehInsuranceData || undefined,
-        permitPdf: vehPermitFile || "All-India-Permit.pdf",
-        permitData: vehPermitData || undefined,
-        fitnessPdf: vehFitnessFile || "FC-Certificate.pdf",
-        fitnessData: vehFitnessData || undefined
-      };
-      setVehicles(prev => [...prev, newV]);
-      triggerOnlineSync(`ADDED NEW FLEET VEHICLE: ${vehName}`);
+    const next: Vehicle = {
+      id: vehId,
+      vehicleName: vehName,
+      vehicleType: vehType,
+      brand: vehBrand,
+      model: vehModel,
+      registrationDate: vehRegDate,
+      insuranceExpiry: vehInsExpiry,
+      fitnessExpiry: vehFitExpiry,
+      pollutionExpiry: vehPolExpiry,
+      rcBookPdf: vehRcBookFile || "RC-Verified.pdf",
+      rcBookData: vehRcBookData || undefined,
+      insurancePdf: vehInsuranceFile || "Insurance-Receipt.pdf",
+      insuranceData: vehInsuranceData || undefined,
+      permitPdf: vehPermitFile || "All-India-Permit.pdf",
+      permitData: vehPermitData || undefined,
+      fitnessPdf: vehFitnessFile || "FC-Certificate.pdf",
+      fitnessData: vehFitnessData || undefined
+    };
+
+    try {
+      const saved = await persistVehicle(next, editingVehicleId ? "PUT" : "POST");
+      setVehicles(prev => editingVehicleId
+        ? prev.map(v => v.id === editingVehicleId ? saved : v)
+        : [saved, ...prev]
+      );
+      await onSharedDataChanged?.();
+      triggerOnlineSync(editingVehicleId ? `UPDATED VEHICLE DETAILS: ${vehName}` : `ADDED NEW FLEET VEHICLE: ${vehName}`);
+      setIsVehicleFormOpen(false);
+    } catch (error) {
+      console.error(error);
     }
-    setIsVehicleFormOpen(false);
   };
 
   const handleDeleteVehicle = (id: string) => {
@@ -1621,7 +1607,7 @@ export default function MobileBusiness({
     setIsFuelFormOpen(true);
   };
 
-  const handleSaveFuel = (e: React.FormEvent) => {
+  const handleSaveFuel = async (e: React.FormEvent) => {
     e.preventDefault();
     const totalAmount = Number(fuelLiters) * Number(fuelPerLiterCost);
 
@@ -1634,6 +1620,20 @@ export default function MobileBusiness({
       liters: Number(fuelLiters),
       totalAmount
     };
+
+    void requestJson(apiBaseUrl, "/api/v1/vehicles/fuel", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        id: newFuel.id,
+        date: fuelDateTime.split(" ")[0],
+        vehicle_name: newFuel.vehicleName,
+        fuel_type: newFuel.fuelType,
+        per_liter_cost: newFuel.perLiterCost,
+        liters: newFuel.liters,
+        cost: newFuel.totalAmount,
+      }),
+    }).catch((error) => console.error(error));
 
     setFuelEntries(prev => [...prev, newFuel]);
     setIsFuelFormOpen(false);
@@ -1787,12 +1787,72 @@ export default function MobileBusiness({
     setPayoutStatus("Pending");
   };
 
-  const handleProcessSalaryPayment = () => {
+  const handleProcessSalaryPayment = async () => {
     if (!selectedLabourForPayout) return;
 
     const totalAdv = (selectedLabourForPayout.advanceEntries || []).reduce((sum, item) => sum + item.amount, 0);
     const deductValue = payoutOption === "Deduct" ? Number(deductAmountInput) : 0;
     const finalSalaryComputed = (selectedLabourForPayout.salaryPerMonth ?? 0) - deductValue;
+
+    try {
+      const existing = salaryPayments.find((payment) => payment.labourId === selectedLabourForPayout.id);
+      const savedResponse = await requestJson(
+        apiBaseUrl,
+        existing ? `/api/v1/labours/salary-payments/${existing.id}` : "/api/v1/labours/salary-payments",
+        {
+          method: existing ? "PUT" : "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            id: existing?.id ?? `pay-${Date.now()}`,
+            labour_id: selectedLabourForPayout.id,
+            date: new Date().toISOString().split("T")[0],
+            amount_calculated: selectedLabourForPayout.salaryPerMonth ?? 0,
+            advance_deducted: deductValue,
+            bonus: 0,
+            net_paid: finalSalaryComputed,
+            status: payoutStatus,
+            salary_option: payoutOption,
+            deduct_amount_requested: deductValue,
+          }),
+        }
+      );
+
+      const savedPayment: SalaryPayment = {
+        id: String(savedResponse.id ?? existing?.id ?? `pay-${Date.now()}`),
+        labourId: selectedLabourForPayout.id,
+        date: new Date().toISOString().split("T")[0],
+        amountCalculated: selectedLabourForPayout.salaryPerMonth ?? 0,
+        advanceDeducted: deductValue,
+        bonus: 0,
+        netPaid: finalSalaryComputed,
+        status: payoutStatus,
+        salaryOption: payoutOption,
+        deductAmountRequested: deductValue,
+      };
+
+      setSalaryPayments(prev => {
+        const filtered = prev.filter(p => p.labourId !== selectedLabourForPayout.id);
+        return [...filtered, savedPayment];
+      });
+
+      if (payoutOption === "Deduct" && payoutStatus === "Paid" && deductValue > 0) {
+        const nextLabour = {
+          ...selectedLabourForPayout,
+          advanceEntries: [],
+        };
+        const persistedLabour = await persistLabour(nextLabour, "PUT");
+        setLabours(prev => prev.map(l => l.id === selectedLabourForPayout.id ? persistedLabour : l));
+      }
+
+      await onSharedDataChanged?.();
+      alert(`Salary slip calculated and processed for ${selectedLabourForPayout.fullName}. Net payout: â‚¹${finalSalaryComputed.toLocaleString()}`);
+      setSelectedLabourForPayout(null);
+      triggerOnlineSync(`PROCESSED HARVEST PAYOUT SLIP`);
+      return;
+    } catch (error) {
+      console.error(error);
+      return;
+    }
 
     const newPayment: SalaryPayment = {
       id: `pay-${Date.now()}`,
@@ -3252,6 +3312,14 @@ export default function MobileBusiness({
                                         }
                                       });
                                       triggerOnlineSync(`Marked ${lab.fullName} Present for ${activeDateString}`);
+                                      void requestJson(apiBaseUrl, "/api/v1/labours/attendance", {
+                                        method: "POST",
+                                        headers: { "Content-Type": "application/json" },
+                                        body: JSON.stringify({
+                                          date: activeDateString,
+                                          records: [{ labour_id: lab.id, status: "Present", reason: null }],
+                                        }),
+                                      }).catch((error) => console.error(error));
                                     }}
                                     className={`py-1 text-[8.5px] font-black uppercase rounded-md transition border cursor-pointer ${
                                       recordStatus === "Present"
@@ -3276,6 +3344,14 @@ export default function MobileBusiness({
                                         }
                                       });
                                       triggerOnlineSync(`Marked ${lab.fullName} Half-Day for ${activeDateString}`);
+                                      void requestJson(apiBaseUrl, "/api/v1/labours/attendance", {
+                                        method: "POST",
+                                        headers: { "Content-Type": "application/json" },
+                                        body: JSON.stringify({
+                                          date: activeDateString,
+                                          records: [{ labour_id: lab.id, status: "Half-Day", reason: null }],
+                                        }),
+                                      }).catch((error) => console.error(error));
                                     }}
                                     className={`py-1 text-[8.5px] font-black uppercase rounded-md transition border cursor-pointer ${
                                       recordStatus === "Half-Day"
@@ -3300,6 +3376,14 @@ export default function MobileBusiness({
                                         }
                                       });
                                       triggerOnlineSync(`Marked ${lab.fullName} Absent for ${activeDateString}`);
+                                      void requestJson(apiBaseUrl, "/api/v1/labours/attendance", {
+                                        method: "POST",
+                                        headers: { "Content-Type": "application/json" },
+                                        body: JSON.stringify({
+                                          date: activeDateString,
+                                          records: [{ labour_id: lab.id, status: "Absent", reason: null }],
+                                        }),
+                                      }).catch((error) => console.error(error));
                                     }}
                                     className={`py-1 text-[8.5px] font-black uppercase rounded-md transition border cursor-pointer ${
                                       recordStatus === "Absent"
@@ -3314,6 +3398,9 @@ export default function MobileBusiness({
                                     onClick={() => {
                                       setAttendance(prev => prev.filter(r => !(r.labourId === lab.id && r.date === activeDateString)));
                                       triggerOnlineSync(`Cleared attendance record for ${lab.fullName} on ${activeDateString}`);
+                                      void requestJson(apiBaseUrl, `/api/v1/labours/attendance/${lab.id}/${activeDateString}`, {
+                                        method: "DELETE",
+                                      }).catch((error) => console.error(error));
                                     }}
                                     className={`py-1 text-[8.5px] font-black uppercase rounded-md transition border cursor-pointer ${
                                       !recordStatus
@@ -3379,6 +3466,18 @@ export default function MobileBusiness({
                                               });
                                               setIsEditingAttendanceReason(false);
                                               triggerOnlineSync(`Saved reason for ${lab.fullName} on ${activeDateString}: ${attendanceReasonText}`);
+                                              void requestJson(apiBaseUrl, "/api/v1/labours/attendance", {
+                                                method: "POST",
+                                                headers: { "Content-Type": "application/json" },
+                                                body: JSON.stringify({
+                                                  date: activeDateString,
+                                                  records: [{
+                                                    labour_id: lab.id,
+                                                    status: recordStatus || "Absent",
+                                                    reason: attendanceReasonText.trim() || null,
+                                                  }],
+                                                }),
+                                              }).catch((error) => console.error(error));
                                             }}
                                             className="bg-indigo-600 hover:bg-indigo-550 px-3 py-1 rounded text-[9.5px] text-white font-black font-mono transition cursor-pointer uppercase tracking-wider"
                                           >

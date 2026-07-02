@@ -1,4 +1,4 @@
-from datetime import datetime, timedelta, timezone
+from datetime import date as dt_date, datetime, timedelta, timezone
 from typing import Any, TypeVar
 
 from fastapi import Depends, FastAPI, HTTPException, status
@@ -29,18 +29,28 @@ from .models import (
 from .schemas import (
     AttendanceBatch,
     CategoryBudgetCreate,
+    CategoryBudgetUpdate,
     ChangePasswordRequest,
     DocumentCreate,
+    DocumentUpdate,
     EMICollectRequest,
     FamilyExpenseCreate,
+    FamilyExpenseUpdate,
     FamilyMemberCreate,
+    FamilyMemberUpdate,
     FuelEntryCreate,
     IncomeEntryCreate,
+    IncomeEntryUpdate,
     LabourCreate,
     LabourUpdate,
     LoanGivenCreate,
+    LoanGivenUpdate,
     LoanReceivedCreate,
+    LoanReceivedUpdate,
     NotificationCreate,
+    NotificationUpdate,
+    SalaryPaymentCreate,
+    SalaryPaymentUpdate,
     TokenRequest,
     TokenResponse,
     TripCreate,
@@ -220,6 +230,53 @@ def mark_attendance(payload: AttendanceBatch, db: Session = Depends(get_db)):
     return {"message": "Attendance marked successfully", "total_records": len(saved), "date": payload.date}
 
 
+@app.get("/api/v1/labours/attendance")
+def list_attendance(db: Session = Depends(get_db)):
+    return [serialize_model(item) for item in db.execute(select(Attendance).order_by(Attendance.date.desc())).scalars()]
+
+
+@app.delete("/api/v1/labours/attendance/{labour_id}/{attendance_date}", status_code=status.HTTP_204_NO_CONTENT)
+def delete_attendance(labour_id: str, attendance_date: dt_date, db: Session = Depends(get_db)):
+    attendance = db.execute(
+        select(Attendance).where(Attendance.labour_id == labour_id, Attendance.date == attendance_date)
+    ).scalar_one_or_none()
+    if not attendance:
+        raise HTTPException(status_code=404, detail="Attendance record not found")
+    db.delete(attendance)
+    db.commit()
+
+
+@app.get("/api/v1/labours/salary-payments")
+def list_salary_payments(db: Session = Depends(get_db)):
+    return [serialize_model(item) for item in db.execute(select(SalaryPayment).order_by(SalaryPayment.created_at.desc())).scalars()]
+
+
+@app.post("/api/v1/labours/salary-payments", status_code=status.HTTP_201_CREATED)
+def create_salary_payment(payload: SalaryPaymentCreate, db: Session = Depends(get_db)):
+    payment = SalaryPayment(**payload.model_dump())
+    db.add(payment)
+    db.commit()
+    db.refresh(payment)
+    return serialize_model(payment)
+
+
+@app.put("/api/v1/labours/salary-payments/{payment_id}")
+def update_salary_payment(payment_id: str, payload: SalaryPaymentUpdate, db: Session = Depends(get_db)):
+    payment = db.get(SalaryPayment, payment_id)
+    if not payment:
+        raise HTTPException(status_code=404, detail="Salary payment not found")
+    return serialize_model(update_instance(db, payment, payload.model_dump(exclude_unset=True)))
+
+
+@app.delete("/api/v1/labours/salary-payments/{payment_id}", status_code=status.HTTP_204_NO_CONTENT)
+def delete_salary_payment(payment_id: str, db: Session = Depends(get_db)):
+    payment = db.get(SalaryPayment, payment_id)
+    if not payment:
+        raise HTTPException(status_code=404, detail="Salary payment not found")
+    db.delete(payment)
+    db.commit()
+
+
 @app.get("/api/v1/labours/salary-pending")
 def salary_pending(db: Session = Depends(get_db)):
     rows = db.execute(
@@ -291,6 +348,11 @@ def create_fuel_entry(payload: FuelEntryCreate, db: Session = Depends(get_db)):
     return serialize_model(entry)
 
 
+@app.get("/api/v1/vehicles/fuel")
+def list_fuel_entries(db: Session = Depends(get_db)):
+    return [serialize_model(item) for item in db.execute(select(FuelEntry).order_by(FuelEntry.created_at.desc())).scalars()]
+
+
 @app.post("/api/v1/vehicles/trips", status_code=status.HTTP_201_CREATED)
 def create_trip(payload: TripCreate, db: Session = Depends(get_db)):
     trip = TripRecord(**payload.model_dump())
@@ -298,6 +360,11 @@ def create_trip(payload: TripCreate, db: Session = Depends(get_db)):
     db.commit()
     db.refresh(trip)
     return serialize_model(trip)
+
+
+@app.get("/api/v1/vehicles/trips")
+def list_trips(db: Session = Depends(get_db)):
+    return [serialize_model(item) for item in db.execute(select(TripRecord).order_by(TripRecord.created_at.desc())).scalars()]
 
 
 @app.get("/api/v1/loans/given")
@@ -312,6 +379,23 @@ def create_loan_given(payload: LoanGivenCreate, db: Session = Depends(get_db)):
     db.commit()
     db.refresh(loan)
     return serialize_model(loan)
+
+
+@app.put("/api/v1/loans/given/{loan_id}")
+def update_loan_given(loan_id: str, payload: LoanGivenUpdate, db: Session = Depends(get_db)):
+    loan = db.get(LoanGiven, loan_id)
+    if not loan:
+        raise HTTPException(status_code=404, detail="Loan not found")
+    return serialize_model(update_instance(db, loan, payload.model_dump(exclude_unset=True)))
+
+
+@app.delete("/api/v1/loans/given/{loan_id}", status_code=status.HTTP_204_NO_CONTENT)
+def delete_loan_given(loan_id: str, db: Session = Depends(get_db)):
+    loan = db.get(LoanGiven, loan_id)
+    if not loan:
+        raise HTTPException(status_code=404, detail="Loan not found")
+    db.delete(loan)
+    db.commit()
 
 
 @app.post("/api/v1/loans/given/collect-emi")
@@ -346,6 +430,23 @@ def create_loan_received(payload: LoanReceivedCreate, db: Session = Depends(get_
     return serialize_model(loan)
 
 
+@app.put("/api/v1/loans/received/{loan_id}")
+def update_loan_received(loan_id: str, payload: LoanReceivedUpdate, db: Session = Depends(get_db)):
+    loan = db.get(LoanReceived, loan_id)
+    if not loan:
+        raise HTTPException(status_code=404, detail="Loan not found")
+    return serialize_model(update_instance(db, loan, payload.model_dump(exclude_unset=True)))
+
+
+@app.delete("/api/v1/loans/received/{loan_id}", status_code=status.HTTP_204_NO_CONTENT)
+def delete_loan_received(loan_id: str, db: Session = Depends(get_db)):
+    loan = db.get(LoanReceived, loan_id)
+    if not loan:
+        raise HTTPException(status_code=404, detail="Loan not found")
+    db.delete(loan)
+    db.commit()
+
+
 @app.get("/api/v1/family-members")
 def list_family_members(db: Session = Depends(get_db)):
     return [serialize_model(item) for item in db.execute(select(FamilyMember).order_by(FamilyMember.created_at.desc())).scalars()]
@@ -358,6 +459,23 @@ def create_family_member(payload: FamilyMemberCreate, db: Session = Depends(get_
     db.commit()
     db.refresh(member)
     return serialize_model(member)
+
+
+@app.put("/api/v1/family-members/{member_id}")
+def update_family_member(member_id: str, payload: FamilyMemberUpdate, db: Session = Depends(get_db)):
+    member = db.get(FamilyMember, member_id)
+    if not member:
+        raise HTTPException(status_code=404, detail="Family member not found")
+    return serialize_model(update_instance(db, member, payload.model_dump(exclude_unset=True)))
+
+
+@app.delete("/api/v1/family-members/{member_id}", status_code=status.HTTP_204_NO_CONTENT)
+def delete_family_member(member_id: str, db: Session = Depends(get_db)):
+    member = db.get(FamilyMember, member_id)
+    if not member:
+        raise HTTPException(status_code=404, detail="Family member not found")
+    db.delete(member)
+    db.commit()
 
 
 @app.get("/api/v1/income")
@@ -374,6 +492,23 @@ def create_income(payload: IncomeEntryCreate, db: Session = Depends(get_db)):
     return serialize_model(income)
 
 
+@app.put("/api/v1/income/{income_id}")
+def update_income(income_id: str, payload: IncomeEntryUpdate, db: Session = Depends(get_db)):
+    income = db.get(IncomeEntry, income_id)
+    if not income:
+        raise HTTPException(status_code=404, detail="Income entry not found")
+    return serialize_model(update_instance(db, income, payload.model_dump(exclude_unset=True)))
+
+
+@app.delete("/api/v1/income/{income_id}", status_code=status.HTTP_204_NO_CONTENT)
+def delete_income(income_id: str, db: Session = Depends(get_db)):
+    income = db.get(IncomeEntry, income_id)
+    if not income:
+        raise HTTPException(status_code=404, detail="Income entry not found")
+    db.delete(income)
+    db.commit()
+
+
 @app.get("/api/v1/expenses")
 def list_expenses(db: Session = Depends(get_db)):
     return [serialize_model(item) for item in db.execute(select(FamilyExpense).order_by(FamilyExpense.created_at.desc())).scalars()]
@@ -386,6 +521,23 @@ def create_expense(payload: FamilyExpenseCreate, db: Session = Depends(get_db)):
     db.commit()
     db.refresh(expense)
     return serialize_model(expense)
+
+
+@app.put("/api/v1/expenses/{expense_id}")
+def update_expense(expense_id: str, payload: FamilyExpenseUpdate, db: Session = Depends(get_db)):
+    expense = db.get(FamilyExpense, expense_id)
+    if not expense:
+        raise HTTPException(status_code=404, detail="Expense not found")
+    return serialize_model(update_instance(db, expense, payload.model_dump(exclude_unset=True)))
+
+
+@app.delete("/api/v1/expenses/{expense_id}", status_code=status.HTTP_204_NO_CONTENT)
+def delete_expense(expense_id: str, db: Session = Depends(get_db)):
+    expense = db.get(FamilyExpense, expense_id)
+    if not expense:
+        raise HTTPException(status_code=404, detail="Expense not found")
+    db.delete(expense)
+    db.commit()
 
 
 @app.get("/api/v1/category-budgets")
@@ -402,6 +554,23 @@ def create_category_budget(payload: CategoryBudgetCreate, db: Session = Depends(
     return serialize_model(budget)
 
 
+@app.put("/api/v1/category-budgets/{category}")
+def update_category_budget(category: str, payload: CategoryBudgetUpdate, db: Session = Depends(get_db)):
+    budget = db.get(CategoryBudget, category)
+    if not budget:
+        raise HTTPException(status_code=404, detail="Category budget not found")
+    return serialize_model(update_instance(db, budget, payload.model_dump(exclude_unset=True)))
+
+
+@app.delete("/api/v1/category-budgets/{category}", status_code=status.HTTP_204_NO_CONTENT)
+def delete_category_budget(category: str, db: Session = Depends(get_db)):
+    budget = db.get(CategoryBudget, category)
+    if not budget:
+        raise HTTPException(status_code=404, detail="Category budget not found")
+    db.delete(budget)
+    db.commit()
+
+
 @app.get("/api/v1/documents")
 def list_documents(db: Session = Depends(get_db)):
     return [serialize_model(item) for item in db.execute(select(ManagedDocument).order_by(ManagedDocument.created_at.desc())).scalars()]
@@ -416,6 +585,23 @@ def create_document(payload: DocumentCreate, db: Session = Depends(get_db)):
     return serialize_model(document)
 
 
+@app.put("/api/v1/documents/{document_id}")
+def update_document(document_id: str, payload: DocumentUpdate, db: Session = Depends(get_db)):
+    document = db.get(ManagedDocument, document_id)
+    if not document:
+        raise HTTPException(status_code=404, detail="Document not found")
+    return serialize_model(update_instance(db, document, payload.model_dump(exclude_unset=True)))
+
+
+@app.delete("/api/v1/documents/{document_id}", status_code=status.HTTP_204_NO_CONTENT)
+def delete_document(document_id: str, db: Session = Depends(get_db)):
+    document = db.get(ManagedDocument, document_id)
+    if not document:
+        raise HTTPException(status_code=404, detail="Document not found")
+    db.delete(document)
+    db.commit()
+
+
 @app.get("/api/v1/notifications")
 def list_notifications(db: Session = Depends(get_db)):
     return [serialize_model(item) for item in db.execute(select(AppNotification).order_by(AppNotification.created_at.desc())).scalars()]
@@ -428,3 +614,20 @@ def create_notification(payload: NotificationCreate, db: Session = Depends(get_d
     db.commit()
     db.refresh(notification)
     return serialize_model(notification)
+
+
+@app.put("/api/v1/notifications/{notification_id}")
+def update_notification(notification_id: str, payload: NotificationUpdate, db: Session = Depends(get_db)):
+    notification = db.get(AppNotification, notification_id)
+    if not notification:
+        raise HTTPException(status_code=404, detail="Notification not found")
+    return serialize_model(update_instance(db, notification, payload.model_dump(exclude_unset=True)))
+
+
+@app.delete("/api/v1/notifications/{notification_id}", status_code=status.HTTP_204_NO_CONTENT)
+def delete_notification(notification_id: str, db: Session = Depends(get_db)):
+    notification = db.get(AppNotification, notification_id)
+    if not notification:
+        raise HTTPException(status_code=404, detail="Notification not found")
+    db.delete(notification)
+    db.commit()

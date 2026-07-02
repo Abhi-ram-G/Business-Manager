@@ -182,8 +182,51 @@ class LoanGivenCreate(BaseModel):
     monthly_interests: dict[str, str] | None = None
 
 
+class LoanGivenUpdate(BaseModel):
+    borrower_name: str | None = None
+    person_name: str | None = None
+    mobile_number: str | None = None
+    address: str | None = None
+    loan_amount: float | None = None
+    amount_given: float | None = None
+    interest_rate: float | None = None
+    interest_percentage: float | None = None
+    start_date: dt_date | None = None
+    end_date: dt_date | None = None
+    emi_amount: float | None = None
+    due_date: str | None = None
+    total_paid: float | None = None
+    is_defaulter: bool | None = None
+    interest_type: str | None = None
+    category: str | None = None
+    status: str | None = None
+    monthly_interests: dict[str, str] | None = None
+
+
 class LoanReceivedCreate(BaseModel):
     id: str
+    lender_name: str | None = None
+    person_name: str | None = None
+    my_name: str | None = None
+    borrowed_amount: float | None = None
+    amount: float | None = None
+    interest_rate: float | None = None
+    interest_percentage: float | None = None
+    start_date: dt_date | None = None
+    end_date: dt_date | None = None
+    monthly_emi: float | None = None
+    due_date: str | None = None
+    total_repaid: float | None = None
+    interest_type: str | None = None
+    interest_status: str | None = None
+    category: str | None = None
+    status: str | None = None
+    vehicle_id: str | None = None
+    number_of_months: int | None = None
+    monthly_interests: dict[str, str] | None = None
+
+
+class LoanReceivedUpdate(BaseModel):
     lender_name: str | None = None
     person_name: str | None = None
     my_name: str | None = None
@@ -217,11 +260,22 @@ class FamilyMemberCreate(BaseModel):
     relationship_name: str = Field(alias="relationship")
 
 
+class FamilyMemberUpdate(BaseModel):
+    name: str | None = None
+    relationship_name: str | None = Field(default=None, alias="relationship")
+
+
 class IncomeEntryCreate(BaseModel):
     id: str
     source: str
     amount: float
     date: dt_date
+
+
+class IncomeEntryUpdate(BaseModel):
+    source: str | None = None
+    amount: float | None = None
+    date: dt_date | None = None
 
 
 class FamilyExpenseCreate(BaseModel):
@@ -235,10 +289,25 @@ class FamilyExpenseCreate(BaseModel):
     description: str | None = None
 
 
+class FamilyExpenseUpdate(BaseModel):
+    family_member_name: str | None = None
+    member_id: str | None = None
+    date: dt_date | None = None
+    reason: str | None = None
+    category: str | None = None
+    amount: float | None = None
+    description: str | None = None
+
+
 class CategoryBudgetCreate(BaseModel):
     category: str
     limit: float
     spent: float = 0
+
+
+class CategoryBudgetUpdate(BaseModel):
+    limit: float | None = None
+    spent: float | None = None
 
 
 class DocumentCreate(BaseModel):
@@ -252,6 +321,16 @@ class DocumentCreate(BaseModel):
     status: str = "Active"
 
 
+class DocumentUpdate(BaseModel):
+    name: str | None = None
+    type: str | None = None
+    owner_name: str | None = None
+    upload_date: dt_date | None = None
+    file_size: str | None = None
+    expiry_date: dt_date | None = None
+    status: str | None = None
+
+
 class NotificationCreate(BaseModel):
     id: str
     title: str
@@ -259,3 +338,36 @@ class NotificationCreate(BaseModel):
     date: str
     type: str
     is_read: bool = False
+
+
+class NotificationUpdate(BaseModel):
+    title: str | None = None
+    body: str | None = None
+    date: str | None = None
+    type: str | None = None
+    is_read: bool | None = None
+
+
+class SalaryPaymentCreate(BaseModel):
+    id: str
+    labour_id: str
+    date: dt_date
+    amount_calculated: float
+    advance_deducted: float = 0
+    bonus: float = 0
+    net_paid: float
+    status: str
+    salary_option: str
+    deduct_amount_requested: float | None = None
+
+
+class SalaryPaymentUpdate(BaseModel):
+    labour_id: str | None = None
+    date: dt_date | None = None
+    amount_calculated: float | None = None
+    advance_deducted: float | None = None
+    bonus: float | None = None
+    net_paid: float | None = None
+    status: str | None = None
+    salary_option: str | None = None
+    deduct_amount_requested: float | None = None

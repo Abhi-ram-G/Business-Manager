@@ -3,7 +3,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import React, { useState, useMemo, useEffect, useRef } from "react";
+import React, { useState, useMemo, useEffect, useRef, useCallback } from "react";
 import { 
   Briefcase, 
   Car, 
@@ -67,18 +67,19 @@ import {
   AppNotification 
 } from "./types";
 import { sqlSchemas, userStories, developmentRoadmap } from "./data";
+import { fetchSharedSnapshot, requestJson } from "./lib/sharedApi";
+
+const DEFAULT_FAMILY_MEMBERS: FamilyMember[] = [
+  { id: "fam-abhiram", name: "Abhiram", relationship: "Self" },
+  { id: "fam-praneet", name: "Praneet", relationship: "Brother" },
+  { id: "fam-ponmani", name: "Ponmani", relationship: "Mother" },
+  { id: "fam-govindarajan", name: "Govindarajan", relationship: "Father" },
+  { id: "fam-venkattammal", name: "Venkattammal", relationship: "Family" },
+  { id: "fam-palanathal", name: "Palanathal", relationship: "Family" },
+];
 
 export default function App() {
   const apiBaseUrl = import.meta.env.VITE_API_BASE_URL || import.meta.env.VITE_API_URL || "http://localhost:8000";
-  const defaultFamilyMembers: FamilyMember[] = [
-    { id: "fam-abhiram", name: "Abhiram", relationship: "Self" },
-    { id: "fam-praneet", name: "Praneet", relationship: "Brother" },
-    { id: "fam-ponmani", name: "Ponmani", relationship: "Mother" },
-    { id: "fam-govindarajan", name: "Govindarajan", relationship: "Father" },
-    { id: "fam-venkattammal", name: "Venkattammal", relationship: "Family" },
-    { id: "fam-palanathal", name: "Palanathal", relationship: "Family" },
-  ];
-
   const loadStoredArray = <T,>(key: string, fallback: T[]): T[] => {
     const saved = localStorage.getItem(key);
     if (!saved) return fallback;
@@ -413,12 +414,12 @@ export default function App() {
     if (saved) {
       try {
         const parsed = JSON.parse(saved) as FamilyMember[];
-        return parsed.length > 0 ? parsed : defaultFamilyMembers;
+        return parsed.length > 0 ? parsed : DEFAULT_FAMILY_MEMBERS;
       } catch (error) {
         console.error(error);
       }
     }
-    return defaultFamilyMembers;
+    return DEFAULT_FAMILY_MEMBERS;
   });
 
   const [incomeEntries, setIncomeEntries] = useState<IncomeEntry[]>(() => {
@@ -449,6 +450,28 @@ export default function App() {
       { id: "not-2", title: "HDFC bank EMI Pending", body: "₹14,600 bank loan EMI is payable on the 15th.", date: "Yesterday", type: "emi", isRead: false },
     ];
   });
+
+  const refreshSharedData = useCallback(async () => {
+    try {
+      const snapshot = await fetchSharedSnapshot(apiBaseUrl);
+      setLabours(snapshot.labours);
+      setAttendance(snapshot.attendance);
+      setSalaryPayments(snapshot.salaryPayments);
+      setVehicles(snapshot.vehicles);
+      setFuelEntries(snapshot.fuelEntries);
+      setTrips(snapshot.trips);
+      setLoansGiven(snapshot.loansGiven);
+      setLoansReceived(snapshot.loansReceived);
+      setFamilyMembers(snapshot.familyMembers.length > 0 ? snapshot.familyMembers : DEFAULT_FAMILY_MEMBERS);
+      setIncomeEntries(snapshot.incomeEntries);
+      setFamilyExpenses(snapshot.familyExpenses);
+      setCategoryBudgets((prev) => (snapshot.categoryBudgets.length > 0 ? snapshot.categoryBudgets : prev));
+      setDocuments((prev) => (snapshot.documents.length > 0 ? snapshot.documents : prev));
+      setNotifications((prev) => (snapshot.notifications.length > 0 ? snapshot.notifications : prev));
+    } catch (error) {
+      console.error("Unable to refresh shared records", error);
+    }
+  }, [apiBaseUrl]);
 
   // Save states to localStorage on state changes
   useEffect(() => {
@@ -506,6 +529,14 @@ export default function App() {
   useEffect(() => {
     localStorage.setItem("srs_notifications", JSON.stringify(notifications));
   }, [notifications]);
+
+  useEffect(() => {
+    void refreshSharedData();
+    const interval = window.setInterval(() => {
+      void refreshSharedData();
+    }, 15000);
+    return () => window.clearInterval(interval);
+  }, [refreshSharedData]);
 
   // --- FORM STATE ENGINE FOR ADD NEW ITEMS (CRUD) ---
   const [searchQuery, setSearchQuery] = useState("");
@@ -631,12 +662,18 @@ export default function App() {
     setNotifications(prev => prev.map(n => n.id === id ? { ...n, isRead: !n.isRead } : n));
   };
 
-  const deleteNotification = (id: string) => {
-    setNotifications(prev => prev.filter(n => n.id !== id));
+  const deleteNotification = async (id: string) => {
+    try {
+      await requestJson(apiBaseUrl, `/api/v1/notifications/${id}`, { method: "DELETE" });
+      setNotifications(prev => prev.filter(n => n.id !== id));
+      void refreshSharedData();
+    } catch (error) {
+      console.error(error);
+    }
   };
 
   // --- CRUD ACTIONS ---
-  const handleAddLabour = (e: React.FormEvent) => {
+  const handleAddLabour = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!newLabourName.trim()) return;
 
@@ -654,9 +691,41 @@ export default function App() {
       isActive: true
     };
 
-    triggerLocalAction(`Labour ${newLabourName}`, () => {
+    try {
+      await requestJson(apiBaseUrl, "/api/v1/labours", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          id: entry.id,
+          full_name: entry.fullName,
+          phone: entry.phone,
+          skill_type: entry.skillType,
+          daily_wage: entry.dailyWage,
+          joining_date: entry.joiningDate,
+          aadhaar_number: entry.aadhaarNumber,
+          address: entry.address,
+          emergency_contact: entry.emergencyContact,
+          is_active: entry.isActive,
+          is_freezed: entry.isFreezed ?? false,
+          avatar_url: entry.avatarUrl ?? null,
+          license_number: entry.licenseNumber ?? null,
+          license_expiry_date: entry.licenseExpiryDate ?? null,
+          salary_per_month: entry.salaryPerMonth ?? null,
+          advance_entries: entry.advanceEntries ?? null,
+          pdf_attachment_name: entry.pdfAttachmentName ?? null,
+          profile_photo: entry.profilePhoto ?? null,
+          aadhaar_pdf_name: entry.aadhaarPdfName ?? null,
+          aadhaar_pdf_data: entry.aadhaarPdfData ?? null,
+          license_pdf_name: entry.licensePdfName ?? null,
+          license_pdf_data: entry.licensePdfData ?? null,
+          custom_documents: entry.customDocuments ?? null,
+        }),
+      });
       setLabours(prev => [entry, ...prev]);
-    });
+      void refreshSharedData();
+    } catch (error) {
+      console.error(error);
+    }
 
     // Reset inputs
     setNewLabourName("");
@@ -664,7 +733,7 @@ export default function App() {
     setNewLabourAadhaar("");
   };
 
-  const handleAddVehicle = (e: React.FormEvent) => {
+  const handleAddVehicle = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!newVehicleNo.trim()) return;
 
@@ -681,16 +750,46 @@ export default function App() {
       nextServiceDue: "2026-09-10"
     };
 
-    triggerLocalAction(`Vehicle Register ${newVehicleNo}`, () => {
+    try {
+      await requestJson(apiBaseUrl, "/api/v1/vehicles", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          id: entry.id,
+          vehicle_name: entry.vehicleName ?? null,
+          vehicle_type: entry.vehicleType,
+          brand: entry.brand,
+          model: entry.model,
+          registration_date: entry.registrationDate ?? null,
+          insurance_expiry: entry.insuranceExpiry,
+          fitness_expiry: entry.fitnessExpiry ?? null,
+          pollution_expiry: entry.pollutionExpiry,
+          driver_name: entry.driverName ?? null,
+          rc_expiry: entry.rcExpiry ?? null,
+          insurance_number: entry.insuranceNumber ?? null,
+          next_service_due: entry.nextServiceDue ?? null,
+          rc_book_pdf: entry.rcBookPdf ?? null,
+          insurance_pdf: entry.insurancePdf ?? null,
+          permit_pdf: entry.permitPdf ?? null,
+          fitness_pdf: entry.fitnessPdf ?? null,
+          rc_book_data: entry.rcBookData ?? null,
+          insurance_data: entry.insuranceData ?? null,
+          permit_data: entry.permitData ?? null,
+          fitness_data: entry.fitnessData ?? null,
+        }),
+      });
       setVehicles(prev => [entry, ...prev]);
-    });
+      void refreshSharedData();
+    } catch (error) {
+      console.error(error);
+    }
 
     setNewVehicleNo("");
     setNewVehicleBrand("");
     setNewVehicleDriver("");
   };
 
-  const handleAddFuel = (e: React.FormEvent) => {
+  const handleAddFuel = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!newFuelVehicle) return;
 
@@ -703,12 +802,30 @@ export default function App() {
       currentOdometer: 146000
     };
 
-    triggerLocalAction(`Log Fuel for ${newFuelVehicle}`, () => {
+    try {
+      await requestJson(apiBaseUrl, "/api/v1/vehicles/fuel", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          id: entry.id,
+          vehicle_id: entry.vehicleId ?? null,
+          date: entry.date ?? null,
+          liters: entry.liters ?? null,
+          cost: entry.cost ?? null,
+          current_odometer: entry.currentOdometer ?? null,
+          fuel_type: entry.fuelType ?? null,
+          per_liter_cost: null,
+          vehicle_name: entry.vehicleId ?? null,
+        }),
+      });
       setFuelEntries(prev => [entry, ...prev]);
-    });
+      void refreshSharedData();
+    } catch (error) {
+      console.error(error);
+    }
   };
 
-  const handleGiveLoan = (e: React.FormEvent) => {
+  const handleGiveLoan = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!newBorrowerName.trim()) return;
 
@@ -727,15 +844,43 @@ export default function App() {
       isDefaulter: false
     };
 
-    triggerLocalAction(`Lend Cash to ${newBorrowerName}`, () => {
+    try {
+      await requestJson(apiBaseUrl, "/api/v1/loans/given", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          id: entry.id,
+          borrower_name: entry.borrowerName ?? null,
+          person_name: entry.personName ?? null,
+          mobile_number: entry.mobileNumber ?? null,
+          address: entry.address ?? null,
+          loan_amount: entry.loanAmount ?? null,
+          amount_given: entry.amountGiven ?? null,
+          interest_rate: entry.interestRate ?? null,
+          interest_percentage: entry.interestPercentage ?? null,
+          start_date: entry.startDate ?? null,
+          end_date: entry.endDate ?? null,
+          emi_amount: entry.emiAmount ?? null,
+          due_date: entry.dueDate ?? null,
+          total_paid: entry.totalPaid ?? null,
+          is_defaulter: entry.isDefaulter ?? null,
+          interest_type: entry.interestType ?? null,
+          category: entry.category ?? null,
+          status: entry.status ?? null,
+          monthly_interests: entry.monthlyInterests ?? null,
+        }),
+      });
       setLoansGiven(prev => [entry, ...prev]);
-    });
+      void refreshSharedData();
+    } catch (error) {
+      console.error(error);
+    }
 
     setNewBorrowerName("");
     setNewBorrowerPhone("");
   };
 
-  const handleAddExpense = (e: React.FormEvent) => {
+  const handleAddExpense = async (e: React.FormEvent) => {
     e.preventDefault();
     const resolvedReason = newExpReason === "Other"
       ? newExpOtherReason.trim() || "Other"
@@ -750,6 +895,53 @@ export default function App() {
       date: newExpDate,
       description: resolvedReason
     };
+
+    void requestJson(apiBaseUrl, "/api/v1/expenses", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        id: entry.id,
+        family_member_name: entry.familyMemberName ?? null,
+        member_id: entry.memberId ?? null,
+        date: entry.date,
+        reason: entry.reason ?? null,
+        category: entry.category ?? null,
+        amount: entry.amount,
+        description: entry.description ?? null,
+      }),
+    }).catch((error) => console.error(error));
+
+    const matchedBudget = categoryBudgets.find((item) => item.category === resolvedReason);
+    if (matchedBudget) {
+      const nextSpent = matchedBudget.spent + Number(newExpAmount);
+      void requestJson(apiBaseUrl, `/api/v1/category-budgets/${encodeURIComponent(matchedBudget.category)}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ spent: nextSpent }),
+      }).catch((error) => console.error(error));
+      if (nextSpent > matchedBudget.limit) {
+        const warning = {
+          id: `budget-not-${Date.now()}`,
+          title: "Budget Warning: Limit Exceeded!",
+          body: `Attention: Absolute spending for ${matchedBudget.category} reached ₹${nextSpent} out of ₹${matchedBudget.limit} maximum limit!`,
+          date: "Just Now",
+          type: "budget" as const,
+          isRead: false,
+        };
+        void requestJson(apiBaseUrl, "/api/v1/notifications", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            id: warning.id,
+            title: warning.title,
+            body: warning.body,
+            date: warning.date,
+            type: warning.type,
+            is_read: warning.isRead,
+          }),
+        }).catch((error) => console.error(error));
+      }
+    }
 
     triggerLocalAction(`Expense Added: ${resolvedReason}`, () => {
       setFamilyExpenses(prev => [entry, ...prev]);
@@ -785,7 +977,7 @@ export default function App() {
     setNewExpReason("Food");
   };
 
-  const handleUploadDocument = (e: React.FormEvent) => {
+  const handleUploadDocument = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!newDocName.trim()) return;
 
@@ -799,46 +991,119 @@ export default function App() {
       status: "Active"
     };
 
+    void requestJson(apiBaseUrl, "/api/v1/documents", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        id: entry.id,
+        name: entry.name,
+        type: entry.type,
+        owner_name: entry.ownerName,
+        upload_date: entry.uploadDate,
+        file_size: entry.fileSize,
+        expiry_date: entry.expiryDate ?? null,
+        status: entry.status,
+      }),
+    }).catch((error) => console.error(error));
+
     triggerLocalAction(`Upload Document: ${newDocName}`, () => {
       setDocuments(prev => [entry, ...prev]);
     });
+    void refreshSharedData();
 
     setNewDocName("");
     setNewDocOwner("");
   };
 
-  const handleDeleteLabour = (id: string) => {
-    triggerLocalAction(`Delete Labour Entry`, () => {
+  const handleDeleteLabour = async (id: string) => {
+    try {
+      await requestJson(apiBaseUrl, `/api/v1/labours/${id}`, { method: "DELETE" });
       setLabours(prev => prev.filter(l => l.id !== id));
-    });
+      void refreshSharedData();
+    } catch (error) {
+      console.error(error);
+    }
   };
 
-  const handleDeleteVehicle = (id: string) => {
-    triggerLocalAction(`Decommission Vehicle`, () => {
+  const handleDeleteVehicle = async (id: string) => {
+    try {
+      await requestJson(apiBaseUrl, `/api/v1/vehicles/${id}`, { method: "DELETE" });
       setVehicles(prev => prev.filter(v => v.id !== id));
-    });
+      void refreshSharedData();
+    } catch (error) {
+      console.error(error);
+    }
   };
 
-  const handleToggleLabourStatus = (id: string) => {
-    triggerLocalAction(`Toggle Employee status`, () => {
-      setLabours(prev => prev.map(l => l.id === id ? { ...l, isActive: !l.isActive } : l));
-    });
+  const handleToggleLabourStatus = async (id: string) => {
+    const current = labours.find((lab) => lab.id === id);
+    if (!current) return;
+    const next = { ...current, isActive: !current.isActive };
+    try {
+      await requestJson(apiBaseUrl, `/api/v1/labours/${id}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          full_name: next.fullName,
+          phone: next.phone,
+          skill_type: next.skillType,
+          daily_wage: next.dailyWage,
+          joining_date: next.joiningDate,
+          aadhaar_number: next.aadhaarNumber,
+          address: next.address,
+          emergency_contact: next.emergencyContact,
+          is_active: next.isActive,
+          is_freezed: next.isFreezed ?? false,
+          avatar_url: next.avatarUrl ?? null,
+          license_number: next.licenseNumber ?? null,
+          license_expiry_date: next.licenseExpiryDate ?? null,
+          salary_per_month: next.salaryPerMonth ?? null,
+          advance_entries: next.advanceEntries ?? null,
+          pdf_attachment_name: next.pdfAttachmentName ?? null,
+          profile_photo: next.profilePhoto ?? null,
+          aadhaar_pdf_name: next.aadhaarPdfName ?? null,
+          aadhaar_pdf_data: next.aadhaarPdfData ?? null,
+          license_pdf_name: next.licensePdfName ?? null,
+          license_pdf_data: next.licensePdfData ?? null,
+          custom_documents: next.customDocuments ?? null,
+        }),
+      });
+      setLabours(prev => prev.map(l => l.id === id ? next : l));
+      void refreshSharedData();
+    } catch (error) {
+      console.error(error);
+    }
   };
 
   // Mark Daily Attendance Today
-  const handleMarkAttendance = (labourId: string, status: "Present" | "Absent" | "Half-Day") => {
-    triggerLocalAction(`Mark Attendance`, () => {
-      // Check if already marked for June 14, 2026
-      const existingIdx = attendance.findIndex(a => a.labourId === labourId && a.date === "2026-06-14");
+  const handleMarkAttendance = async (labourId: string, status: "Present" | "Absent" | "Half-Day") => {
+    const activeDate = "2026-06-14";
+    const existingIdx = attendance.findIndex(a => a.labourId === labourId && a.date === activeDate);
+    try {
+      await requestJson(apiBaseUrl, "/api/v1/labours/attendance", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          date: activeDate,
+          records: [{
+            labour_id: labourId,
+            status,
+            reason: existingIdx > -1 ? attendance[existingIdx].reason ?? null : null,
+          }],
+        }),
+      });
       if (existingIdx > -1) {
         setAttendance(prev => prev.map((a, idx) => idx === existingIdx ? { ...a, status } : a));
       } else {
         setAttendance(prev => [
           ...prev,
-          { id: `att-${Date.now()}`, labourId, date: "2026-06-14", status }
+          { id: `att-${Date.now()}`, labourId, date: activeDate, status }
         ]);
       }
-    });
+      void refreshSharedData();
+    } catch (error) {
+      console.error(error);
+    }
   };
 
   // --- ROLE BASED ACCESS CONTROL (RBAC) BLOCKED PANELS CHECKER ---
@@ -1675,6 +1940,7 @@ export default function App() {
 
                           {selectedMobileModule === "business" && (
                             <MobileBusiness
+                              apiBaseUrl={apiBaseUrl}
                               labours={labours}
                               setLabours={setLabours}
                               vehicles={vehicles}
@@ -1687,27 +1953,32 @@ export default function App() {
                               setAttendance={setAttendance}
                               isOnline={isOnline}
                               triggerOnlineSync={(op) => triggerLocalAction(op, () => {})}
+                              onSharedDataChanged={refreshSharedData}
                               initialSubSection="labour"
                             />
                           )}
 
                           {selectedMobileModule === "finance" && (
                             <MobileFinance
+                              apiBaseUrl={apiBaseUrl}
                               loansGiven={loansGiven}
                               setLoansGiven={setLoansGiven}
                               loansReceived={loansReceived}
                               setLoansReceived={setLoansReceived}
                               vehicles={vehicles}
                               triggerOnlineSync={(op) => triggerLocalAction(op, () => {})}
+                              onSharedDataChanged={refreshSharedData}
                             />
                           )}
 
                           {selectedMobileModule === "expenses" && (
                             <MobileFamily
+                              apiBaseUrl={apiBaseUrl}
                               familyExpenses={familyExpenses}
                               setFamilyExpenses={setFamilyExpenses}
                               familyMembers={familyMembers}
                               incomeEntries={incomeEntries}
+                              onSharedDataChanged={refreshSharedData}
                             />
                           )}
 

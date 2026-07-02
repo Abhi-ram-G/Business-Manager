@@ -21,29 +21,40 @@ import {
   Wallet
 } from "lucide-react";
 import { FamilyExpense, FamilyMember, IncomeEntry } from "../types";
+import { mapExpenseFromApi, requestJson, toExpenseApiPayload } from "../lib/sharedApi";
 
 interface MobileFamilyProps {
+  apiBaseUrl: string;
   familyExpenses: FamilyExpense[];
   setFamilyExpenses: React.Dispatch<React.SetStateAction<FamilyExpense[]>>;
   familyMembers: FamilyMember[];
   incomeEntries: IncomeEntry[];
+  onSharedDataChanged?: () => Promise<void> | void;
 }
 
 export default function MobileFamily({
+  apiBaseUrl,
   familyExpenses,
   setFamilyExpenses,
   familyMembers,
-  incomeEntries
+  incomeEntries,
+  onSharedDataChanged
 }: MobileFamilyProps) {
   // Form display and editing states
   const [isExpenseFormOpen, setIsExpenseFormOpen] = useState(false);
   const [editingExpenseId, setEditingExpenseId] = useState<string | null>(null);
   const [deleteConfirmation, setDeleteConfirmation] = useState<{ id: string; name: string } | null>(null);
 
-  const executeDeleteExpense = () => {
+  const executeDeleteExpense = async () => {
     if (!deleteConfirmation) return;
-    setFamilyExpenses(prev => prev.filter(item => item.id !== deleteConfirmation.id));
-    setDeleteConfirmation(null);
+    try {
+      await requestJson(apiBaseUrl, `/api/v1/expenses/${deleteConfirmation.id}`, { method: "DELETE" });
+      setFamilyExpenses(prev => prev.filter(item => item.id !== deleteConfirmation.id));
+      await onSharedDataChanged?.();
+      setDeleteConfirmation(null);
+    } catch (error) {
+      alert(error instanceof Error ? error.message : "Unable to delete expense");
+    }
   };
 
   // Form input states
@@ -79,37 +90,46 @@ export default function MobileFamily({
     setIsExpenseFormOpen(true);
   };
 
-  const handleSaveExpense = (e: React.FormEvent) => {
+  const handleSaveExpense = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!memberValue || !expAmount) return;
     const resolvedReason = expReason === "Other" ? expOtherReason.trim() || "Other" : expReason;
-
-    if (editingExpenseId) {
-      // Edit
-      setFamilyExpenses(prev => prev.map(item => {
-        if (item.id === editingExpenseId) {
-          return {
-            ...item,
-            familyMemberName: memberValue,
-            date: expDate,
-            reason: resolvedReason,
-            amount: Number(expAmount)
-          };
+    const payload: FamilyExpense = editingExpenseId
+      ? {
+          id: editingExpenseId,
+          familyMemberName: memberValue,
+          date: expDate,
+          reason: resolvedReason,
+          amount: Number(expAmount),
         }
-        return item;
-      }));
-    } else {
-      // Add
-      const newExp: FamilyExpense = {
-        id: `EXP-${Date.now()}`,
-        familyMemberName: memberValue,
-        date: expDate,
-        reason: resolvedReason,
-        amount: Number(expAmount)
-      };
-      setFamilyExpenses(prev => [...prev, newExp]);
+      : {
+          id: `EXP-${Date.now()}`,
+          familyMemberName: memberValue,
+          date: expDate,
+          reason: resolvedReason,
+          amount: Number(expAmount),
+        };
+
+    try {
+      const response = await requestJson(
+        apiBaseUrl,
+        editingExpenseId ? `/api/v1/expenses/${editingExpenseId}` : "/api/v1/expenses",
+        {
+          method: editingExpenseId ? "PUT" : "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(toExpenseApiPayload(payload)),
+        }
+      );
+      const saved = mapExpenseFromApi(response);
+      setFamilyExpenses(prev => editingExpenseId
+        ? prev.map(item => item.id === editingExpenseId ? saved : item)
+        : [saved, ...prev]
+      );
+      await onSharedDataChanged?.();
+      setIsExpenseFormOpen(false);
+    } catch (error) {
+      alert(error instanceof Error ? error.message : "Unable to save expense");
     }
-    setIsExpenseFormOpen(false);
   };
 
   const handleDeleteExpense = (id: string, name: string) => {
@@ -359,7 +379,7 @@ export default function MobileFamily({
               </button>
               <button
                 type="button"
-                onClick={executeDeleteExpense}
+                onClick={() => void executeDeleteExpense()}
                 className="flex-1 py-2 bg-rose-600 hover:bg-rose-500 text-white text-xs font-semibold rounded-xl transition cursor-pointer"
               >
                 Delete

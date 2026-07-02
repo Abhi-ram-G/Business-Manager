@@ -25,23 +25,34 @@ import {
   Truck
 } from "lucide-react";
 import { LoanGiven, LoanReceived, Vehicle } from "../types";
+import {
+  mapLoanGivenFromApi,
+  mapLoanReceivedFromApi,
+  requestJson,
+  toLoanGivenApiPayload,
+  toLoanReceivedApiPayload,
+} from "../lib/sharedApi";
 
 interface MobileFinanceProps {
+  apiBaseUrl: string;
   loansGiven: LoanGiven[];
   setLoansGiven: React.Dispatch<React.SetStateAction<LoanGiven[]>>;
   loansReceived: LoanReceived[];
   setLoansReceived: React.Dispatch<React.SetStateAction<LoanReceived[]>>;
   vehicles?: Vehicle[];
   triggerOnlineSync: (op: string) => void;
+  onSharedDataChanged?: () => Promise<void> | void;
 }
 
 export default function MobileFinance({
+  apiBaseUrl,
   loansGiven,
   setLoansGiven,
   loansReceived,
   setLoansReceived,
   vehicles = [],
-  triggerOnlineSync
+  triggerOnlineSync,
+  onSharedDataChanged
 }: MobileFinanceProps) {
   // Toggle between LENT (Given) and BORROWED (Got) and VEHICLE LOANS
   const [activeFinanceTab, setActiveFinanceTab] = useState<"lent" | "borrowed" | "vehicle">("lent");
@@ -94,43 +105,37 @@ export default function MobileFinance({
   };
 
   const handleUpdateMonthStatus = (loanId: string, monthKey: string, status?: "Paid" | "Pending" | "Carry Forward") => {
-    setLoansGiven(prev => prev.map(item => {
-      if (item.id === loanId) {
-        const currentInts = item.monthlyInterests || {};
-        const updatedInts = { ...currentInts };
-        if (status) {
-          updatedInts[monthKey] = status;
-        } else {
-          delete updatedInts[monthKey];
-        }
-        return {
-          ...item,
-          monthlyInterests: updatedInts
-        };
-      }
-      return item;
-    }));
+    const current = loansGiven.find(item => item.id === loanId);
+    if (!current) return;
+    const updatedInts = { ...(current.monthlyInterests || {}) };
+    if (status) {
+      updatedInts[monthKey] = status;
+    } else {
+      delete updatedInts[monthKey];
+    }
+    const next = { ...current, monthlyInterests: updatedInts };
+    setLoansGiven(prev => prev.map(item => item.id === loanId ? next : item));
+    void persistLoanGiven(next, "PUT")
+      .then(() => onSharedDataChanged?.())
+      .catch((error) => console.error(error));
     triggerOnlineSync(`Updated Interest for ${monthKey} to ${status || "Cleared"}`);
     setSelectedMonthControl(null);
   };
 
   const handleUpdateBorrowedMonthStatus = (loanId: string, monthKey: string, status?: "Paid" | "Pending" | "Carry Forward") => {
-    setLoansReceived(prev => prev.map(item => {
-      if (item.id === loanId) {
-        const currentInts = item.monthlyInterests || {};
-        const updatedInts = { ...currentInts };
-        if (status) {
-          updatedInts[monthKey] = status;
-        } else {
-          delete updatedInts[monthKey];
-        }
-        return {
-          ...item,
-          monthlyInterests: updatedInts
-        };
-      }
-      return item;
-    }));
+    const current = loansReceived.find(item => item.id === loanId);
+    if (!current) return;
+    const updatedInts = { ...(current.monthlyInterests || {}) };
+    if (status) {
+      updatedInts[monthKey] = status;
+    } else {
+      delete updatedInts[monthKey];
+    }
+    const next = { ...current, monthlyInterests: updatedInts };
+    setLoansReceived(prev => prev.map(item => item.id === loanId ? next : item));
+    void persistLoanReceived(next, "PUT")
+      .then(() => onSharedDataChanged?.())
+      .catch((error) => console.error(error));
     triggerOnlineSync(`Updated Borrowed Interest for ${monthKey} to ${status || "Cleared"}`);
     setSelectedMonthControl(null);
   };
@@ -204,6 +209,32 @@ export default function MobileFinance({
     return interest;
   };
 
+  const persistLoanGiven = async (record: LoanGiven, method: "POST" | "PUT") => {
+    const response = await requestJson(
+      apiBaseUrl,
+      method === "POST" ? "/api/v1/loans/given" : `/api/v1/loans/given/${record.id}`,
+      {
+        method,
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(toLoanGivenApiPayload(record)),
+      }
+    );
+    return mapLoanGivenFromApi(response);
+  };
+
+  const persistLoanReceived = async (record: LoanReceived, method: "POST" | "PUT") => {
+    const response = await requestJson(
+      apiBaseUrl,
+      method === "POST" ? "/api/v1/loans/received" : `/api/v1/loans/received/${record.id}`,
+      {
+        method,
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(toLoanReceivedApiPayload(record)),
+      }
+    );
+    return mapLoanReceivedFromApi(response);
+  };
+
   // --- LENT CRUD HANDLERS ---
   const handleOpenAddLent = () => {
     setEditingLentId(null);
@@ -235,52 +266,39 @@ export default function MobileFinance({
     setIsLentFormOpen(true);
   };
 
-  const handleSaveLent = (e: React.FormEvent) => {
+  const handleSaveLent = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!lentPerson || !lentAmount) return;
 
     const computedInterest = calculateInterestVal(lentAmount, lentIntPct, lentIntType);
 
-    if (editingLentId) {
-      setLoansGiven(prev => prev.map(item => {
-        if (item.id === editingLentId) {
-          return {
-            ...item,
-            personName: lentPerson,
-            myName: lentMyName,
-            amountGiven: Number(lentAmount),
-            interestType: lentIntType,
-            interestPercentage: Number(lentIntPct),
-            interestAmount: computedInterest,
-            startDate: lentStartDate,
-            dueDate: lentDueDate,
-            collectionStatus: lentCollectionStatus,
-            category: lentCategory,
-            status: lentStatus as any
-          };
-        }
-        return item;
-      }));
-      triggerOnlineSync(`UPDATED LENT LEDGER: LENT TO ${lentPerson}`);
-    } else {
-      const newLent: LoanGiven = {
-        id: `LENT-${Date.now()}`,
-        personName: lentPerson,
-        myName: lentMyName,
-        amountGiven: Number(lentAmount),
-        interestType: lentIntType,
-        interestPercentage: Number(lentIntPct),
-        interestAmount: computedInterest,
-        startDate: lentStartDate,
-        dueDate: lentDueDate,
-        collectionStatus: lentCollectionStatus,
-        category: lentCategory,
-        status: lentStatus as any
-      };
-      setLoansGiven(prev => [...prev, newLent]);
-      triggerOnlineSync(`LENT OUT HIGH INTEREST LOAN: TO ${lentPerson}`);
+    const next: LoanGiven = {
+      id: editingLentId || `LENT-${Date.now()}`,
+      personName: lentPerson,
+      myName: lentMyName,
+      amountGiven: Number(lentAmount),
+      interestType: lentIntType,
+      interestPercentage: Number(lentIntPct),
+      interestAmount: computedInterest,
+      startDate: lentStartDate,
+      dueDate: lentDueDate,
+      collectionStatus: lentCollectionStatus,
+      category: lentCategory,
+      status: lentStatus as any,
+    };
+
+    try {
+      const saved = await persistLoanGiven(next, editingLentId ? "PUT" : "POST");
+      setLoansGiven(prev => editingLentId
+        ? prev.map(item => item.id === editingLentId ? saved : item)
+        : [saved, ...prev]
+      );
+      await onSharedDataChanged?.();
+      triggerOnlineSync(editingLentId ? `UPDATED LENT LEDGER: LENT TO ${lentPerson}` : `LENT OUT HIGH INTEREST LOAN: TO ${lentPerson}`);
+      setIsLentFormOpen(false);
+    } catch (error) {
+      console.error(error);
     }
-    setIsLentFormOpen(false);
   };
 
   const handleDeleteLent = (id: string, name: string) => {
@@ -291,11 +309,21 @@ export default function MobileFinance({
     if (!deleteConfirmation) return;
     const { id, name, type } = deleteConfirmation;
     if (type === "lent") {
-      setLoansGiven(prev => prev.filter(item => item.id !== id));
-      triggerOnlineSync(`DELETED LENT LEDGER ENTRY: TO ${name}`);
+      requestJson(apiBaseUrl, `/api/v1/loans/given/${id}`, { method: "DELETE" })
+        .then(async () => {
+          setLoansGiven(prev => prev.filter(item => item.id !== id));
+          await onSharedDataChanged?.();
+          triggerOnlineSync(`DELETED LENT LEDGER ENTRY: TO ${name}`);
+        })
+        .catch((error) => console.error(error));
     } else if (type === "borrowed") {
-      setLoansReceived(prev => prev.filter(item => item.id !== id));
-      triggerOnlineSync(`DELETED BORROWED ARCHIVE ENTRY: FROM ${name}`);
+      requestJson(apiBaseUrl, `/api/v1/loans/received/${id}`, { method: "DELETE" })
+        .then(async () => {
+          setLoansReceived(prev => prev.filter(item => item.id !== id));
+          await onSharedDataChanged?.();
+          triggerOnlineSync(`DELETED BORROWED ARCHIVE ENTRY: FROM ${name}`);
+        })
+        .catch((error) => console.error(error));
     }
     setDeleteConfirmation(null);
   };
@@ -396,7 +424,7 @@ export default function MobileFinance({
     setIsBorrowedFormOpen(true);
   };
 
-  const handleSaveBorrowed = (e: React.FormEvent) => {
+  const handleSaveBorrowed = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!borrowedPerson || !borrowedAmount) return;
 
@@ -409,51 +437,36 @@ export default function MobileFinance({
       pct = Number(((borrowedIntFlatAmt / borrowedAmount) * 100).toFixed(2));
     }
 
-    if (editingBorrowedId) {
-      setLoansReceived(prev => prev.map(item => {
-        if (item.id === editingBorrowedId) {
-          return {
-            ...item,
-            personName: borrowedPerson,
-            myName: borrowedMyName,
-            amount: Number(borrowedAmount),
-            interestType: borrowedIntType,
-            interestPercentage: pct,
-            interestAmount: computedInterest,
-            startDate: borrowedStartDate,
-            dueDate: borrowedDueDate,
-            interestStatus: borrowedInterestStatus,
-            category: borrowedCategory,
-            status: borrowedStatus as any,
-            vehicleId: borrowedCategory === "Vehicle" ? borrowedVehicleId : undefined,
-            numberOfMonths: borrowedCategory === "Vehicle" ? (borrowedTenureType === "Year" ? borrowedTenureValue * 12 : borrowedTenureValue) : undefined,
-          };
-        }
-        return item;
-      }));
-      triggerOnlineSync(`UPDATED BORROWED DETAILS: FROM ${borrowedPerson}`);
-    } else {
-      const newBorrowed: LoanReceived = {
-        id: `BOR-${Date.now()}`,
-        personName: borrowedPerson,
-        myName: borrowedMyName,
-        amount: Number(borrowedAmount),
-        interestType: borrowedIntType,
-        interestPercentage: pct,
-        interestAmount: computedInterest,
-        startDate: borrowedStartDate,
-        dueDate: borrowedDueDate,
-        interestStatus: borrowedInterestStatus,
-        category: borrowedCategory,
-        status: borrowedStatus as any,
-        vehicleId: borrowedCategory === "Vehicle" ? borrowedVehicleId : undefined,
-        numberOfMonths: borrowedCategory === "Vehicle" ? (borrowedTenureType === "Year" ? borrowedTenureValue * 12 : borrowedTenureValue) : undefined,
-        monthlyInterests: {}
-      };
-      setLoansReceived(prev => [...prev, newBorrowed]);
-      triggerOnlineSync(`BORROWED FUNDS ADDITION: FROM ${borrowedPerson}`);
+    const next: LoanReceived = {
+      id: editingBorrowedId || `BOR-${Date.now()}`,
+      personName: borrowedPerson,
+      myName: borrowedMyName,
+      amount: Number(borrowedAmount),
+      interestType: borrowedIntType,
+      interestPercentage: pct,
+      interestAmount: computedInterest,
+      startDate: borrowedStartDate,
+      dueDate: borrowedDueDate,
+      interestStatus: borrowedInterestStatus,
+      category: borrowedCategory,
+      status: borrowedStatus as any,
+      vehicleId: borrowedCategory === "Vehicle" ? borrowedVehicleId : undefined,
+      numberOfMonths: borrowedCategory === "Vehicle" ? (borrowedTenureType === "Year" ? borrowedTenureValue * 12 : borrowedTenureValue) : undefined,
+      monthlyInterests: editingBorrowedId ? loansReceived.find(item => item.id === editingBorrowedId)?.monthlyInterests : {},
+    };
+
+    try {
+      const saved = await persistLoanReceived(next, editingBorrowedId ? "PUT" : "POST");
+      setLoansReceived(prev => editingBorrowedId
+        ? prev.map(item => item.id === editingBorrowedId ? saved : item)
+        : [saved, ...prev]
+      );
+      await onSharedDataChanged?.();
+      triggerOnlineSync(editingBorrowedId ? `UPDATED BORROWED DETAILS: FROM ${borrowedPerson}` : `BORROWED FUNDS ADDITION: FROM ${borrowedPerson}`);
+      setIsBorrowedFormOpen(false);
+    } catch (error) {
+      console.error(error);
     }
-    setIsBorrowedFormOpen(false);
   };
 
   const handleDeleteBorrowed = (id: string, name: string) => {
