@@ -79,7 +79,14 @@ const DEFAULT_FAMILY_MEMBERS: FamilyMember[] = [
 ];
 
 export default function App() {
-  const apiBaseUrl = import.meta.env.VITE_API_BASE_URL || import.meta.env.VITE_API_URL || "http://localhost:8000";
+  const apiBaseUrl = useMemo(() => {
+    const envUrl = import.meta.env.VITE_API_BASE_URL || import.meta.env.VITE_API_URL;
+    if (envUrl) return envUrl;
+    if (typeof window !== "undefined" && window.location.hostname !== "localhost" && window.location.hostname !== "127.0.0.1") {
+      return "https://business-manager-1.onrender.com";
+    }
+    return "http://localhost:8000";
+  }, []);
   const loadStoredArray = <T,>(key: string, fallback: T[]): T[] => {
     const saved = localStorage.getItem(key);
     if (!saved) return fallback;
