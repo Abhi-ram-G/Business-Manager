@@ -3,7 +3,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import React, { useState } from "react";
+import React, { useState, useRef } from "react";
 import { 
   Users, 
   Car, 
@@ -1103,6 +1103,7 @@ export default function MobileBusiness({
   const [attendanceMonth, setAttendanceMonth] = useState(5); // June (0-indexed, Jan=0, Jun=5)
   const [isLabourFormOpen, setIsLabourFormOpen] = useState(false);
   const [editingLabourId, setEditingLabourId] = useState<string | null>(null);
+  const labourFormRef = useRef<HTMLFormElement>(null);
 
   // Labour input fields
   const [fullName, setFullName] = useState("");
@@ -1275,6 +1276,7 @@ export default function MobileBusiness({
     setTempPdfData("");
 
     setIsLabourFormOpen(true);
+    setTimeout(() => labourFormRef.current?.scrollIntoView({ behavior: "smooth", block: "start" }), 80);
   };
 
   const handleOpenEditLabour = (lab: Labour) => {
@@ -1304,6 +1306,7 @@ export default function MobileBusiness({
     setTempPdfData("");
 
     setIsLabourFormOpen(true);
+    setTimeout(() => labourFormRef.current?.scrollIntoView({ behavior: "smooth", block: "start" }), 80);
   };
 
   const handleSaveLabour = async (e: React.FormEvent) => {
@@ -2565,7 +2568,7 @@ export default function MobileBusiness({
 
               {/* Roster Add / Edit Form Panel Overlay Overlay */}
               {isLabourFormOpen && (
-                <form onSubmit={handleSaveLabour} className="bg-slate-900 p-4 border border-slate-800 rounded-xl space-y-3">
+                <form ref={labourFormRef} onSubmit={handleSaveLabour} className="bg-slate-900 p-4 border border-slate-800 rounded-xl space-y-3">
                   <span className="text-[10px] font-mono font-bold text-amber-500 uppercase block">
                     {editingLabourId ? "Modify Registered Profile" : `Register New ${activeLabourTab}`}
                   </span>

@@ -1,5 +1,6 @@
 """
-Run this script once to add the new columns to the labours table.
+Run this script once to add the new columns to the labours table
+and fix the aadhaar_number unique/nullable constraints.
 Usage:  python run_migration.py
 """
 import os
@@ -18,9 +19,17 @@ if not DATABASE_URL:
     exit(1)
 
 SQL_STATEMENTS = [
+    # Add new columns (safe to re-run)
     "ALTER TABLE labours ADD COLUMN IF NOT EXISTS gender varchar(10);",
     "ALTER TABLE labours ADD COLUMN IF NOT EXISTS profile_photo_name varchar(255);",
+    # Change profile_photo to TEXT to support base64 image data
     "ALTER TABLE labours ALTER COLUMN profile_photo TYPE text;",
+    # Drop unique constraint on aadhaar_number (allows empty/null values)
+    "ALTER TABLE labours DROP CONSTRAINT IF EXISTS labours_aadhaar_number_key;",
+    # Allow NULL on aadhaar_number, address, emergency_contact
+    "ALTER TABLE labours ALTER COLUMN aadhaar_number DROP NOT NULL;",
+    "ALTER TABLE labours ALTER COLUMN address DROP NOT NULL;",
+    "ALTER TABLE labours ALTER COLUMN emergency_contact DROP NOT NULL;",
 ]
 
 print(f"Connecting to database...")
@@ -36,7 +45,7 @@ try:
 
     cur.close()
     conn.close()
-    print("\n✅ Migration complete! All columns added successfully.")
+    print("\n✅ Migration complete! All changes applied successfully.")
 
 except Exception as e:
     print(f"\n❌ Migration failed: {e}")

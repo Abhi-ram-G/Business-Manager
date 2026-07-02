@@ -29,9 +29,9 @@ class LabourBase(BaseModel):
     skill_type: Literal["Driver", "Helper"]
     daily_wage: float
     joining_date: dt_date
-    aadhaar_number: str
-    address: str
-    emergency_contact: str
+    aadhaar_number: str | None = None
+    address: str | None = None
+    emergency_contact: str | None = None
     is_active: bool = True
     is_freezed: bool = False
     avatar_url: str | None = None
