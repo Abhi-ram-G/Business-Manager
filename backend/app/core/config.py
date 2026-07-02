@@ -47,6 +47,16 @@ class Settings(BaseSettings):
         return [item.strip() for item in self.allowed_origins.split(",") if item.strip()]
 
     @property
+    def selected_db_env_var(self) -> str:
+        if self.supabase_pooler_url:
+            return "SUPABASE_POOLER_URL"
+        if self.database_url:
+            return "DATABASE_URL"
+        if self.postgres_url:
+            return "POSTGRES_URL"
+        return "None"
+
+    @property
     def effective_database_url(self) -> str:
         # Priority:
         # 1. SUPABASE_POOLER_URL
@@ -60,6 +70,7 @@ class Settings(BaseSettings):
             return self.supabase_pooler_url
             
         return url
+
 
 
 

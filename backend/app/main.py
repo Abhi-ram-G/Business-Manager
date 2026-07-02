@@ -116,11 +116,17 @@ def initialize_database() -> None:
     db_url = settings.effective_database_url
     masked_url = mask_database_url(db_url)
     conn_type = get_connection_type(db_url)
+    selected_var = settings.selected_db_env_var
     
     print("\n" + "="*50)
     print("DATABASE STARTUP CONNECTION DETAILS")
-    print(f"Active URL:      {masked_url}")
-    print(f"Connection Type: {conn_type}")
+    print(f"Selected Env Var: {selected_var}")
+    print(f"Active URL:       {masked_url}")
+    print(f"Connection Type:  {conn_type}")
+    
+    if db_url and "db.vwtjogybncekikjyqgur.supabase.co" in db_url:
+        print("\n[WARNING] Direct Supabase connection detected. Render requires the Session Pooler (IPv4).")
+        
     print("="*50 + "\n")
 
     try:
@@ -131,6 +137,7 @@ def initialize_database() -> None:
             "Unable to connect to Supabase from Render. The direct Supabase database endpoint is IPv6-only. "
             "Set SUPABASE_POOLER_URL to the Supabase shared pooler session URL (IPv4) or enable the IPv4 add-on."
         ) from exc
+
 
 
 
