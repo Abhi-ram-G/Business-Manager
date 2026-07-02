@@ -1,0 +1,248 @@
+/**
+ * @license
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+export type UserRole = "Admin";
+
+// Advance entries model inside Drivers & Helpers
+export interface AdvanceEntry {
+  id: string;
+  dateTime: string;
+  reason: "Betta" | "Drink" | "Home Town" | "Medical" | "Festival" | "Other";
+  amount: number;
+}
+
+// Module 1: Labour Management (Drivers & Helpers)
+export interface Labour {
+  id: string;
+  fullName: string;
+  phone: string;
+  skillType: "Driver" | "Helper"; // Distinguished types
+  dailyWage: number;              // For historical backward compat
+  joiningDate: string;            // YYYY-MM-DD
+  aadhaarNumber: string;
+  address: string;
+  emergencyContact: string;
+  isActive: boolean;
+  isFreezed?: boolean;
+  avatarUrl?: string;
+
+  // Driver/Helper Rich Fields
+  licenseNumber?: string;         // Optional for helpers, mandatory for drivers
+  licenseExpiryDate?: string;
+  salaryPerMonth?: number;
+  advanceEntries?: AdvanceEntry[];
+  pdfAttachmentName?: string;
+  profilePhoto?: string;
+
+  // New Document Attachments
+  aadhaarPdfName?: string;
+  aadhaarPdfData?: string;
+  licensePdfName?: string;
+  licensePdfData?: string;
+  customDocuments?: {
+    id: string;
+    docName: string; // e.g. "Fitness Cert", "Pan Card"
+    pdfName: string; // e.g. "pan.pdf"
+    pdfData: string; // Base64 data URL
+  }[];
+}
+
+export interface AttendanceRecord {
+  id: string;
+  labourId: string;
+  date: string; // YYYY-MM-DD
+  status: "Present" | "Absent" | "Half-Day";
+  reason?: string;
+}
+
+export interface SalaryPayment {
+  id: string;
+  labourId: string;
+  date: string;
+  amountCalculated: number; // Month salary
+  advanceDeducted: number;
+  bonus: number;
+  netPaid: number;
+  status: "Paid" | "Pending";
+  salaryOption: "Deduct" | "CarryForward";
+  deductAmountRequested?: number;
+}
+
+// Module 2: Vehicle Management & Fuel management
+export interface Vehicle {
+  id: string; // Vehicle Number (e.g. KA-51-MJ-1234)
+  vehicleName?: string;
+  vehicleType: "Truck" | "Tractor" | "Car" | "Van" | "Two-Wheeler";
+  brand: string;
+  model: string;
+  registrationDate?: string; // YYYY-MM-DD
+  insuranceExpiry: string; // YYYY-MM-DD
+  fitnessExpiry?: string; // YYYY-MM-DD
+  pollutionExpiry: string; // YYYY-MM-DD
+  
+  // legacy compatibility
+  driverName?: string;
+  rcExpiry?: string;
+  insuranceNumber?: string;
+  nextServiceDue?: string;
+
+  // Attachments indicator
+  rcBookPdf?: string;
+  insurancePdf?: string;
+  permitPdf?: string;
+  fitnessPdf?: string;
+
+  // Custom uploaded file data URLs for direct visualization
+  rcBookData?: string;
+  insuranceData?: string;
+  permitData?: string;
+  fitnessData?: string;
+}
+
+export interface FuelEntry {
+  id: string;
+  dateTime?: string;
+  vehicleName?: string; // From Vehicle List
+  fuelType?: "Diesel" | "Petrol" | "CNG" | string;
+  perLiterCost?: number;
+  liters?: number;
+  totalAmount?: number; // Auto computed Total Amount = liters * perLiterCost
+  vehicleId?: string;
+  date?: string;
+  cost?: number;
+  currentOdometer?: number;
+}
+
+export interface MaintenanceRecord {
+  id: string;
+  vehicleId: string;
+  date: string;
+  serviceType: string;
+  spareParts: string[];
+  cost: number;
+}
+
+export interface TripRecord {
+  id: string;
+  vehicleId: string;
+  date: string;
+  startLocation: string;
+  endLocation: string;
+  distanceCovered: number;
+  revenueEarned: number;
+}
+
+// Module 3: Finance Management (Give & Get)
+// A. Borrowed Loan (Amount I Got)
+export interface LoanReceived {
+  id: string;
+  personName?: string;
+  myName?: string;
+  amount?: number;
+  interestType?: "Monthly" | "Yearly" | "Daily";
+  interestPercentage?: number;
+  interestAmount?: number; // calculated or inputted
+  startDate?: string;
+  dueDate?: string;
+  interestStatus?: "Paid" | "Pending";
+  category?: "Personal" | "Business" | "Emergency" | string;
+  status?: "Active" | "Paid" | "Defaulted";
+
+  // New fields for vehicle loan integration
+  vehicleId?: string;
+  numberOfMonths?: number;
+  monthlyInterests?: { [monthKey: string]: "Paid" | "Pending" | "Carry Forward" };
+
+  // legacy compatibility
+  lenderName?: string;
+  borrowedAmount?: number;
+  interestRate?: number;
+  totalRepaid?: number;
+  endDate?: string;
+  monthlyEMI?: number;
+}
+
+// B. Lent Loan (Amount I Given)
+export interface LoanGiven {
+  id: string;
+  personName?: string;
+  myName?: string;
+  amountGiven?: number;
+  interestType?: "Monthly" | "Yearly" | "Daily";
+  interestPercentage?: number;
+  interestAmount?: number;
+  startDate?: string;
+  dueDate?: string;
+  collectionStatus?: "Paid" | "Pending";
+  category?: "Personal" | "Business" | "Emergency" | string;
+  status?: "Active" | "Paid" | "Defaulted";
+  monthlyInterests?: {
+    [monthKey: string]: "Paid" | "Pending" | "Carry Forward";
+  };
+
+  // legacy compatibility
+  borrowerName?: string;
+  mobileNumber?: string;
+  address?: string;
+  loanAmount?: number;
+  interestRate?: number;
+  endDate?: string;
+  emiAmount?: number;
+  totalPaid?: number;
+  isDefaulter?: boolean;
+}
+
+// Module 4: Family Expense Management
+export interface FamilyMember {
+  id: string;
+  name: string;
+  relationship: string;
+}
+
+export interface IncomeEntry {
+  id: string;
+  source: string; // "Salary", "Business", "Investments", etc.
+  amount: number;
+  date: string;
+}
+
+export interface FamilyExpense {
+  id: string;
+  familyMemberName?: string; // name of family member for new UI
+  memberId?: string; // legay id of family member
+  date: string;
+  reason?: "Food" | "Education" | "Medical" | "Shopping" | "Travel" | "House Rent" | "Electricity" | "Water Bill" | "Internet" | "Entertainment" | "Other" | string;
+  category?: string; // mapped from reason in legacy UI
+  amount: number;
+  description?: string;
+}
+
+export interface CategoryBudget {
+  category: string;
+  limit: number;
+  spent: number;
+}
+
+// Module 6: Document Management
+export interface ManagedDocument {
+  id: string;
+  name: string;
+  type: "Aadhaar" | "PAN" | "RC Book" | "Insurance" | "Loan Agreement" | "Salary Record";
+  ownerName: string;
+  uploadDate: string;
+  fileSize: string;
+  expiryDate?: string;
+  status: "Active" | "Expired" | "Pending Review";
+}
+
+// Module 7: Notifications
+export interface AppNotification {
+  id: string;
+  title: string;
+  body: string;
+  date: string;
+  type: "salary" | "emi" | "loan" | "insurance" | "service" | "budget";
+  isRead: boolean;
+}

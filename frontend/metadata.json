@@ -1,0 +1,6 @@
+{
+  "name": "Smart Business & Family Manager",
+  "description": "Premium multi-module simulator and architecture blueprint workspace for unified labor pool, logistics, finance, and family budget administration.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

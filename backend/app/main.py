@@ -1,0 +1,418 @@
+from datetime import datetime, timedelta, timezone
+from typing import Any, TypeVar
+
+from fastapi import Depends, FastAPI, HTTPException, status
+from fastapi.middleware.cors import CORSMiddleware
+from sqlalchemy import func, select
+from sqlalchemy.orm import Session
+
+from .core.config import get_settings
+from .core.db import Base, engine, get_db
+from .core.security import create_access_token, hash_password, verify_password
+from .models import (
+    AppNotification,
+    Attendance,
+    CategoryBudget,
+    FamilyExpense,
+    FamilyMember,
+    FuelEntry,
+    IncomeEntry,
+    Labour,
+    LoanGiven,
+    LoanReceived,
+    ManagedDocument,
+    SalaryPayment,
+    TripRecord,
+    User,
+    Vehicle,
+)
+from .schemas import (
+    AttendanceBatch,
+    CategoryBudgetCreate,
+    ChangePasswordRequest,
+    DocumentCreate,
+    EMICollectRequest,
+    FamilyExpenseCreate,
+    FamilyMemberCreate,
+    FuelEntryCreate,
+    IncomeEntryCreate,
+    LabourCreate,
+    LabourUpdate,
+    LoanGivenCreate,
+    LoanReceivedCreate,
+    NotificationCreate,
+    TokenRequest,
+    TokenResponse,
+    TripCreate,
+    VehicleCreate,
+    VehicleUpdate,
+)
+
+
+settings = get_settings()
+
+
+app = FastAPI(title="Smart Business Family Manager API", version="1.0.0")
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=settings.allowed_origin_list,
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
+
+@app.get("/health")
+def health() -> dict[str, str]:
+    return {
+        "status": "ok",
+        "service": "smart-business-family-manager-backend",
+        "database_configured": bool(settings.database_url),
+    }
+
+
+def serialize_model(obj: Any) -> dict[str, Any]:
+    return {key: value for key, value in obj.__dict__.items() if key != "_sa_instance_state"}
+
+
+ModelT = TypeVar("ModelT")
+
+
+def create_or_400(db: Session, model_cls: type[ModelT], obj: ModelT, message: str):
+    db.add(obj)
+    try:
+        db.commit()
+    except Exception as exc:
+        db.rollback()
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=message) from exc
+    db.refresh(obj)
+    return obj
+
+
+def update_instance(db: Session, instance: Any, payload: dict[str, Any]):
+    for key, value in payload.items():
+        if value is not None:
+            setattr(instance, key, value)
+    db.commit()
+    db.refresh(instance)
+    return instance
+
+
+@app.post("/api/v1/auth/token", response_model=TokenResponse)
+def login(payload: TokenRequest, db: Session = Depends(get_db)) -> TokenResponse:
+    try:
+        user = db.execute(select(User).where(User.username == payload.username)).scalar_one_or_none()
+    except Exception:
+        user = None
+
+    if user is None:
+        if payload.username == "admin" and payload.password == "30072005":
+            token = create_access_token("admin", "Admin")
+            return TokenResponse(
+                access_token=token,
+                expires_in=settings.access_token_expire_minutes * 60,
+                role="Admin",
+                name="Admin",
+            )
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid credentials")
+
+    try:
+        password_ok = verify_password(payload.password, user.hashed_password)
+    except Exception:
+        password_ok = payload.username == "admin" and payload.password == "30072005"
+
+    if not password_ok:
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid credentials")
+
+    token = create_access_token(user.username, user.role)
+    return TokenResponse(
+        access_token=token,
+        expires_in=settings.access_token_expire_minutes * 60,
+        role=user.role,
+        name=user.username,
+    )
+
+
+@app.post("/api/v1/auth/change-password")
+def change_password(payload: ChangePasswordRequest, db: Session = Depends(get_db)) -> dict[str, str]:
+    if payload.new_password != payload.confirm_new_password:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="New passwords do not match")
+
+    try:
+        admin = db.execute(select(User).where(User.username == "admin")).scalar_one_or_none()
+    except Exception as exc:
+        raise HTTPException(status_code=status.HTTP_503_SERVICE_UNAVAILABLE, detail="Database is unavailable") from exc
+
+    if admin is None:
+        admin = User(
+            username="admin",
+            email="admin@local.app",
+            hashed_password=hash_password("30072005"),
+            role="Admin",
+        )
+        db.add(admin)
+        db.commit()
+        db.refresh(admin)
+
+    if not verify_password(payload.old_password, admin.hashed_password):
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Old password is incorrect")
+
+    admin.hashed_password = hash_password(payload.new_password)
+    db.commit()
+    return {"message": "Password updated successfully"}
+
+
+@app.get("/api/v1/labours")
+def list_labours(db: Session = Depends(get_db)):
+    return [serialize_model(item) for item in db.execute(select(Labour).order_by(Labour.created_at.desc())).scalars()]
+
+
+@app.post("/api/v1/labours", status_code=status.HTTP_201_CREATED)
+def create_labour(payload: LabourCreate, db: Session = Depends(get_db)):
+    labour = Labour(**payload.model_dump())
+    return serialize_model(create_or_400(db, Labour, labour, "Unable to create labour record"))
+
+
+@app.put("/api/v1/labours/{labour_id}")
+def update_labour(labour_id: str, payload: LabourUpdate, db: Session = Depends(get_db)):
+    labour = db.get(Labour, labour_id)
+    if not labour:
+        raise HTTPException(status_code=404, detail="Labour not found")
+    return serialize_model(update_instance(db, labour, payload.model_dump(exclude_unset=True)))
+
+
+@app.delete("/api/v1/labours/{labour_id}", status_code=status.HTTP_204_NO_CONTENT)
+def delete_labour(labour_id: str, db: Session = Depends(get_db)):
+    labour = db.get(Labour, labour_id)
+    if not labour:
+        raise HTTPException(status_code=404, detail="Labour not found")
+    db.delete(labour)
+    db.commit()
+
+
+@app.post("/api/v1/labours/attendance")
+def mark_attendance(payload: AttendanceBatch, db: Session = Depends(get_db)):
+    saved = []
+    for record in payload.records:
+        existing = db.execute(
+            select(Attendance).where(Attendance.labour_id == record.labour_id, Attendance.date == payload.date)
+        ).scalar_one_or_none()
+        if existing:
+            existing.status = record.status
+            existing.reason = record.reason
+            saved.append(existing)
+        else:
+            saved.append(Attendance(labour_id=record.labour_id, date=payload.date, status=record.status, reason=record.reason))
+            db.add(saved[-1])
+    db.commit()
+    return {"message": "Attendance marked successfully", "total_records": len(saved), "date": payload.date}
+
+
+@app.get("/api/v1/labours/salary-pending")
+def salary_pending(db: Session = Depends(get_db)):
+    rows = db.execute(
+        select(Labour.id, Labour.full_name, Labour.salary_per_month).where(Labour.is_active.is_(True))
+    ).all()
+    result = []
+    for labour_id, full_name, salary_per_month in rows:
+        present_days = db.execute(
+            select(func.count()).select_from(Attendance).where(Attendance.labour_id == labour_id, Attendance.status == "Present")
+        ).scalar_one()
+        half_days = db.execute(
+            select(func.count()).select_from(Attendance).where(Attendance.labour_id == labour_id, Attendance.status == "Half-Day")
+        ).scalar_one()
+        wage = float(salary_per_month or 0)
+        base_payout = wage
+        result.append(
+            {
+                "labour_id": labour_id,
+                "name": full_name,
+                "present_days": present_days,
+                "half_days": half_days,
+                "wage_rate": wage,
+                "base_payout": base_payout,
+                "advance_deductions": 0.0,
+                "net_outstanding": base_payout,
+            }
+        )
+    return result
+
+
+@app.get("/api/v1/vehicles")
+def list_vehicles(db: Session = Depends(get_db)):
+    return [serialize_model(item) for item in db.execute(select(Vehicle).order_by(Vehicle.created_at.desc())).scalars()]
+
+
+@app.post("/api/v1/vehicles", status_code=status.HTTP_201_CREATED)
+def create_vehicle(payload: VehicleCreate, db: Session = Depends(get_db)):
+    vehicle = Vehicle(**payload.model_dump())
+    return serialize_model(create_or_400(db, Vehicle, vehicle, "Unable to create vehicle"))
+
+
+@app.put("/api/v1/vehicles/{vehicle_id}")
+def update_vehicle(vehicle_id: str, payload: VehicleUpdate, db: Session = Depends(get_db)):
+    vehicle = db.get(Vehicle, vehicle_id)
+    if not vehicle:
+        raise HTTPException(status_code=404, detail="Vehicle not found")
+    return serialize_model(update_instance(db, vehicle, payload.model_dump(exclude_unset=True)))
+
+
+@app.delete("/api/v1/vehicles/{vehicle_id}", status_code=status.HTTP_204_NO_CONTENT)
+def delete_vehicle(vehicle_id: str, db: Session = Depends(get_db)):
+    vehicle = db.get(Vehicle, vehicle_id)
+    if not vehicle:
+        raise HTTPException(status_code=404, detail="Vehicle not found")
+    db.delete(vehicle)
+    db.commit()
+
+
+@app.post("/api/v1/vehicles/fuel", status_code=status.HTTP_201_CREATED)
+def create_fuel_entry(payload: FuelEntryCreate, db: Session = Depends(get_db)):
+    entry = FuelEntry(**payload.model_dump())
+    if entry.liters is not None and entry.per_liter_cost is not None and entry.cost is None:
+        entry.cost = float(entry.liters) * float(entry.per_liter_cost)
+    if entry.cost is not None and entry.liters is not None and entry.per_liter_cost is None and entry.liters != 0:
+        entry.per_liter_cost = float(entry.cost) / float(entry.liters)
+    db.add(entry)
+    db.commit()
+    db.refresh(entry)
+    return serialize_model(entry)
+
+
+@app.post("/api/v1/vehicles/trips", status_code=status.HTTP_201_CREATED)
+def create_trip(payload: TripCreate, db: Session = Depends(get_db)):
+    trip = TripRecord(**payload.model_dump())
+    db.add(trip)
+    db.commit()
+    db.refresh(trip)
+    return serialize_model(trip)
+
+
+@app.get("/api/v1/loans/given")
+def list_loans_given(db: Session = Depends(get_db)):
+    return [serialize_model(item) for item in db.execute(select(LoanGiven).order_by(LoanGiven.created_at.desc())).scalars()]
+
+
+@app.post("/api/v1/loans/given", status_code=status.HTTP_201_CREATED)
+def create_loan_given(payload: LoanGivenCreate, db: Session = Depends(get_db)):
+    loan = LoanGiven(**payload.model_dump())
+    db.add(loan)
+    db.commit()
+    db.refresh(loan)
+    return serialize_model(loan)
+
+
+@app.post("/api/v1/loans/given/collect-emi")
+def collect_emi(payload: EMICollectRequest, db: Session = Depends(get_db)):
+    loan = db.get(LoanGiven, payload.borrower_id)
+    if not loan:
+        raise HTTPException(status_code=404, detail="Loan not found")
+    loan.total_paid = float(loan.total_paid or 0) + float(payload.amount_paid)
+    loan.is_defaulter = False
+    db.commit()
+    db.refresh(loan)
+    return {
+        "borrower_name": loan.borrower_name or loan.person_name,
+        "emi_amount": payload.amount_paid,
+        "remaining_loan_balance": max(float(loan.loan_amount or loan.amount_given or 0) - float(loan.total_paid or 0), 0),
+        "repayment_status": "Paid-On-Time",
+        "defaulter_flag_cleared": True,
+    }
+
+
+@app.get("/api/v1/loans/received")
+def list_loans_received(db: Session = Depends(get_db)):
+    return [serialize_model(item) for item in db.execute(select(LoanReceived).order_by(LoanReceived.created_at.desc())).scalars()]
+
+
+@app.post("/api/v1/loans/received", status_code=status.HTTP_201_CREATED)
+def create_loan_received(payload: LoanReceivedCreate, db: Session = Depends(get_db)):
+    loan = LoanReceived(**payload.model_dump())
+    db.add(loan)
+    db.commit()
+    db.refresh(loan)
+    return serialize_model(loan)
+
+
+@app.get("/api/v1/family-members")
+def list_family_members(db: Session = Depends(get_db)):
+    return [serialize_model(item) for item in db.execute(select(FamilyMember).order_by(FamilyMember.created_at.desc())).scalars()]
+
+
+@app.post("/api/v1/family-members", status_code=status.HTTP_201_CREATED)
+def create_family_member(payload: FamilyMemberCreate, db: Session = Depends(get_db)):
+    member = FamilyMember(id=payload.id, name=payload.name, relationship_name=payload.relationship_name)
+    db.add(member)
+    db.commit()
+    db.refresh(member)
+    return serialize_model(member)
+
+
+@app.get("/api/v1/income")
+def list_income(db: Session = Depends(get_db)):
+    return [serialize_model(item) for item in db.execute(select(IncomeEntry).order_by(IncomeEntry.created_at.desc())).scalars()]
+
+
+@app.post("/api/v1/income", status_code=status.HTTP_201_CREATED)
+def create_income(payload: IncomeEntryCreate, db: Session = Depends(get_db)):
+    income = IncomeEntry(**payload.model_dump())
+    db.add(income)
+    db.commit()
+    db.refresh(income)
+    return serialize_model(income)
+
+
+@app.get("/api/v1/expenses")
+def list_expenses(db: Session = Depends(get_db)):
+    return [serialize_model(item) for item in db.execute(select(FamilyExpense).order_by(FamilyExpense.created_at.desc())).scalars()]
+
+
+@app.post("/api/v1/expenses", status_code=status.HTTP_201_CREATED)
+def create_expense(payload: FamilyExpenseCreate, db: Session = Depends(get_db)):
+    expense = FamilyExpense(**payload.model_dump())
+    db.add(expense)
+    db.commit()
+    db.refresh(expense)
+    return serialize_model(expense)
+
+
+@app.get("/api/v1/category-budgets")
+def list_category_budgets(db: Session = Depends(get_db)):
+    return [serialize_model(item) for item in db.execute(select(CategoryBudget)).scalars()]
+
+
+@app.post("/api/v1/category-budgets", status_code=status.HTTP_201_CREATED)
+def create_category_budget(payload: CategoryBudgetCreate, db: Session = Depends(get_db)):
+    budget = CategoryBudget(**payload.model_dump())
+    db.add(budget)
+    db.commit()
+    db.refresh(budget)
+    return serialize_model(budget)
+
+
+@app.get("/api/v1/documents")
+def list_documents(db: Session = Depends(get_db)):
+    return [serialize_model(item) for item in db.execute(select(ManagedDocument).order_by(ManagedDocument.created_at.desc())).scalars()]
+
+
+@app.post("/api/v1/documents", status_code=status.HTTP_201_CREATED)
+def create_document(payload: DocumentCreate, db: Session = Depends(get_db)):
+    document = ManagedDocument(**payload.model_dump())
+    db.add(document)
+    db.commit()
+    db.refresh(document)
+    return serialize_model(document)
+
+
+@app.get("/api/v1/notifications")
+def list_notifications(db: Session = Depends(get_db)):
+    return [serialize_model(item) for item in db.execute(select(AppNotification).order_by(AppNotification.created_at.desc())).scalars()]
+
+
+@app.post("/api/v1/notifications", status_code=status.HTTP_201_CREATED)
+def create_notification(payload: NotificationCreate, db: Session = Depends(get_db)):
+    notification = AppNotification(**payload.model_dump())
+    db.add(notification)
+    db.commit()
+    db.refresh(notification)
+    return serialize_model(notification)
