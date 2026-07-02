@@ -10,7 +10,9 @@ FastAPI backend wired to the Supabase Postgres database.
 pip install -r requirements.txt
 ```
 
-2. Copy `.env.example` to `.env` and set your Supabase password in `DATABASE_URL`.
+2. Copy `.env.example` to `.env`.
+3. For Render, set `SUPABASE_POOLER_URL` using the Supabase "Session pooler" connection string.
+4. Use `DATABASE_URL` only for local development or if your Supabase project has an IPv4 add-on.
 
 3. Run the API:
 
@@ -29,6 +31,12 @@ supabase link --project-ref vwtjogybncekikjyqgur
 ```
 
 Then apply the SQL in `supabase/migrations/0001_init.sql`.
+
+## Notes on Supabase connectivity
+
+- Direct Supabase Postgres connections are IPv6-only by default.
+- Render web services are typically IPv4-only, so the pooler session URL is the safe choice.
+- If you use the direct connection string on Render without the IPv4 add-on, startup will fail with `Network is unreachable`.
 
 ## API
 

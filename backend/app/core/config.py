@@ -13,6 +13,7 @@ class Settings(BaseSettings):
     )
 
     database_url: str = ""
+    supabase_pooler_url: str = ""
     secret_key: str = "change-me"
     access_token_expire_minutes: int = 1440
     supabase_project_url: str = "https://vwtjogybncekikjyqgur.supabase.co"
@@ -30,9 +31,18 @@ class Settings(BaseSettings):
     def normalize_database_url(cls, value: str) -> str:
         return value.strip()
 
+    @field_validator("supabase_pooler_url")
+    @classmethod
+    def normalize_supabase_pooler_url(cls, value: str) -> str:
+        return value.strip()
+
     @property
     def allowed_origin_list(self) -> List[str]:
         return [item.strip() for item in self.allowed_origins.split(",") if item.strip()]
+
+    @property
+    def effective_database_url(self) -> str:
+        return self.supabase_pooler_url or self.database_url
 
 
 @lru_cache

@@ -4,6 +4,7 @@ from typing import Any, TypeVar
 from fastapi import Depends, FastAPI, HTTPException, status
 from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy import func, select, text
+from sqlalchemy.exc import OperationalError
 from sqlalchemy.orm import Session
 
 from .core.config import get_settings
@@ -75,7 +76,13 @@ app.add_middleware(
 
 @app.on_event("startup")
 def initialize_database() -> None:
-    Base.metadata.create_all(bind=engine)
+    try:
+        Base.metadata.create_all(bind=engine)
+    except OperationalError as exc:
+        raise RuntimeError(
+            "Unable to connect to Supabase from Render. The direct Supabase database endpoint is IPv6-only. "
+            "Set SUPABASE_POOLER_URL to the Supabase shared pooler session URL (IPv4) or enable the IPv4 add-on."
+        ) from exc
 
 
 @app.get("/health")

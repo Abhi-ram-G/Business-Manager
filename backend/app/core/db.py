@@ -12,18 +12,18 @@ class Base(DeclarativeBase):
 
 settings = get_settings()
 
-if not settings.database_url:
+if not settings.effective_database_url:
     raise RuntimeError(
-        "DATABASE_URL is not configured. Set backend/.env with your Supabase Postgres connection string "
-        "before starting the backend."
+        "Database connection is not configured. Set SUPABASE_POOLER_URL for Render "
+        "(recommended for IPv4-only networks) or DATABASE_URL for direct Postgres access."
     )
 
 engine = create_engine(
-    settings.database_url,
+    settings.effective_database_url,
     pool_pre_ping=True,
     pool_size=5,
     max_overflow=10,
-    connect_args={"sslmode": "require"} if settings.database_url.startswith("postgresql") else {},
+    connect_args={"sslmode": "require"} if settings.effective_database_url.startswith("postgresql") else {},
 )
 
 SessionLocal = sessionmaker(bind=engine, autoflush=False, autocommit=False, expire_on_commit=False)
