@@ -14,6 +14,7 @@ class Settings(BaseSettings):
 
     database_url: str = ""
     supabase_pooler_url: str = ""
+    postgres_url: str = ""
     secret_key: str = "change-me"
     access_token_expire_minutes: int = 1440
     supabase_project_url: str = "https://vwtjogybncekikjyqgur.supabase.co"
@@ -36,13 +37,30 @@ class Settings(BaseSettings):
     def normalize_supabase_pooler_url(cls, value: str) -> str:
         return value.strip()
 
+    @field_validator("postgres_url")
+    @classmethod
+    def normalize_postgres_url(cls, value: str) -> str:
+        return value.strip()
+
     @property
     def allowed_origin_list(self) -> List[str]:
         return [item.strip() for item in self.allowed_origins.split(",") if item.strip()]
 
     @property
     def effective_database_url(self) -> str:
-        return self.supabase_pooler_url or self.database_url
+        # Priority:
+        # 1. SUPABASE_POOLER_URL
+        # 2. DATABASE_URL
+        # 3. POSTGRES_URL
+        url = self.supabase_pooler_url or self.database_url or self.postgres_url
+        
+        # If the pooler URL is set, and the chosen database URL points to a direct connection
+        # (e.g., db.<project>.supabase.co), replace it with the pooler connection string.
+        if self.supabase_pooler_url and ("db." in url and ".supabase.co" in url):
+            return self.supabase_pooler_url
+            
+        return url
+
 
 
 @lru_cache

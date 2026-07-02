@@ -74,15 +74,64 @@ app.add_middleware(
 )
 
 
+def mask_database_url(url: str) -> str:
+    if not url:
+        return "Not Configured"
+    from urllib.parse import urlparse
+    try:
+        parsed = urlparse(url)
+        if parsed.password:
+            netloc = parsed.hostname or ""
+            if parsed.port:
+                netloc = f"{netloc}:{parsed.port}"
+            if parsed.username:
+                netloc = f"{parsed.username}:******@{netloc}"
+            return parsed._replace(netloc=netloc).geturl()
+        return url
+    except Exception:
+        if "@" in url:
+            parts = url.split("@", 1)
+            prefix, suffix = parts[0], parts[1]
+            if ":" in prefix:
+                sub_parts = prefix.split(":")
+                if len(sub_parts) >= 3:
+                    sub_parts[-1] = "******"
+                    return ":".join(sub_parts) + "@" + suffix
+            return "******@" + suffix
+        return "[Masked URL]"
+
+
+def get_connection_type(url: str) -> str:
+    if not url:
+        return "None"
+    if "pooler" in url or ":6543" in url:
+        return "Session Pooler (IPv4)"
+    elif "supabase.co" in url:
+        return "Direct Connection (IPv6)"
+    return "Direct/Other"
+
+
 @app.on_event("startup")
 def initialize_database() -> None:
+    db_url = settings.effective_database_url
+    masked_url = mask_database_url(db_url)
+    conn_type = get_connection_type(db_url)
+    
+    print("\n" + "="*50)
+    print("DATABASE STARTUP CONNECTION DETAILS")
+    print(f"Active URL:      {masked_url}")
+    print(f"Connection Type: {conn_type}")
+    print("="*50 + "\n")
+
     try:
         Base.metadata.create_all(bind=engine)
+        print("Database initialized/synchronized successfully.\n")
     except OperationalError as exc:
         raise RuntimeError(
             "Unable to connect to Supabase from Render. The direct Supabase database endpoint is IPv6-only. "
             "Set SUPABASE_POOLER_URL to the Supabase shared pooler session URL (IPv4) or enable the IPv4 add-on."
         ) from exc
+
 
 
 @app.get("/health")
