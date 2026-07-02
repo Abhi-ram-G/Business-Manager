@@ -18,6 +18,7 @@ class Settings(BaseSettings):
     supabase_project_url: str = "https://vwtjogybncekikjyqgur.supabase.co"
     supabase_publishable_key: str = ""
     allowed_origins: str = "http://localhost:3000,http://127.0.0.1:3000"
+    allowed_origin_regex: str = r"^(https://.*\.vercel\.app|https://.*\.netlify\.app)$"
 
     @field_validator("allowed_origins")
     @classmethod
