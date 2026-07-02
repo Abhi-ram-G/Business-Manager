@@ -143,7 +143,7 @@ export default function App() {
 
       const payload = await response.json();
       if (!response.ok) {
-        throw new Error(payload.detail || "Invalid PIN");
+        throw new Error("you entered wrong pin number,please check it");
       }
 
       sessionStorage.setItem("srs_access_token", payload.access_token);
@@ -151,7 +151,7 @@ export default function App() {
       setLoginPin("");
       setLoginMessage("Login successful.");
     } catch (error) {
-      setLoginMessage(error instanceof Error ? error.message : "Login failed");
+      setLoginMessage(error instanceof Error ? error.message : "you entered wrong pin number,please check it");
     } finally {
       setLoginLoading(false);
     }
@@ -219,7 +219,7 @@ export default function App() {
     setPasswordMessage("");
     try {
       if (newPassword !== confirmNewPassword) {
-        throw new Error("New password and confirmation do not match.");
+        throw new Error("New PIN and confirmation PIN do not match.");
       }
 
       const response = await fetch(`${apiBaseUrl}/api/v1/auth/change-password`, {
@@ -234,15 +234,18 @@ export default function App() {
 
       const payload = await response.json();
       if (!response.ok) {
-        throw new Error(payload.detail || "Unable to update password");
+        if (response.status === 400 || (payload && payload.detail && payload.detail.includes("Old password"))) {
+          throw new Error("Please enter correct pin");
+        }
+        throw new Error(payload.detail || "Unable to update PIN");
       }
 
       setOldPassword("");
       setNewPassword("");
       setConfirmNewPassword("");
-      setPasswordMessage(payload.message || "Password updated successfully.");
+      setPasswordMessage(payload.message || "PIN updated successfully.");
     } catch (error) {
-      setPasswordMessage(error instanceof Error ? error.message : "Unable to update password");
+      setPasswordMessage(error instanceof Error ? error.message : "Unable to update PIN");
     } finally {
       setPasswordLoading(false);
     }
@@ -2091,19 +2094,19 @@ export default function App() {
                                 <div className="space-y-0.5">
                                   <h3 className="text-xs font-mono font-bold text-indigo-400 uppercase tracking-widest">Change Login PIN</h3>
                                   <p className="text-[10px] text-slate-400 leading-normal">
-                                    Verify your current password, then enter and confirm the new PIN before saving.
+                                    Verify your current PIN, then enter and confirm the new PIN before saving.
                                   </p>
                                 </div>
 
                                 <form onSubmit={handleChangePassword} className="space-y-2.5">
                                   <div className="space-y-1.5">
-                                    <label className="text-[8px] uppercase tracking-wider font-bold text-slate-500">Old Password</label>
+                                    <label className="text-[8px] uppercase tracking-wider font-bold text-slate-500">Old PIN</label>
                                     <div className="flex items-center gap-2 bg-slate-950 border border-slate-850 rounded-lg px-2.5 py-2">
                                       <input
                                         type={showOldPassword ? "text" : "password"}
                                         value={oldPassword}
                                         onChange={(e) => setOldPassword(e.target.value)}
-                                        placeholder="Enter old password"
+                                        placeholder="Enter old PIN"
                                         className="flex-1 bg-transparent text-[11px] text-slate-200 outline-none"
                                       />
                                       <button type="button" onClick={() => setShowOldPassword((prev) => !prev)} className="text-slate-400 hover:text-white">
@@ -2113,13 +2116,13 @@ export default function App() {
                                   </div>
 
                                   <div className="space-y-1.5">
-                                    <label className="text-[8px] uppercase tracking-wider font-bold text-slate-500">New Password</label>
+                                    <label className="text-[8px] uppercase tracking-wider font-bold text-slate-500">New PIN</label>
                                     <div className="flex items-center gap-2 bg-slate-950 border border-slate-850 rounded-lg px-2.5 py-2">
                                       <input
                                         type={showNewPassword ? "text" : "password"}
                                         value={newPassword}
                                         onChange={(e) => setNewPassword(e.target.value)}
-                                        placeholder="Enter new password"
+                                        placeholder="Enter new PIN"
                                         className="flex-1 bg-transparent text-[11px] text-slate-200 outline-none"
                                       />
                                       <button type="button" onClick={() => setShowNewPassword((prev) => !prev)} className="text-slate-400 hover:text-white">
@@ -2129,13 +2132,13 @@ export default function App() {
                                   </div>
 
                                   <div className="space-y-1.5">
-                                    <label className="text-[8px] uppercase tracking-wider font-bold text-slate-500">Confirm New Password</label>
+                                    <label className="text-[8px] uppercase tracking-wider font-bold text-slate-500">Confirm New PIN</label>
                                     <div className="flex items-center gap-2 bg-slate-950 border border-slate-850 rounded-lg px-2.5 py-2">
                                       <input
                                         type={showConfirmNewPassword ? "text" : "password"}
                                         value={confirmNewPassword}
                                         onChange={(e) => setConfirmNewPassword(e.target.value)}
-                                        placeholder="Re-enter new password"
+                                        placeholder="Re-enter new PIN"
                                         className="flex-1 bg-transparent text-[11px] text-slate-200 outline-none"
                                       />
                                       <button type="button" onClick={() => setShowConfirmNewPassword((prev) => !prev)} className="text-slate-400 hover:text-white">
