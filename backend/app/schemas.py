@@ -40,7 +40,9 @@ class LabourBase(BaseModel):
     salary_per_month: float | None = None
     advance_entries: list[dict[str, Any]] | None = None
     pdf_attachment_name: str | None = None
+    gender: str | None = None
     profile_photo: str | None = None
+    profile_photo_name: str | None = None
     aadhaar_pdf_name: str | None = None
     aadhaar_pdf_data: str | None = None
     license_pdf_name: str | None = None
@@ -69,7 +71,9 @@ class LabourUpdate(BaseModel):
     salary_per_month: float | None = None
     advance_entries: list[dict[str, Any]] | None = None
     pdf_attachment_name: str | None = None
+    gender: str | None = None
     profile_photo: str | None = None
+    profile_photo_name: str | None = None
     aadhaar_pdf_name: str | None = None
     aadhaar_pdf_data: str | None = None
     license_pdf_name: str | None = None

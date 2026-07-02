@@ -17,6 +17,7 @@ export interface AdvanceEntry {
 export interface Labour {
   id: string;
   fullName: string;
+  gender?: "Male" | "Female";
   phone: string;
   skillType: "Driver" | "Helper"; // Distinguished types
   dailyWage: number;              // For historical backward compat
@@ -34,7 +35,8 @@ export interface Labour {
   salaryPerMonth?: number;
   advanceEntries?: AdvanceEntry[];
   pdfAttachmentName?: string;
-  profilePhoto?: string;
+  profilePhoto?: string;           // base64 data URL or external URL
+  profilePhotoName?: string;        // original uploaded file name
 
   // New Document Attachments
   aadhaarPdfName?: string;

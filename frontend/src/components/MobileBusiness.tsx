@@ -1114,7 +1114,9 @@ export default function MobileBusiness({
   const [licenseExpiryDate, setLicenseExpiryDate] = useState("2030-12-31");
   const [emergencyContact, setEmergencyContact] = useState("");
   const [salaryPerMonth, setSalaryPerMonth] = useState(24000);
-  const [profilePhoto, setProfilePhoto] = useState("https://images.unsplash.com/photo-1544005313-94ddf0286df2?auto=format&fit=crop&q=80&w=120&h=120");
+  const [gender, setGender] = useState<"Male" | "Female" | "">("Male");
+  const [profilePhoto, setProfilePhoto] = useState("");
+  const [profilePhotoName, setProfilePhotoName] = useState("");
   const [pdfAttachmentName, setPdfAttachmentName] = useState("DL-Driver-Docs.pdf");
 
   // New states for PDF attachments
@@ -1250,6 +1252,7 @@ export default function MobileBusiness({
   const handleOpenAddLabour = () => {
     setEditingLabourId(null);
     setFullName("");
+    setGender("Male");
     setPhone("");
     setAadhaarNumber("");
     setAddress("");
@@ -1258,6 +1261,8 @@ export default function MobileBusiness({
     setLicenseExpiryDate("2030-12-31");
     setEmergencyContact("");
     setSalaryPerMonth(activeLabourTab === "Driver" ? 25000 : 16000);
+    setProfilePhoto("");
+    setProfilePhotoName("");
 
     // Reset document states
     setAadhaarPdfName("");
@@ -1276,6 +1281,7 @@ export default function MobileBusiness({
     setEditingLabourId(lab.id);
     setActiveLabourTab(lab.skillType);
     setFullName(lab.fullName);
+    setGender((lab.gender as "Male" | "Female" | "") || "Male");
     setPhone(lab.phone);
     setAadhaarNumber(lab.aadhaarNumber);
     setAddress(lab.address);
@@ -1284,6 +1290,8 @@ export default function MobileBusiness({
     setLicenseExpiryDate(lab.licenseExpiryDate || "2030-12-31");
     setEmergencyContact(lab.emergencyContact);
     setSalaryPerMonth(lab.salaryPerMonth ?? 0);
+    setProfilePhoto(lab.profilePhoto || "");
+    setProfilePhotoName(lab.profilePhotoName || "");
 
     // Populate document states
     setAadhaarPdfName(lab.aadhaarPdfName || "");
@@ -1302,10 +1310,18 @@ export default function MobileBusiness({
     e.preventDefault();
     if (!fullName || !phone) return;
 
+    // Phone validation: exactly 10 digits, no alphabets
+    const phoneDigitsOnly = phone.replace(/\D/g, "");
+    if (!/^\d{10}$/.test(phoneDigitsOnly)) {
+      alert("Mobile number must be exactly 10 digits (numbers only).");
+      return;
+    }
+
     const next: Labour = {
       id: editingLabourId || `LAB-${Date.now()}`,
       fullName,
-      phone,
+      gender: gender || undefined,
+      phone: phoneDigitsOnly,
       skillType: activeLabourTab,
       dailyWage: 800,
       joiningDate,
@@ -1319,7 +1335,8 @@ export default function MobileBusiness({
       salaryPerMonth: Number(salaryPerMonth),
       advanceEntries: labours.find((lab) => lab.id === editingLabourId)?.advanceEntries ?? [],
       pdfAttachmentName: "Driver-Kyc.pdf",
-      profilePhoto: "https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&q=80&w=120&h=120",
+      profilePhoto: profilePhoto || undefined,
+      profilePhotoName: profilePhotoName || undefined,
       aadhaarPdfName,
       aadhaarPdfData,
       licensePdfName: activeLabourTab === "Driver" ? licensePdfName : undefined,
@@ -1341,6 +1358,7 @@ export default function MobileBusiness({
       setIsLabourFormOpen(false);
     } catch (error) {
       console.error(error);
+      alert("Failed to save. Please check all fields and try again.");
     }
   };
 
@@ -2553,6 +2571,57 @@ export default function MobileBusiness({
                   </span>
 
                   <div className="space-y-2.5 text-xs text-slate-300">
+
+                    {/* Profile Photo Upload */}
+                    <div className="flex items-center gap-3 bg-slate-950 border border-slate-800 p-2.5 rounded-xl">
+                      <div className="w-12 h-12 rounded-full overflow-hidden bg-slate-800 border-2 border-slate-700 shrink-0 flex items-center justify-center">
+                        {profilePhoto ? (
+                          <img src={profilePhoto} alt="Profile" className="w-full h-full object-cover" />
+                        ) : (
+                          <span className="text-slate-500 text-[8px] font-mono text-center leading-tight px-1">No Photo</span>
+                        )}
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <label className="text-[9px] font-mono text-slate-500 block mb-1">PROFILE PHOTO <span className="text-slate-600">(Optional)</span></label>
+                        <div className="flex items-center gap-1.5">
+                          <input
+                            type="file"
+                            accept="image/*"
+                            onChange={(e) => {
+                              const file = e.target.files?.[0];
+                              if (!file) return;
+                              const reader = new FileReader();
+                              reader.onload = () => {
+                                setProfilePhoto(reader.result as string);
+                                setProfilePhotoName(file.name);
+                              };
+                              reader.readAsDataURL(file);
+                            }}
+                            className="hidden"
+                            id="profile-photo-upload"
+                          />
+                          <label
+                            htmlFor="profile-photo-upload"
+                            className="bg-indigo-600/30 hover:bg-indigo-600/50 text-indigo-300 text-[9px] font-bold px-2 py-1 rounded cursor-pointer shrink-0 transition border border-indigo-700/40"
+                          >
+                            Upload Photo
+                          </label>
+                          {profilePhoto && (
+                            <button
+                              type="button"
+                              onClick={() => { setProfilePhoto(""); setProfilePhotoName(""); }}
+                              className="text-rose-400 hover:text-rose-300 text-[9px] font-bold px-1.5 py-1 rounded transition"
+                            >
+                              Remove
+                            </button>
+                          )}
+                          {profilePhotoName && (
+                            <span className="text-[8px] text-slate-500 truncate flex-1">{profilePhotoName}</span>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+
                     <div className="grid grid-cols-2 gap-2">
                       <div>
                         <label className="text-[9px] font-mono text-slate-500 block">FULL NAME</label>
@@ -2566,16 +2635,38 @@ export default function MobileBusiness({
                         />
                       </div>
                       <div>
-                        <label className="text-[9px] font-mono text-slate-500 block">MOBILE NO</label>
-                        <input
-                          type="text"
-                          value={phone}
-                          onChange={(e) => setPhone(e.target.value)}
-                          className="w-full bg-slate-950 border border-slate-800 p-1.5 rounded focus:outline-none focus:border-indigo-500"
-                          placeholder="9876543210"
-                          required
-                        />
+                        <label className="text-[9px] font-mono text-slate-500 block">GENDER</label>
+                        <select
+                          value={gender}
+                          onChange={(e) => setGender(e.target.value as "Male" | "Female")}
+                          className="w-full bg-slate-950 border border-slate-800 p-1.5 rounded focus:outline-none focus:border-indigo-500 text-xs"
+                        >
+                          <option value="Male">Male</option>
+                          <option value="Female">Female</option>
+                        </select>
                       </div>
+                    </div>
+
+                    <div>
+                      <label className="text-[9px] font-mono text-slate-500 block">MOBILE NO</label>
+                      <input
+                        type="tel"
+                        value={phone}
+                        onChange={(e) => {
+                          // Allow only digits
+                          const val = e.target.value.replace(/\D/g, "");
+                          if (val.length <= 10) setPhone(val);
+                        }}
+                        className={`w-full bg-slate-950 border p-1.5 rounded focus:outline-none focus:border-indigo-500 font-mono tracking-widest ${
+                          phone.length > 0 && phone.length !== 10 ? "border-rose-600" : "border-slate-800"
+                        }`}
+                        placeholder="9876543210"
+                        maxLength={10}
+                        required
+                      />
+                      {phone.length > 0 && phone.length !== 10 && (
+                        <span className="text-[8px] text-rose-400 mt-0.5 block">Must be exactly 10 digits</span>
+                      )}
                     </div>
 
                     <div className="grid grid-cols-2 gap-2">
