@@ -1306,6 +1306,8 @@ export default function MobileBusiness({
     setTempPdfData("");
 
     setIsLabourFormOpen(true);
+    // Close profile view so the edit form is visible
+    setSelectedLabourForProfile(null);
     setTimeout(() => labourFormRef.current?.scrollIntoView({ behavior: "smooth", block: "start" }), 80);
   };
 
@@ -1353,7 +1355,8 @@ export default function MobileBusiness({
         ? prev.map(lab => lab.id === editingLabourId ? saved : lab)
         : [saved, ...prev]
       );
-      if (selectedLabourForProfile?.id === editingLabourId) {
+      // If this was an edit, reopen the profile view with fresh data
+      if (editingLabourId) {
         setSelectedLabourForProfile(saved);
       }
       await onSharedDataChanged?.();
