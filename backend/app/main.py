@@ -3,7 +3,7 @@ from typing import Any, TypeVar
 
 from fastapi import Depends, FastAPI, HTTPException, status
 from fastapi.middleware.cors import CORSMiddleware
-from sqlalchemy import func, select
+from sqlalchemy import func, select, text
 from sqlalchemy.orm import Session
 
 from .core.config import get_settings
@@ -63,12 +63,23 @@ app.add_middleware(
 )
 
 
+@app.on_event("startup")
+def initialize_database() -> None:
+    Base.metadata.create_all(bind=engine)
+
+
 @app.get("/health")
-def health() -> dict[str, str]:
+def health(db: Session = Depends(get_db)) -> dict[str, Any]:
+    db_status = "connected"
+    try:
+        db.execute(text("SELECT 1"))
+    except Exception as exc:
+        db_status = f"error: {exc.__class__.__name__}"
     return {
         "status": "ok",
         "service": "smart-business-family-manager-backend",
         "database_configured": bool(settings.database_url),
+        "database_status": db_status,
     }
 
 

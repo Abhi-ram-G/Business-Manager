@@ -79,6 +79,18 @@ export default function App() {
     { id: "fam-palanathal", name: "Palanathal", relationship: "Family" },
   ];
 
+  const loadStoredArray = <T,>(key: string, fallback: T[]): T[] => {
+    const saved = localStorage.getItem(key);
+    if (!saved) return fallback;
+    try {
+      const parsed = JSON.parse(saved) as T[];
+      return Array.isArray(parsed) ? parsed : fallback;
+    } catch (error) {
+      console.error(`Unable to parse ${key} from localStorage`, error);
+      return fallback;
+    }
+  };
+
   // Current user role in simulated app (multi-user simulator)
   const currentUserRole: UserRole = "Admin";
   const [isMobileLoggedIn, setIsMobileLoggedIn] = useState<boolean>(() => sessionStorage.getItem("srs_session_active") === "true");
@@ -362,37 +374,37 @@ export default function App() {
   
   // 1. LABOUR MODULE
   const [labours, setLabours] = useState<Labour[]>(() => {
-    return [];
+    return loadStoredArray<Labour>("srs_labours", []);
   });
 
   const [attendance, setAttendance] = useState<AttendanceRecord[]>(() => {
-    return [];
+    return loadStoredArray<AttendanceRecord>("srs_attendance", []);
   });
 
   const [salaryPayments, setSalaryPayments] = useState<SalaryPayment[]>(() => {
-    return [];
+    return loadStoredArray<SalaryPayment>("srs_salary_payments", []);
   });
 
   // 2. VEHICLE MODULE
   const [vehicles, setVehicles] = useState<Vehicle[]>(() => {
-    return [];
+    return loadStoredArray<Vehicle>("srs_vehicles", []);
   });
 
   const [fuelEntries, setFuelEntries] = useState<FuelEntry[]>(() => {
-    return [];
+    return loadStoredArray<FuelEntry>("srs_fuel_entries", []);
   });
 
   const [trips, setTrips] = useState<TripRecord[]>(() => {
-    return [];
+    return loadStoredArray<TripRecord>("srs_trips", []);
   });
 
   // 3. FINANCE MODULE (Given & Received)
   const [loansGiven, setLoansGiven] = useState<LoanGiven[]>(() => {
-    return [];
+    return loadStoredArray<LoanGiven>("srs_loans_given", []);
   });
 
   const [loansReceived, setLoansReceived] = useState<LoanReceived[]>(() => {
-    return [];
+    return loadStoredArray<LoanReceived>("srs_loans_received", []);
   });
 
   // 4. FAMILY EXPENSE MODULE
@@ -410,20 +422,20 @@ export default function App() {
   });
 
   const [incomeEntries, setIncomeEntries] = useState<IncomeEntry[]>(() => {
-    return [];
+    return loadStoredArray<IncomeEntry>("srs_income_entries", []);
   });
 
   const [familyExpenses, setFamilyExpenses] = useState<FamilyExpense[]>(() => {
-    return [];
+    return loadStoredArray<FamilyExpense>("srs_family_expenses", []);
   });
 
   const [categoryBudgets, setCategoryBudgets] = useState<CategoryBudget[]>(() => {
-    return [];
+    return loadStoredArray<CategoryBudget>("srs_category_budgets", []);
   });
 
   // 6. DOCUMENTS VAULT
   const [documents, setDocuments] = useState<ManagedDocument[]>(() => {
-    return [];
+    return loadStoredArray<ManagedDocument>("srs_documents", []);
   });
 
   // 7. SYSTEM LEVEL REMINDERS
@@ -437,10 +449,6 @@ export default function App() {
       { id: "not-2", title: "HDFC bank EMI Pending", body: "₹14,600 bank loan EMI is payable on the 15th.", date: "Yesterday", type: "emi", isRead: false },
     ];
   });
-
-  useEffect(() => {
-    setNotifications([]);
-  }, []);
 
   // Save states to localStorage on state changes
   useEffect(() => {
@@ -499,29 +507,8 @@ export default function App() {
     localStorage.setItem("srs_notifications", JSON.stringify(notifications));
   }, [notifications]);
 
-  useEffect(() => {
-    const recordKeys = [
-      "srs_labours",
-      "srs_attendance",
-      "srs_salary_payments",
-      "srs_vehicles",
-      "srs_fuel_entries",
-      "srs_trips",
-      "srs_loans_given",
-      "srs_loans_received",
-      "srs_family_members",
-      "srs_income_entries",
-      "srs_family_expenses",
-      "srs_category_budgets",
-      "srs_documents",
-      "srs_notifications",
-    ];
-    recordKeys.forEach((key) => localStorage.removeItem(key));
-  }, []);
-
   // --- FORM STATE ENGINE FOR ADD NEW ITEMS (CRUD) ---
   const [searchQuery, setSearchQuery] = useState("");
-  const [purgeStep, setPurgeStep] = useState<number>(0);
 
   // Labour inputs
   const [newLabourName, setNewLabourName] = useState("");
@@ -1647,14 +1634,6 @@ export default function App() {
                       })}
                     </div>
 
-                    {!isSidebarCollapsed && (
-                      <div className="pt-4 border-t border-slate-800 flex flex-col gap-1.5 animate-fade-in">
-                        <span className="text-[9px] text-slate-500 font-mono uppercase">Authorized Role</span>
-                        <div className="w-full text-xs font-semibold bg-slate-950 text-slate-200 border border-slate-850 rounded-xl px-2.5 py-1.5">
-                          Admin Profile
-                        </div>
-                      </div>
-                    )}
                   </div>
 
                   {/* Web Application Right Content Board */}
@@ -1910,46 +1889,6 @@ export default function App() {
                                 </form>
                               </div>
 
-                              <div className="bg-slate-950 p-4 rounded-xl border border-slate-855 space-y-4">
-                                <h3 className="text-xs font-mono font-bold text-indigo-400 uppercase tracking-widest">Database Seed Management</h3>
-                                <p className="text-xs text-slate-400">Reinstall standard mock profiles, transaction items, ledger templates or purge existing records from browser storage.</p>
-                                <div className="flex gap-2.5">
-                                  <button
-                                    onClick={() => {
-                                      setLabours(prev => [
-                                        ...prev,
-                                        { id: `LAB-RESEED-${Date.now()}`, fullName: "Arun Swamy (Reseed)", phone: "+91 99000 11223", address: "Sathy", skillType: "Mason", dailyWage: 700, joiningDate: "2026-06-14", aadhaarNumber: `${Math.floor(100000000000 + Math.random() * 900000000000)}`, emergencyContact: "+91 99000 11220", isActive: true }
-                                      ]);
-                                      alert("Dev data seed injected successfully.");
-                                    }}
-                                    className="px-4 py-2 bg-indigo-600 hover:bg-indigo-500 text-slate-50 font-bold rounded-lg text-xs transition cursor-pointer"
-                                  >
-                                    Reseed Dev Data
-                                  </button>
-                                  <button
-                                    onClick={() => {
-                                      if (purgeStep === 0) {
-                                        setPurgeStep(1);
-                                      } else {
-                                        setLabours([]);
-                                        setVehicles([]);
-                                        setLoansGiven([]);
-                                        setFamilyExpenses([]);
-                                        setOfflineSyncQueue(0);
-                                        setPurgeStep(0);
-                                        alert("All local databases have been purged.");
-                                      }
-                                    }}
-                                    className={`px-4 py-2 rounded-lg text-xs font-bold transition cursor-pointer ${
-                                      purgeStep === 1 
-                                        ? "bg-rose-600 text-white border border-rose-500 animate-pulse" 
-                                        : "bg-rose-950/40 text-rose-450 border border-rose-900/40 hover:bg-rose-600 hover:text-white"
-                                    }`}
-                                  >
-                                    {purgeStep === 1 ? "Confirm Purge?" : "Purge Local Tables"}
-                                  </button>
-                                </div>
-                              </div>
                             </div>
                           )}
                         </div>
@@ -3122,44 +3061,6 @@ export default function App() {
                   </div>
 
                   {/* Purge / Reseed button widgets */}
-                  <div className="pt-4 border-t border-slate-800 flex flex-wrap gap-3">
-                    <button
-                      onClick={() => {
-                        // Reseed database simulator
-                        setLabours(prev => [
-                          ...prev,
-                          { id: `LAB-RESEED-${Date.now()}`, fullName: "Arun Swamy (Reseed)", phone: "+91 99000 11223", address: "Sathy", skillType: "Mason", dailyWage: 700, joiningDate: "2026-06-14", aadhaarNumber: `${Math.floor(100000000000 + Math.random() * 900000000000)}`, emergencyContact: "+91 99000 11220", isActive: true }
-                        ]);
-                        alert("Database seeds re-inserted successfully.");
-                      }}
-                      className="px-3.5 py-2 bg-indigo-600/30 text-indigo-300 border border-indigo-900/40 rounded-lg hover:bg-indigo-600 hover:text-white transition cursor-pointer text-xs font-semibold"
-                    >
-                      Reseed Dev Data
-                    </button>
-                    
-                    <button
-                      onClick={() => {
-                        if (purgeStep === 0) {
-                          setPurgeStep(1);
-                        } else {
-                          setLabours([]);
-                          setVehicles([]);
-                          setLoansGiven([]);
-                          setFamilyExpenses([]);
-                          setOfflineSyncQueue(0);
-                          setPurgeStep(0);
-                          alert("All local databases have been purged.");
-                        }
-                      }}
-                      className={`px-3.5 py-2 rounded-lg text-xs font-bold transition cursor-pointer ${
-                        purgeStep === 1 
-                          ? "bg-rose-600 text-white border border-rose-500 animate-pulse" 
-                          : "bg-rose-950/40 text-rose-450 border border-rose-900/40 hover:bg-rose-600 hover:text-white"
-                      }`}
-                    >
-                      {purgeStep === 1 ? "Confirm Purge?" : "Purge Local Tables"}
-                    </button>
-                  </div>
                 </div>
 
                 {/* Simulated Logs Terminal (Prints instant feedback for clicks) */}
