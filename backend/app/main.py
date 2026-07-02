@@ -132,6 +132,26 @@ def initialize_database() -> None:
     try:
         Base.metadata.create_all(bind=engine)
         print("Database initialized/synchronized successfully.\n")
+        
+        # Ensure default admin user exists in database
+        db = Session(bind=engine)
+        try:
+            admin_exists = db.query(User).filter(User.username == "admin").first()
+            if not admin_exists:
+                default_admin = User(
+                    username="admin",
+                    email="admin@local.app",
+                    hashed_password=hash_password("30072005"),
+                    role="Admin",
+                )
+                db.add(default_admin)
+                db.commit()
+                print("Default admin user created in database successfully.")
+        except Exception as err:
+            db.rollback()
+            print(f"Warning: Failed to ensure default admin user: {err}")
+        finally:
+            db.close()
     except OperationalError as exc:
         raise RuntimeError(
             "Unable to connect to Supabase from Render. The direct Supabase database endpoint is IPv6-only. "
