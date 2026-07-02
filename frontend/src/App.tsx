@@ -69,7 +69,7 @@ import {
 import { sqlSchemas, userStories, developmentRoadmap } from "./data";
 
 export default function App() {
-  const apiBaseUrl = import.meta.env.VITE_API_BASE_URL || "http://localhost:8000";
+  const apiBaseUrl = import.meta.env.VITE_API_BASE_URL || import.meta.env.VITE_API_URL || "http://localhost:8000";
   const defaultFamilyMembers: FamilyMember[] = [
     { id: "fam-abhiram", name: "Abhiram", relationship: "Self" },
     { id: "fam-praneet", name: "Praneet", relationship: "Brother" },
