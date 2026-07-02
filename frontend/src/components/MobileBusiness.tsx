@@ -46,7 +46,7 @@ import {
   toLabourApiPayload,
   toVehicleApiPayload,
 } from "../lib/sharedApi";
-const borewellLogo = "/src/assets/images/borewell_machine_logo_1782797350175.jpg";
+import borewellLogo from "../assets/images/borewell_machine_logo_1782797350175.jpg";
 
 export interface ServiceRecord {
   id: string;
