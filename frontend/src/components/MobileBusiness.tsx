@@ -1225,6 +1225,7 @@ export default function MobileBusiness({
 
   const handleOpenEditLabour = (lab: Labour) => {
     setEditingLabourId(lab.id);
+    setActiveLabourTab(lab.skillType);
     setFullName(lab.fullName);
     setPhone(lab.phone);
     setAadhaarNumber(lab.aadhaarNumber);
@@ -2727,7 +2728,10 @@ export default function MobileBusiness({
                   <div className="flex gap-2 justify-end pt-1">
                     <button
                       type="button"
-                      onClick={() => setIsLabourFormOpen(false)}
+                      onClick={() => {
+                        setIsLabourFormOpen(false);
+                        setEditingLabourId(null);
+                      }}
                       className="px-3 py-1 bg-slate-950 text-slate-400 rounded-lg text-[10px]"
                     >
                       Cancel
