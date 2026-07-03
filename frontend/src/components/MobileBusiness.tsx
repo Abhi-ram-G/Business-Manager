@@ -1074,14 +1074,14 @@ export default function MobileBusiness({
   const [attendanceSubMonth, setAttendanceSubMonth] = useState(5); // 0-indexed: 5 is June
   const [attendanceSubYear, setAttendanceSubYear] = useState(2026);
   const [expandedLabourId, setExpandedLabourId] = useState<string | null>(null);
-  const [selectedDayToEdit, setSelectedDayToEdit] = useState<number | null>(null);
+  const [selectedDaysToEdit, setSelectedDaysToEdit] = useState<number[]>([]);
   const [attendanceReasonText, setAttendanceReasonText] = useState("");
   const [isEditingAttendanceReason, setIsEditingAttendanceReason] = useState(false);
 
   React.useEffect(() => {
-    if (selectedDayToEdit !== null && expandedLabourId !== null) {
+    if (selectedDaysToEdit.length === 1 && expandedLabourId !== null) {
       const monthStr = String(attendanceSubMonth + 1).padStart(2, '0');
-      const activeDateString = `${attendanceSubYear}-${monthStr}-${String(selectedDayToEdit).padStart(2, '0')}`;
+      const activeDateString = `${attendanceSubYear}-${monthStr}-${String(selectedDaysToEdit[0]).padStart(2, '0')}`;
       const found = (attendance || []).find(r => r.labourId === expandedLabourId && r.date === activeDateString);
       if (found) {
         setAttendanceReasonText(found.reason || "");
@@ -1094,7 +1094,7 @@ export default function MobileBusiness({
       setAttendanceReasonText("");
       setIsEditingAttendanceReason(false);
     }
-  }, [selectedDayToEdit, expandedLabourId, attendanceSubMonth, attendanceSubYear, attendance]);
+  }, [selectedDaysToEdit, expandedLabourId, attendanceSubMonth, attendanceSubYear, attendance]);
 
   // A. Labour management state
   const [activeLabourTab, setActiveLabourTab] = useState<"Driver" | "Helper">("Driver");
@@ -2980,7 +2980,7 @@ export default function MobileBusiness({
                     value={attendanceSubMonth}
                     onChange={(e) => {
                       setAttendanceSubMonth(Number(e.target.value));
-                      setSelectedDayToEdit(null); // Reset active selected day
+                      setSelectedDaysToEdit([]); // Reset active selected days
                     }}
                     className="bg-slate-950 border border-slate-800 rounded-lg px-2 py-1 text-xs text-indigo-400 font-mono font-bold focus:outline-none cursor-pointer"
                   >
@@ -2988,12 +2988,12 @@ export default function MobileBusiness({
                       <option key={m} value={idx}>{m}</option>
                     ))}
                   </select>
-
+ 
                   <select
                     value={attendanceSubYear}
                     onChange={(e) => {
                       setAttendanceSubYear(Number(e.target.value));
-                      setSelectedDayToEdit(null); // Reset active selected day
+                      setSelectedDaysToEdit([]); // Reset active selected days
                     }}
                     className="bg-slate-950 border border-slate-800 rounded-lg px-2 py-1 text-xs text-indigo-400 font-mono font-bold focus:outline-none cursor-pointer"
                   >
@@ -3003,7 +3003,7 @@ export default function MobileBusiness({
                   </select>
                 </div>
               </div>
-
+ 
               {/* Quick Month Navigation Controls */}
               <div className="flex gap-1">
                 <button
@@ -3016,7 +3016,7 @@ export default function MobileBusiness({
                       }
                       return prev - 1;
                     });
-                    setSelectedDayToEdit(null);
+                    setSelectedDaysToEdit([]);
                   }}
                   className="bg-slate-950 border border-slate-800 px-2.5 py-1 text-xs text-slate-350 hover:bg-slate-800 cursor-pointer font-bold font-mono rounded-lg transition"
                 >
@@ -3032,7 +3032,7 @@ export default function MobileBusiness({
                       }
                       return prev + 1;
                     });
-                    setSelectedDayToEdit(null);
+                    setSelectedDaysToEdit([]);
                   }}
                   className="bg-slate-950 border border-slate-800 px-2.5 py-1 text-xs text-slate-350 hover:bg-slate-800 cursor-pointer font-bold font-mono rounded-lg transition"
                 >
@@ -3214,10 +3214,10 @@ export default function MobileBusiness({
                           onClick={() => {
                             if (isExpanded) {
                               setExpandedLabourId(null);
-                              setSelectedDayToEdit(null);
+                              setSelectedDaysToEdit([]);
                             } else {
                               setExpandedLabourId(lab.id);
-                              setSelectedDayToEdit(null);
+                              setSelectedDaysToEdit([]);
                             }
                           }}
                           className={`px-3 py-1.5 text-[9.5px] font-bold uppercase tracking-wider rounded-lg border transition cursor-pointer select-none flex items-center gap-1 ${
@@ -3264,7 +3264,7 @@ export default function MobileBusiness({
                                     }
                                     return prev - 1;
                                   });
-                                  setSelectedDayToEdit(null);
+                                  setSelectedDaysToEdit([]);
                                 }}
                                 className="bg-slate-900 border border-slate-800 px-2 py-1 text-[9px] text-slate-300 hover:text-white hover:bg-slate-800 rounded transition cursor-pointer font-bold font-mono"
                               >
@@ -3274,7 +3274,7 @@ export default function MobileBusiness({
                                 value={attendanceSubMonth}
                                 onChange={(e) => {
                                   setAttendanceSubMonth(Number(e.target.value));
-                                  setSelectedDayToEdit(null);
+                                  setSelectedDaysToEdit([]);
                                 }}
                                 className="bg-slate-900 border border-slate-800 text-[9.5px] text-indigo-400 font-mono font-black rounded px-1.5 py-0.5 focus:outline-none cursor-pointer uppercase mx-0.5"
                               >
@@ -3286,7 +3286,7 @@ export default function MobileBusiness({
                                 value={attendanceSubYear}
                                 onChange={(e) => {
                                   setAttendanceSubYear(Number(e.target.value));
-                                  setSelectedDayToEdit(null);
+                                  setSelectedDaysToEdit([]);
                                 }}
                                 className="bg-slate-900 border border-slate-800 text-[9.5px] text-indigo-400 font-mono font-black rounded px-1.5 py-0.5 focus:outline-none cursor-pointer uppercase mx-0.5"
                               >
@@ -3304,16 +3304,31 @@ export default function MobileBusiness({
                                     }
                                     return prev + 1;
                                   });
-                                  setSelectedDayToEdit(null);
+                                  setSelectedDaysToEdit([]);
                                 }}
                                 className="bg-slate-900 border border-slate-800 px-2 py-1 text-[9px] text-slate-300 hover:text-white hover:bg-slate-800 rounded transition cursor-pointer font-bold font-mono"
                               >
                                 Next →
                               </button>
                             </div>
-                            <span className="text-[8px] text-slate-550 font-mono uppercase text-right leading-none max-w-32">
-                              Tap a day to adjust status
-                            </span>
+                            <div className="flex items-center gap-1.5">
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  const allDays = Array.from({ length: daysInMonth }, (_, i) => i + 1);
+                                  setSelectedDaysToEdit(allDays);
+                                }}
+                                className="px-1.5 py-0.5 bg-indigo-950/60 border border-indigo-900/40 text-indigo-400 text-[8px] font-bold font-mono rounded hover:bg-indigo-950 transition cursor-pointer uppercase"
+                              >All</button>
+                              <button
+                                type="button"
+                                onClick={() => setSelectedDaysToEdit([])}
+                                className="px-1.5 py-0.5 bg-slate-900 border border-slate-800 text-slate-400 text-[8px] font-bold font-mono rounded hover:bg-slate-800 transition cursor-pointer uppercase"
+                              >Clear</button>
+                              <span className="text-[8px] text-slate-550 font-mono uppercase leading-none">
+                                {selectedDaysToEdit.length > 0 ? `${selectedDaysToEdit.length} selected` : "Tap to select"}
+                              </span>
+                            </div>
                           </div>
 
                           {/* Calendar Week Days headers */}
@@ -3345,16 +3360,22 @@ export default function MobileBusiness({
                                 cellColor = "bg-rose-950/40 text-rose-455 border-rose-900/65 hover:bg-rose-950/60";
                               }
 
-                              const isActiveDay = selectedDayToEdit === dayBox;
-                              if (isActiveDay) {
-                                cellColor += " ring-1 ring-indigo-505 ring-offset-2 ring-offset-slate-950";
+                              const isSelectedDay = selectedDaysToEdit.includes(dayBox);
+                              if (isSelectedDay) {
+                                cellColor += " ring-2 ring-indigo-400 ring-offset-1 ring-offset-slate-950";
                               }
 
                               return (
                                 <button
                                   key={dayBox}
                                   type="button"
-                                  onClick={() => setSelectedDayToEdit(dayBox)}
+                                  onClick={() => {
+                                    setSelectedDaysToEdit(prev =>
+                                      prev.includes(dayBox)
+                                        ? prev.filter(d => d !== dayBox)
+                                        : [...prev, dayBox].sort((a, b) => a - b)
+                                    );
+                                  }}
                                   className={`h-8 rounded-lg flex flex-col items-center justify-center text-[10px] border font-mono font-bold transition cursor-pointer relative ${cellColor}`}
                                 >
                                   <span>{dayBox}</span>
@@ -3370,147 +3391,133 @@ export default function MobileBusiness({
                             })}
                           </div>
 
-                          {/* Quick Edit control panel for selected day in month sheet */}
-                          {selectedDayToEdit !== null && (() => {
-                            const activeDateString = `${monthPrefix}${String(selectedDayToEdit).padStart(2, '0')}`;
-                            const foundRecord = (attendance || []).find(
-                              r => r.labourId === lab.id && r.date === activeDateString
-                            );
+                          {/* Multi-date Quick Edit panel */}
+                          {selectedDaysToEdit.length > 0 && (() => {
+                            // Compute statuses for all selected days
+                            const selectedStatuses = selectedDaysToEdit.map(d => {
+                              const ds = `${monthPrefix}${String(d).padStart(2, '0')}`;
+                              return (attendance || []).find(r => r.labourId === lab.id && r.date === ds)?.status;
+                            });
+                            const uniqueStatuses = [...new Set(selectedStatuses.filter(Boolean))];
+                            const displayStatus = selectedDaysToEdit.length === 1
+                              ? (selectedStatuses[0] || "Unmarked")
+                              : uniqueStatuses.length === 1 ? uniqueStatuses[0] : (uniqueStatuses.length > 1 ? "Mixed" : "Unmarked");
+
+                            // Helper: mark all selected days with a given status
+                            const markAllSelected = (newStatus: "Present" | "Half-Day" | "Absent") => {
+                              setAttendance(prev => {
+                                let updated = [...prev];
+                                selectedDaysToEdit.forEach(d => {
+                                  const ds = `${monthPrefix}${String(d).padStart(2, '0')}`;
+                                  const idx2 = updated.findIndex(r => r.labourId === lab.id && r.date === ds);
+                                  if (idx2 > -1) {
+                                    updated[idx2] = { ...updated[idx2], status: newStatus };
+                                  } else {
+                                    updated.push({ id: `att-${Date.now()}-${lab.id}-${d}`, labourId: lab.id, date: ds, status: newStatus });
+                                  }
+                                });
+                                return updated;
+                              });
+                              selectedDaysToEdit.forEach(d => {
+                                const ds = `${monthPrefix}${String(d).padStart(2, '0')}`;
+                                void requestJson(apiBaseUrl, "/api/v1/labours/attendance", {
+                                  method: "POST",
+                                  headers: { "Content-Type": "application/json" },
+                                  body: JSON.stringify({ date: ds, records: [{ labour_id: lab.id, status: newStatus, reason: null }] }),
+                                }).catch(console.error);
+                              });
+                              triggerOnlineSync(`Marked ${lab.fullName} ${newStatus} for ${selectedDaysToEdit.length} days in ${monthName}`);
+                            };
+
+                            // Helper: clear all selected days
+                            const clearAllSelected = () => {
+                              setAttendance(prev => prev.filter(r => !(r.labourId === lab.id && selectedDaysToEdit.map(d => `${monthPrefix}${String(d).padStart(2, '0')}`).includes(r.date))));
+                              selectedDaysToEdit.forEach(d => {
+                                const ds = `${monthPrefix}${String(d).padStart(2, '0')}`;
+                                void requestJson(apiBaseUrl, `/api/v1/labours/attendance/${lab.id}/${ds}`, { method: "DELETE" }).catch(console.error);
+                              });
+                              triggerOnlineSync(`Cleared attendance for ${lab.fullName} on ${selectedDaysToEdit.length} days in ${monthName}`);
+                            };
+
+                            // For single day: resolve foundRecord for reason editing
+                            const singleDateString = selectedDaysToEdit.length === 1
+                              ? `${monthPrefix}${String(selectedDaysToEdit[0]).padStart(2, '0')}`
+                              : null;
+                            const foundRecord = singleDateString
+                              ? (attendance || []).find(r => r.labourId === lab.id && r.date === singleDateString)
+                              : null;
                             const recordStatus = foundRecord?.status;
-
                             return (
-                              <div className="bg-slate-900/85 border border-slate-850/60 p-3 rounded-lg space-y-2 text-[9.5px]">
+                              <div className="bg-slate-900/85 border border-indigo-900/30 p-3 rounded-xl space-y-2.5 text-[9.5px]">
+                                {/* Header: selected day count and date info */}
                                 <div className="flex justify-between items-center font-mono">
-                                  <span>
-                                    Date: <span className="text-white font-bold">{monthName} {selectedDayToEdit}, {attendanceSubYear}</span>
+                                  <span className="text-indigo-300 font-bold text-[10px]">
+                                    {selectedDaysToEdit.length === 1
+                                      ? `${monthName} ${selectedDaysToEdit[0]}, ${attendanceSubYear}`
+                                      : `${selectedDaysToEdit.length} Days Selected`}
                                   </span>
-                                  <span>
-                                    Status: <span className={`font-black uppercase ${
-                                      recordStatus === "Present" ? "text-emerald-400" :
-                                      recordStatus === "Half-Day" ? "text-cyan-400" :
-                                      recordStatus === "Absent" ? "text-rose-450" : "text-slate-500"
-                                    }`}>{recordStatus || "Unmarked"}</span>
-                                  </span>
+                                  <div className="flex items-center gap-1.5">
+                                    <span className={`font-black uppercase text-[9px] ${
+                                      displayStatus === "Present" ? "text-emerald-400" :
+                                      displayStatus === "Half-Day" ? "text-cyan-400" :
+                                      displayStatus === "Absent" ? "text-rose-400" :
+                                      displayStatus === "Mixed" ? "text-amber-400" : "text-slate-500"
+                                    }`}>{displayStatus}</span>
+                                    <button
+                                      type="button"
+                                      onClick={() => setSelectedDaysToEdit([])}
+                                      className="px-1.5 py-0.5 bg-slate-800 border border-slate-700 text-slate-400 text-[8px] font-bold font-mono rounded hover:bg-slate-700 transition cursor-pointer uppercase"
+                                    >✕ Deselect All</button>
+                                  </div>
                                 </div>
 
-                                <div className="grid grid-cols-4 gap-1.5 pt-1">
+                                {/* Batch Mark Buttons */}
+                                <div className="grid grid-cols-4 gap-1.5 pt-0.5">
                                   <button
                                     type="button"
-                                    onClick={() => {
-                                      setAttendance(prev => {
-                                        const foundIdx = prev.findIndex(r => r.labourId === lab.id && r.date === activeDateString);
-                                        if (foundIdx > -1) {
-                                          return prev.map((item, idx2) => idx2 === foundIdx ? { ...item, status: "Present" } : item);
-                                        } else {
-                                          return [
-                                            ...prev,
-                                            { id: `att-${Date.now()}-${lab.id}`, labourId: lab.id, date: activeDateString, status: "Present" }
-                                          ];
-                                        }
-                                      });
-                                      triggerOnlineSync(`Marked ${lab.fullName} Present for ${activeDateString}`);
-                                      void requestJson(apiBaseUrl, "/api/v1/labours/attendance", {
-                                        method: "POST",
-                                        headers: { "Content-Type": "application/json" },
-                                        body: JSON.stringify({
-                                          date: activeDateString,
-                                          records: [{ labour_id: lab.id, status: "Present", reason: null }],
-                                        }),
-                                      }).catch((error) => console.error(error));
-                                    }}
-                                    className={`py-1 text-[8.5px] font-black uppercase rounded-md transition border cursor-pointer ${
-                                      recordStatus === "Present"
-                                        ? "bg-emerald-500 text-white border-emerald-500 shadow-md shadow-emerald-950/20"
-                                        : "bg-slate-950 border-slate-800 text-slate-400 hover:bg-slate-850 hover:text-white"
+                                    onClick={() => markAllSelected("Present")}
+                                    className={`py-1.5 text-[8.5px] font-black uppercase rounded-lg transition border cursor-pointer ${
+                                      displayStatus === "Present"
+                                        ? "bg-emerald-500 text-white border-emerald-500 shadow-md shadow-emerald-950/30"
+                                        : "bg-slate-950 border-slate-800 text-slate-400 hover:bg-emerald-950/40 hover:text-emerald-400 hover:border-emerald-900/50"
                                     }`}
                                   >
-                                    Present
+                                    ✓ Present
                                   </button>
                                   <button
                                     type="button"
-                                    onClick={() => {
-                                      setAttendance(prev => {
-                                        const foundIdx = prev.findIndex(r => r.labourId === lab.id && r.date === activeDateString);
-                                        if (foundIdx > -1) {
-                                          return prev.map((item, idx2) => idx2 === foundIdx ? { ...item, status: "Half-Day" } : item);
-                                        } else {
-                                          return [
-                                            ...prev,
-                                            { id: `att-${Date.now()}-${lab.id}`, labourId: lab.id, date: activeDateString, status: "Half-Day" }
-                                          ];
-                                        }
-                                      });
-                                      triggerOnlineSync(`Marked ${lab.fullName} Half-Day for ${activeDateString}`);
-                                      void requestJson(apiBaseUrl, "/api/v1/labours/attendance", {
-                                        method: "POST",
-                                        headers: { "Content-Type": "application/json" },
-                                        body: JSON.stringify({
-                                          date: activeDateString,
-                                          records: [{ labour_id: lab.id, status: "Half-Day", reason: null }],
-                                        }),
-                                      }).catch((error) => console.error(error));
-                                    }}
-                                    className={`py-1 text-[8.5px] font-black uppercase rounded-md transition border cursor-pointer ${
-                                      recordStatus === "Half-Day"
-                                        ? "bg-cyan-500 text-white border-cyan-500 shadow-md shadow-cyan-950/20"
-                                        : "bg-slate-950 border-slate-800 text-slate-400 hover:bg-slate-850 hover:text-white"
+                                    onClick={() => markAllSelected("Half-Day")}
+                                    className={`py-1.5 text-[8.5px] font-black uppercase rounded-lg transition border cursor-pointer ${
+                                      displayStatus === "Half-Day"
+                                        ? "bg-cyan-500 text-white border-cyan-500 shadow-md shadow-cyan-950/30"
+                                        : "bg-slate-950 border-slate-800 text-slate-400 hover:bg-cyan-950/40 hover:text-cyan-400 hover:border-cyan-900/50"
                                     }`}
                                   >
-                                    Half-day
+                                    ½ Half
                                   </button>
                                   <button
                                     type="button"
-                                    onClick={() => {
-                                      setAttendance(prev => {
-                                        const foundIdx = prev.findIndex(r => r.labourId === lab.id && r.date === activeDateString);
-                                        if (foundIdx > -1) {
-                                          return prev.map((item, idx2) => idx2 === foundIdx ? { ...item, status: "Absent" } : item);
-                                        } else {
-                                          return [
-                                            ...prev,
-                                            { id: `att-${Date.now()}-${lab.id}`, labourId: lab.id, date: activeDateString, status: "Absent" }
-                                          ];
-                                        }
-                                      });
-                                      triggerOnlineSync(`Marked ${lab.fullName} Absent for ${activeDateString}`);
-                                      void requestJson(apiBaseUrl, "/api/v1/labours/attendance", {
-                                        method: "POST",
-                                        headers: { "Content-Type": "application/json" },
-                                        body: JSON.stringify({
-                                          date: activeDateString,
-                                          records: [{ labour_id: lab.id, status: "Absent", reason: null }],
-                                        }),
-                                      }).catch((error) => console.error(error));
-                                    }}
-                                    className={`py-1 text-[8.5px] font-black uppercase rounded-md transition border cursor-pointer ${
-                                      recordStatus === "Absent"
-                                        ? "bg-rose-500 text-white border-rose-500 shadow-md shadow-rose-950/20"
-                                        : "bg-slate-950 border-slate-800 text-slate-400 hover:bg-slate-850 hover:text-white"
+                                    onClick={() => markAllSelected("Absent")}
+                                    className={`py-1.5 text-[8.5px] font-black uppercase rounded-lg transition border cursor-pointer ${
+                                      displayStatus === "Absent"
+                                        ? "bg-rose-500 text-white border-rose-500 shadow-md shadow-rose-950/30"
+                                        : "bg-slate-950 border-slate-800 text-slate-400 hover:bg-rose-950/40 hover:text-rose-400 hover:border-rose-900/50"
                                     }`}
                                   >
-                                    Absent
+                                    ✗ Absent
                                   </button>
                                   <button
                                     type="button"
-                                    onClick={() => {
-                                      setAttendance(prev => prev.filter(r => !(r.labourId === lab.id && r.date === activeDateString)));
-                                      triggerOnlineSync(`Cleared attendance record for ${lab.fullName} on ${activeDateString}`);
-                                      void requestJson(apiBaseUrl, `/api/v1/labours/attendance/${lab.id}/${activeDateString}`, {
-                                        method: "DELETE",
-                                      }).catch((error) => console.error(error));
-                                    }}
-                                    className={`py-1 text-[8.5px] font-black uppercase rounded-md transition border cursor-pointer ${
-                                      !recordStatus
-                                        ? "bg-slate-500 text-white border-slate-500"
-                                        : "bg-slate-950 border-slate-800 text-slate-500 hover:bg-slate-850 hover:text-white"
-                                    }`}
+                                    onClick={() => clearAllSelected()}
+                                    className="py-1.5 text-[8.5px] font-black uppercase rounded-lg transition border cursor-pointer bg-slate-950 border-slate-800 text-slate-500 hover:bg-slate-800 hover:text-white"
                                   >
-                                    Clear
+                                    ⌫ Clear
                                   </button>
                                 </div>
 
-                                {(recordStatus === "Absent" || recordStatus === "Half-Day") && (
-                                  <div className="mt-3 pt-2.5 border-t border-slate-800/60 space-y-2">
+                                {/* Reason editing (only shown when exactly 1 day is selected and it has Absent or Half-Day) */}
+                                {selectedDaysToEdit.length === 1 && (recordStatus === "Absent" || recordStatus === "Half-Day") && (
+                                  <div className="mt-2 pt-2.5 border-t border-slate-800/60 space-y-2">
                                     <div className="flex justify-between items-center">
                                       <span className="text-[9px] text-slate-500 font-bold uppercase tracking-wider font-mono">
                                         Reason for {recordStatus}
@@ -3553,21 +3560,22 @@ export default function MobileBusiness({
                                           <button
                                             type="button"
                                             onClick={() => {
+                                              if (!singleDateString) return;
                                               setAttendance(prev => {
                                                 return prev.map(r => {
-                                                  if (r.labourId === lab.id && r.date === activeDateString) {
+                                                  if (r.labourId === lab.id && r.date === singleDateString) {
                                                     return { ...r, reason: attendanceReasonText.trim() };
                                                   }
                                                   return r;
                                                 });
                                               });
                                               setIsEditingAttendanceReason(false);
-                                              triggerOnlineSync(`Saved reason for ${lab.fullName} on ${activeDateString}: ${attendanceReasonText}`);
+                                              triggerOnlineSync(`Saved reason for ${lab.fullName} on ${singleDateString}: ${attendanceReasonText}`);
                                               void requestJson(apiBaseUrl, "/api/v1/labours/attendance", {
                                                 method: "POST",
                                                 headers: { "Content-Type": "application/json" },
                                                 body: JSON.stringify({
-                                                  date: activeDateString,
+                                                  date: singleDateString,
                                                   records: [{
                                                     labour_id: lab.id,
                                                     status: recordStatus || "Absent",
