@@ -119,6 +119,7 @@ export const mapBusinessBillFromApi = (item: ApiRecord): BusinessBill => ({
   casing7Rate: item.casing7_rate != null ? toNumber(item.casing7_rate) : undefined,
   customSlabRates: (item.custom_slab_rates as BusinessBill["customSlabRates"]) ?? undefined,
   discountAmount: item.discount_amount != null ? toNumber(item.discount_amount) : undefined,
+  source: "server",
 });
 
 export const mapLoanGivenFromApi = (item: ApiRecord): LoanGiven => ({

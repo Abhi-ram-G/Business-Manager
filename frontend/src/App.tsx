@@ -344,6 +344,7 @@ const DEFAULT_BUSINESS_BILLS: BusinessBill[] = [
       { slabRange: "800 - 900", feet: 100, rate: 310, amount: 31000 },
       { slabRange: "900 - 1000", feet: 50, rate: 380, amount: 19000 },
     ],
+    source: "local",
   },
   {
     id: "bill-2",
@@ -365,6 +366,7 @@ const DEFAULT_BUSINESS_BILLS: BusinessBill[] = [
     totalDrillingCharges: 102505,
     casingCharges: 10500,
     calculatedBreakdown: [],
+    source: "local",
   },
 ];
 
@@ -710,7 +712,10 @@ export default function App() {
 
   const [businessBills, setBusinessBills] = useState<BusinessBill[]>(() => {
     const stored = loadStoredArray<BusinessBill>("srs_business_bills", []);
-    return stored.length > 0 ? stored : DEFAULT_BUSINESS_BILLS;
+    if (stored.length > 0) {
+      return stored.map((bill) => ({ ...bill, source: bill.source ?? "local" }));
+    }
+    return DEFAULT_BUSINESS_BILLS;
   });
 
   const [fuelEntries, setFuelEntries] = useState<FuelEntry[]>(() => {

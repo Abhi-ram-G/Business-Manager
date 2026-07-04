@@ -150,6 +150,12 @@ export default function MobileBusiness({
     if (!deleteConfirmation) return;
     const { id, name, type } = deleteConfirmation;
     if (type === "bill") {
+      const billToDelete = businessBills.find((bill) => bill.id === id);
+      if (!billToDelete || billToDelete.source !== "server") {
+        setBusinessBills((prev) => prev.filter((bill) => bill.id !== id));
+        triggerOnlineSync(`DELETED BILL FOR ${name}`);
+        return;
+      }
       try {
         await requestJson(apiBaseUrl, `/api/v1/business/bills/${id}`, { method: "DELETE" });
         setBusinessBills((prev) => prev.filter((bill) => bill.id !== id));
@@ -157,12 +163,6 @@ export default function MobileBusiness({
         triggerOnlineSync(`DELETED BILL FOR ${name}`);
       } catch (error) {
         console.error(error);
-        const message = error instanceof Error ? error.message.toLowerCase() : "";
-        if (message.includes("not found") || message.includes("404")) {
-          setBusinessBills((prev) => prev.filter((bill) => bill.id !== id));
-          triggerOnlineSync(`DELETED BILL FOR ${name}`);
-          return;
-        }
         alert("Unable to delete the bill right now.");
       }
     } else if (type === "fuel") {
@@ -560,6 +560,8 @@ export default function MobileBusiness({
     };
 
     const finalBillTotal = Math.max(0, calc.grand - discountAmount);
+    const existingBill = editingBillId ? businessBills.find((bill) => bill.id === editingBillId) : undefined;
+    const shouldPersistToServer = !editingBillId || existingBill?.source === "server";
 
     const payloadBill: BusinessBill = {
       id: editingBillId || `bill-${Date.now()}`,
@@ -585,8 +587,46 @@ export default function MobileBusiness({
       calculatedBreakdown: calc.breakdownLines,
       totalDrillingCharges: calc.totalDrilling,
       casingCharges: calc.casingTotal,
+      source: shouldPersistToServer ? "server" : (existingBill?.source ?? "local"),
       ...savedCustomFields
     };
+
+      if (!shouldPersistToServer) {
+        setBusinessBills((prev) => {
+          if (editingBillId) {
+            return prev.map((bill) => (bill.id === editingBillId ? payloadBill : bill));
+          }
+          return [payloadBill, ...prev];
+        });
+        triggerOnlineSync(`${editingBillId ? "UPDATED" : "GENERATED"} BOREWELL BILL: ${payloadBill.invoiceNo || payloadBill.clientName} (local only)`);
+        setEditingBillId(null);
+        setIsBillFormOpen(false);
+        setBillClient("");
+        setBillDescription("");
+        setBorewellType("Tight Formation");
+        setBillMode("New");
+        setExistingDepth(0);
+        setOldFeetRate(90);
+        setFinalDepth(950);
+        setStartingPrice(100);
+        setCasingType("7 inch");
+        setCasingFeet(20);
+        setCasingRate(350);
+        setBatta(1500);
+        setDiscountAmount(0);
+        setCustomLocation("");
+        setCustomBrokerName("");
+        setCustomBillDateType("automatic");
+        setCustomStartingFeet(0);
+        setCustomEndingFeet(950);
+        setCasing10Feet(0);
+        setCasing10Rate(450);
+        setCasing7Feet(20);
+        setCasing7Rate(350);
+        setCustomSlabRates({});
+        await onSharedDataChanged?.();
+        return;
+      }
 
       try {
         const response = await requestJson(
@@ -5499,9 +5539,16 @@ export default function MobileBusiness({
                       <div className="flex gap-1.5 font-bold">
                         <button
                           type="button"
-                          onClick={() => {
+    onClick={() => {
                             void (async () => {
                               const nextStatus = b.status === "Paid" ? "Pending" : "Paid";
+                              if (b.source !== "server") {
+                                setBusinessBills((prev) =>
+                                  prev.map((item) => (item.id === b.id ? { ...item, status: nextStatus } : item))
+                                );
+                                triggerOnlineSync(`Toggled status of Invoice ${b.invoiceNo} (local only)`);
+                                return;
+                              }
                               try {
                                 const response = await requestJson(apiBaseUrl, `/api/v1/business/bills/${b.id}`, {
                                   method: "PUT",

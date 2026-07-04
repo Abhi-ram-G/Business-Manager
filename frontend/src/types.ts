@@ -138,6 +138,7 @@ export interface BusinessBill {
   casing7Rate?: number;
   customSlabRates?: Record<string, number>;
   discountAmount?: number;
+  source?: "local" | "server";
 }
 
 export interface FuelEntry {
