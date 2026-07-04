@@ -602,8 +602,7 @@ export default function MobileBusiness({
   React.useEffect(() => {
     if (billMode === "Customize" && customBillDateType === "automatic") {
       const today = new Date().toISOString().split("T")[0];
-      setBillDate(today);
-      const fut = new Date();
+      setBillDate(today);      const fut = new Date();
       fut.setDate(fut.getDate() + 15);
       setBillDueDate(fut.toISOString().split("T")[0]);
     }
@@ -665,7 +664,11 @@ export default function MobileBusiness({
       casing10Rate,
       casing7Feet,
       casing7Rate,
-      customSlabRates: isCustom ? customSlabRates : {}
+      customSlabRates: isCustom ? customSlabRates : {},
+      usedBitId: selectedBitId || undefined,
+      usedHammerId: selectedHammerId || undefined,
+      usedCasing10HammerId: selectedCasing10HammerId || undefined,
+      usedCasing7HammerId: selectedCasing7HammerId || undefined,
     };
 
     const finalBillTotal = Math.max(0, calc.grand - discountAmount);
@@ -699,8 +702,57 @@ export default function MobileBusiness({
       source: shouldPersistToServer ? "server" : (existingBill?.source ?? "local"),
       ...savedCustomFields
     };
+    // === HAMMER FEET TRACKING (internal, not in PDF) ===
+    const drillingFeet = billMode === "New" 
+      ? Math.max(0, (isCustom ? customEndingFeet : finalDepth) - ((casing7Feet || 0) + (casing10Feet || 0)))
+      : 0;
 
-      if (!shouldPersistToServer) {
+    setHammerEntries((prev) =>
+      prev.map((h) => {
+        let history = (h.usageHistory || []).filter((rec) => rec.billId !== payloadBill.id && rec.id !== payloadBill.id);
+
+        let addedFeet = 0;
+        if (h.id === selectedHammerId && drillingFeet > 0) {
+          addedFeet = drillingFeet;
+        } else if (h.id === selectedCasing10HammerId && (casing10Feet || 0) > 0) {
+          addedFeet = casing10Feet || 0;
+        } else if (h.id === selectedCasing7HammerId && (casing7Feet || 0) > 0) {
+          addedFeet = casing7Feet || 0;
+        }
+
+        if (addedFeet > 0) {
+          const newRecord: HammerUsageRecord = {
+            id: `rec-${Date.now()}-${h.id}`,
+            billId: payloadBill.id,
+            date: billDate,
+            clientName: billClient,
+            location: customLocation || "",
+            calculatedFeet: addedFeet
+          };
+          history = [...history, newRecord];
+        }
+
+        const totalFeet = history.reduce((sum, r) => sum + r.calculatedFeet, 0);
+        let casingType = h.casingType;
+        if (totalFeet >= h.capableFeetDepth && !casingType) {
+          const casingChoice = window.confirm(
+            `⚠️ Hammer ${h.hammerNo} has reached its capable feet limit!\n` +
+            `Total feet used: ${totalFeet} ft (limit: ${h.capableFeetDepth} ft)\n\n` +
+            `Click OK to mark as 7" Casing Hammer\n` +
+            `Click Cancel to mark as 10" Casing Hammer`
+          ) ? "7 inch" : "10 inch";
+          casingType = casingChoice;
+        }
+
+        return {
+          ...h,
+          usageHistory: history,
+          casingType
+        };
+      })
+    );
+
+    if (!shouldPersistToServer) {
         setBusinessBills((prev) => {
           if (editingBillId) {
             return prev.map((bill) => (bill.id === editingBillId ? payloadBill : bill));
@@ -803,42 +855,11 @@ export default function MobileBusiness({
       return;
     }
     
-    // === HAMMER FEET TRACKING (internal, not in PDF) ===
-    // Only for New Bore mode when a hammer is selected
-    if (billMode === "New" && selectedHammerId && !editingBillId) {
-      const c7 = casing7Feet || 0;
-      const c10 = casing10Feet || 0;
-      const usedFeet = Math.max(0, finalDepth - (c7 + c10));
-      const billId = payloadBill.id;
-
-      setHammerEntries(prev => prev.map(h => {
-        if (h.id !== selectedHammerId) return h;
-        const newRecord: HammerUsageRecord = {
-          id: `HU-${Date.now()}`,
-          date: billDate,
-          clientName: billClient,
-          location: customLocation || "",
-          calculatedFeet: usedFeet,
-          billId,
-        };
-        const updatedHistory = [...h.usageHistory, newRecord];
-        const totalFeet = updatedHistory.reduce((sum, r) => sum + r.calculatedFeet, 0);
-        // Check if hammer has reached its capable depth limit
-        if (totalFeet >= h.capableFeetDepth) {
-          const casingChoice = window.confirm(
-            `⚠️ Hammer ${h.hammerNo} has reached its capable feet limit!\n` +
-            `Total feet used: ${totalFeet} ft (limit: ${h.capableFeetDepth} ft)\n\n` +
-            `Click OK to mark as 7" Casing Hammer\n` +
-            `Click Cancel to mark as 10" Casing Hammer`
-          ) ? "7 inch" : "10 inch";
-          return { ...h, usageHistory: updatedHistory, casingType: casingChoice };
-        }
-        return { ...h, usageHistory: updatedHistory };
-      }));
-    }
     // Reset bit/hammer selection
     setSelectedBitId("");
     setSelectedHammerId("");
+    setSelectedCasing10HammerId("");
+    setSelectedCasing7HammerId("");
         setBillClient("");
     setBillDescription("");
     setBorewellType("Tight Formation");
@@ -898,6 +919,10 @@ export default function MobileBusiness({
     setCasing7Rate(bill.casing7Rate || 350);
     setCustomSlabRates(bill.customSlabRates || {});
     setDiscountAmount(bill.discountAmount !== undefined ? bill.discountAmount : 0);
+    setSelectedBitId(bill.usedBitId || "");
+    setSelectedHammerId(bill.usedHammerId || "");
+    setSelectedCasing10HammerId(bill.usedCasing10HammerId || "");
+    setSelectedCasing7HammerId(bill.usedCasing7HammerId || "");
 
     setIsBillFormOpen(true);
   };
@@ -3337,9 +3362,10 @@ export default function MobileBusiness({
                   })
                 )}
               </div>
-            )}
-          </div>
-        )}
+            </div>
+          )}
+        </div>
+      )}
 
                   {/* ======================= B-1. BIT & HAMMER PURCHASE SUBSECTION ======================= */}
       {activeMainSection === "management" && activeSubSection === "bit" && (
@@ -6089,6 +6115,24 @@ export default function MobileBusiness({
                         className="w-full bg-slate-950 p-1.5 rounded text-pink-400 font-mono border border-slate-850 focus:border-pink-500 focus:ring-1 focus:ring-pink-500/25"
                       />
                     </div>
+                    <div className="col-span-2 pt-1.5 border-t border-slate-900/60 mt-1">
+                      <div className="text-[8px] text-slate-400 font-mono font-bold uppercase block mb-1">10" Casing Hammer Used</div>
+                      <select
+                        value={selectedCasing10HammerId}
+                        onChange={(e) => setSelectedCasing10HammerId(e.target.value)}
+                        className="w-full bg-slate-950 p-1.5 rounded text-slate-200 border border-slate-850 font-mono text-[9px] focus:outline-none focus:border-pink-500"
+                      >
+                        <option value="">No 10" Casing Hammer Selected</option>
+                        {hammerEntries.filter(h => h.casingType === "10 inch").map((h) => {
+                          const totalUsed = (h.usageHistory || []).reduce((sum, item) => sum + item.calculatedFeet, 0);
+                          return (
+                            <option key={h.id} value={h.id}>
+                              {h.hammerNo} • {h.brand} ({totalUsed}/{h.capableFeetDepth} ft used)
+                            </option>
+                          );
+                        })}
+                      </select>
+                    </div>
                   </div>
 
                   <div className="grid grid-cols-2 gap-2 text-[10px] bg-slate-950/40 p-2 rounded-xl border border-slate-850">
@@ -6111,6 +6155,24 @@ export default function MobileBusiness({
                         onChange={(e) => setCasing7Rate(Math.max(0, Number(e.target.value)))}
                         className="w-full bg-slate-950 p-1.5 rounded text-violet-400 font-mono border border-slate-850 focus:border-violet-500 focus:ring-1 focus:ring-violet-500/25"
                       />
+                    </div>
+                    <div className="col-span-2 pt-1.5 border-t border-slate-900/60 mt-1">
+                      <div className="text-[8px] text-slate-400 font-mono font-bold uppercase block mb-1">7" Casing Hammer Used</div>
+                      <select
+                        value={selectedCasing7HammerId}
+                        onChange={(e) => setSelectedCasing7HammerId(e.target.value)}
+                        className="w-full bg-slate-950 p-1.5 rounded text-slate-200 border border-slate-850 font-mono text-[9px] focus:outline-none focus:border-violet-500"
+                      >
+                        <option value="">No 7" Casing Hammer Selected</option>
+                        {hammerEntries.filter(h => h.casingType === "7 inch").map((h) => {
+                          const totalUsed = (h.usageHistory || []).reduce((sum, item) => sum + item.calculatedFeet, 0);
+                          return (
+                            <option key={h.id} value={h.id}>
+                              {h.hammerNo} • {h.brand} ({totalUsed}/{h.capableFeetDepth} ft used)
+                            </option>
+                          );
+                        })}
+                      </select>
                     </div>
                   </div>
 

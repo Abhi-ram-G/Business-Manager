@@ -173,6 +173,8 @@ export interface BusinessBill {
   // Internal tracking only — NOT printed in invoice PDF
   usedBitId?: string;
   usedHammerId?: string;
+  usedCasing10HammerId?: string;
+  usedCasing7HammerId?: string;
   hammerFeetUsed?: number;
 }
 

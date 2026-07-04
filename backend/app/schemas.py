@@ -198,6 +198,9 @@ class BusinessBillCreate(BaseModel):
     discount_amount: float | None = None
     bit_id: str | None = None
     hammer_id: str | None = None
+    casing10_hammer_id: str | None = None
+    casing7_hammer_id: str | None = None
+
 
 
 
@@ -237,6 +240,9 @@ class BusinessBillUpdate(BaseModel):
     discount_amount: float | None = None
     bit_id: str | None = None
     hammer_id: str | None = None
+    casing10_hammer_id: str | None = None
+    casing7_hammer_id: str | None = None
+
 
 
 

@@ -163,6 +163,8 @@ class BusinessBill(Base, TimestampMixin):
     discount_amount: Mapped[float | None] = mapped_column(Numeric(10, 2))
     bit_id: Mapped[str | None] = mapped_column(String(50))
     hammer_id: Mapped[str | None] = mapped_column(String(50))
+    casing10_hammer_id: Mapped[str | None] = mapped_column(String(50))
+    casing7_hammer_id: Mapped[str | None] = mapped_column(String(50))
 
 
 
