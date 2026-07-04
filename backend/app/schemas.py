@@ -219,12 +219,26 @@ class FuelEntryCreate(BaseModel):
     id: str
     vehicle_id: str | None = None
     date: dt_date | None = None
+    date_time: str | None = None
     liters: float | None = None
     cost: float | None = None
     current_odometer: int | None = None
     fuel_type: str | None = None
     per_liter_cost: float | None = None
     vehicle_name: str | None = None
+
+
+class FuelEntryUpdate(BaseModel):
+    vehicle_id: str | None = None
+    date: dt_date | None = None
+    liters: float | None = None
+    cost: float | None = None
+    current_odometer: int | None = None
+    fuel_type: str | None = None
+    per_liter_cost: float | None = None
+    date_time: str | None = None
+    vehicle_name: str | None = None
+    total_amount: float | None = None
 
 
 class TripCreate(BaseModel):

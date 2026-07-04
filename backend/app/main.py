@@ -43,6 +43,7 @@ from .schemas import (
     FamilyMemberCreate,
     FamilyMemberUpdate,
     FuelEntryCreate,
+    FuelEntryUpdate,
     IncomeEntryCreate,
     IncomeEntryUpdate,
     LabourCreate,
@@ -427,7 +428,13 @@ def delete_vehicle(vehicle_id: str, db: Session = Depends(get_db)):
 
 @app.post("/api/v1/vehicles/fuel", status_code=status.HTTP_201_CREATED)
 def create_fuel_entry(payload: FuelEntryCreate, db: Session = Depends(get_db)):
-    entry = FuelEntry(**payload.model_dump())
+    payload_data = payload.model_dump()
+    date_time_value = payload_data.pop("date_time", None)
+    entry = FuelEntry(**payload_data)
+    if date_time_value:
+        entry.date_time = datetime.fromisoformat(str(date_time_value))
+    elif entry.date is not None:
+        entry.date_time = datetime.combine(entry.date, datetime.min.time()).replace(tzinfo=timezone.utc)
     if entry.liters is not None and entry.per_liter_cost is not None and entry.cost is None:
         entry.cost = float(entry.liters) * float(entry.per_liter_cost)
     if entry.cost is not None and entry.liters is not None and entry.per_liter_cost is None and entry.liters != 0:
@@ -441,6 +448,35 @@ def create_fuel_entry(payload: FuelEntryCreate, db: Session = Depends(get_db)):
 @app.get("/api/v1/vehicles/fuel")
 def list_fuel_entries(db: Session = Depends(get_db)):
     return [serialize_model(item) for item in db.execute(select(FuelEntry).order_by(FuelEntry.created_at.desc())).scalars()]
+
+
+@app.put("/api/v1/vehicles/fuel/{fuel_id}")
+def update_fuel_entry(fuel_id: str, payload: FuelEntryUpdate, db: Session = Depends(get_db)):
+    entry = db.get(FuelEntry, fuel_id)
+    if not entry:
+        raise HTTPException(status_code=404, detail="Fuel entry not found")
+    payload_data = payload.model_dump(exclude_unset=True)
+    date_time_value = payload_data.pop("date_time", None)
+    if date_time_value is not None:
+        payload_data["date_time"] = datetime.fromisoformat(str(date_time_value))
+    if "liters" in payload_data or "per_liter_cost" in payload_data or "cost" in payload_data:
+        liters = payload_data.get("liters", entry.liters)
+        per_liter_cost = payload_data.get("per_liter_cost", entry.per_liter_cost)
+        cost = payload_data.get("cost", entry.cost)
+        if cost is None and liters is not None and per_liter_cost is not None:
+            payload_data["cost"] = float(liters) * float(per_liter_cost)
+        elif per_liter_cost is None and liters is not None and cost is not None and liters != 0:
+            payload_data["per_liter_cost"] = float(cost) / float(liters)
+    return serialize_model(update_instance(db, entry, payload_data))
+
+
+@app.delete("/api/v1/vehicles/fuel/{fuel_id}", status_code=status.HTTP_204_NO_CONTENT)
+def delete_fuel_entry(fuel_id: str, db: Session = Depends(get_db)):
+    entry = db.get(FuelEntry, fuel_id)
+    if not entry:
+        raise HTTPException(status_code=404, detail="Fuel entry not found")
+    db.delete(entry)
+    db.commit()
 
 
 @app.post("/api/v1/vehicles/trips", status_code=status.HTTP_201_CREATED)

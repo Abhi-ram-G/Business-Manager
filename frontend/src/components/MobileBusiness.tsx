@@ -40,6 +40,7 @@ import {
 import { Labour, Vehicle, BusinessBill, FuelEntry, SalaryPayment, AdvanceEntry, AttendanceRecord } from "../types";
 import { downloadSalarySlipPDF, downloadAttendanceReportPDF, downloadSingleLabourAttendancePDF } from "../utils/pdfGenerator";
 import {
+  mapFuelFromApi,
   mapBusinessBillFromApi,
   mapLabourFromApi,
   mapVehicleFromApi,
@@ -117,7 +118,7 @@ export default function MobileBusiness({
   // Navigation tabs inside Business Section
   const [activeSubSection, setActiveSubSection] = React.useState<"labour" | "attendance" | "vehicles" | "salaries">(initialSubSection);
   const [activeMainSection, setActiveMainSection] = React.useState<"management" | "bill" >("management");
-  const [deleteConfirmation, setDeleteConfirmation] = useState<{ id: string; name: string; type: "bill" | "labour" | "vehicle" | "service" | "material"; } | null>(null);
+  const [deleteConfirmation, setDeleteConfirmation] = useState<{ id: string; name: string; type: "bill" | "labour" | "vehicle" | "fuel" | "service" | "material"; } | null>(null);
 
   const persistLabour = async (record: Labour, method: "POST" | "PUT") => {
     const response = await requestJson(
@@ -157,6 +158,15 @@ export default function MobileBusiness({
       } catch (error) {
         console.error(error);
         alert("Unable to delete the bill right now.");
+      }
+    } else if (type === "fuel") {
+      try {
+        await requestJson(apiBaseUrl, `/api/v1/vehicles/fuel/${id}`, { method: "DELETE" });
+        setFuelEntries((prev) => prev.filter((entry) => entry.id !== id));
+        triggerOnlineSync(`DELETED FUEL LOG: ${name}`);
+      } catch (error) {
+        console.error(error);
+        alert("Unable to delete the fuel entry right now.");
       }
     } else if (type === "labour") {
       try {
@@ -1530,9 +1540,52 @@ export default function MobileBusiness({
     setIsFuelFormOpen(true);
   };
 
+  const handleOpenEditFuel = (entry: FuelEntry) => {
+    setEditingFuelId(entry.id);
+    setFuelDateTime(entry.dateTime || entry.date || "2026-06-15 08:30");
+    setFuelVehicleName(entry.vehicleName || vehicles[0]?.vehicleName || "");
+    setFuelType((entry.fuelType as "Diesel" | "Petrol" | "CNG") || "Diesel");
+    setFuelPerLiterCost(Number(entry.perLiterCost ?? (entry.liters && entry.totalAmount ? entry.totalAmount / entry.liters : 95)));
+    setFuelLiters(Number(entry.liters ?? 40));
+    setIsFuelFormOpen(true);
+  };
+
   const handleSaveFuel = async (e: React.FormEvent) => {
     e.preventDefault();
     const totalAmount = Number(fuelLiters) * Number(fuelPerLiterCost);
+
+    if (editingFuelId) {
+      try {
+        const response = await requestJson(
+          apiBaseUrl,
+          `/api/v1/vehicles/fuel/${editingFuelId}`,
+          {
+            method: "PUT",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              date: fuelDateTime.split(" ")[0],
+              date_time: fuelDateTime,
+              vehicle_name: fuelVehicleName,
+              fuel_type: fuelType,
+              per_liter_cost: Number(fuelPerLiterCost),
+              liters: Number(fuelLiters),
+              cost: totalAmount,
+              total_amount: totalAmount,
+            }),
+          }
+        );
+        const savedFuel = mapFuelFromApi(response);
+        setFuelEntries(prev => prev.map((entry) => entry.id === editingFuelId ? savedFuel : entry));
+        setIsFuelFormOpen(false);
+        setEditingFuelId(null);
+        triggerOnlineSync(`UPDATED FUEL LOG: ₹${totalAmount.toLocaleString()} TO ${fuelVehicleName}`);
+        return;
+      } catch (error) {
+        console.error(error);
+        alert("Unable to update the fuel entry right now.");
+        return;
+      }
+    }
 
     const newFuel: FuelEntry = {
       id: `FUEL-${Date.now()}`,
@@ -1561,6 +1614,10 @@ export default function MobileBusiness({
     setFuelEntries(prev => [...prev, newFuel]);
     setIsFuelFormOpen(false);
     triggerOnlineSync(`ADDED FUEL LOG: ₹${totalAmount} TO ${fuelVehicleName}`);
+  };
+
+  const handleDeleteFuel = (entry: FuelEntry) => {
+    setDeleteConfirmation({ id: entry.id, name: entry.vehicleName || entry.id, type: "fuel" });
   };
 
   // --- ACTIONS SERVICE CRUD ---
@@ -1829,7 +1886,7 @@ export default function MobileBusiness({
   const vehicleWiseFuelCosts = vehicles.map(v => {
     const total = fuelEntries
       .filter(f => f.vehicleName === v.vehicleName)
-      .reduce((sum, f) => sum + f.totalAmount, 0);
+      .reduce((sum, f) => sum + Number(f.totalAmount ?? f.cost ?? ((f.liters ?? 0) * (f.perLiterCost ?? 0)) ?? 0), 0);
     return { name: v.vehicleName, cost: total };
   });
 
@@ -4183,15 +4240,36 @@ export default function MobileBusiness({
                 <span className="text-[10px] font-mono uppercase font-black text-slate-400 tracking-tight block">Fittings Log Ledger</span>
                 
                 <div className="space-y-1.5 max-h-40 overflow-y-auto pr-1">
-                  {fuelEntries.map(f => (
-                    <div key={f.id} className="bg-slate-950 p-2 rounded-xl text-[10px] font-mono flex justify-between items-center">
-                      <div>
-                        <span className="text-[8.5px] text-slate-500 block">{f.dateTime} • {f.vehicleName}</span>
-                        <span className="font-bold text-slate-350">{f.fuelType} • {f.liters}Liters ({f.perLiterCost}/L)</span>
+                  {fuelEntries.map(f => {
+                    const displayAmount = Number(f.totalAmount ?? f.cost ?? ((f.liters ?? 0) * (f.perLiterCost ?? 0)));
+                    return (
+                      <div key={f.id} className="bg-slate-950 p-2 rounded-xl text-[10px] font-mono flex justify-between items-center gap-2">
+                        <div className="min-w-0">
+                          <span className="text-[8.5px] text-slate-500 block truncate">{f.dateTime} ? {f.vehicleName}</span>
+                          <span className="font-bold text-slate-350 block truncate">{f.fuelType} ? {f.liters} Liters ({f.perLiterCost}/L)</span>
+                        </div>
+                        <div className="flex items-center gap-2 shrink-0">
+                          <span className="font-black text-rose-450 text-[10.5px]">?{displayAmount.toLocaleString()}</span>
+                          <button
+                            type="button"
+                            onClick={() => handleOpenEditFuel(f)}
+                            className="p-1 rounded bg-slate-900 border border-slate-800 text-slate-400 hover:text-white hover:bg-slate-800"
+                            title="Edit fuel entry"
+                          >
+                            <Edit className="w-3 h-3" />
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => handleDeleteFuel(f)}
+                            className="p-1 rounded bg-rose-950/40 border border-rose-900/40 text-rose-400 hover:text-rose-300"
+                            title="Delete fuel entry"
+                          >
+                            <Trash2 className="w-3 h-3" />
+                          </button>
+                        </div>
                       </div>
-                      <span className="font-black text-rose-450 text-[10.5px]">₹{f.totalAmount}</span>
-                    </div>
-                  ))}
+                    );
+                  })}
                 </div>
 
                 {/* Reports visual summary block */}
@@ -5592,6 +5670,7 @@ export default function MobileBusiness({
                 deleteConfirmation.type === "bill" ? "Borewell bill" :
                 deleteConfirmation.type === "labour" ? "worker profile and salary database" :
                 deleteConfirmation.type === "vehicle" ? "vehicle" :
+                deleteConfirmation.type === "fuel" ? "fuel log" :
                 deleteConfirmation.type === "service" ? "service log" :
                 "materials purchase entry"
               } <strong className="text-white">'{deleteConfirmation.name}'</strong>?
