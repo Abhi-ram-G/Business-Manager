@@ -2076,7 +2076,7 @@ export default function App() {
       )}
       
       {/* 1. TOP MASTER ENTERPRISE HEADER BAR */}
-      <header id="master-header" className={`bg-slate-900 border-b border-slate-800 px-3 sm:px-4 md:px-6 py-3 sticky top-0 z-40 shadow-xl backdrop-blur-md bg-opacity-95 transition-all duration-300 ${isSidebarCollapsed ? 'lg:pr-20' : 'lg:pr-72'}`}>
+      <header id="master-header" className={`bg-slate-900 border-b border-slate-800 px-3 sm:px-4 md:px-6 py-3 sticky top-0 z-40 shadow-xl backdrop-blur-md bg-opacity-95 transition-all duration-300 ${isSidebarCollapsed ? 'lg:pl-20' : 'lg:pl-72'}`}>
         <div className="max-w-7xl mx-auto flex items-center justify-between gap-2">
           
           {/* Left: Hamburger (mobile only) + Logo */}
@@ -2250,7 +2250,7 @@ export default function App() {
       </div>
 
       {/* 3. PRIMARY CONTENT PANEL - DESKTOP LAYOUT SHIFT CONTROLS */}
-      <main id="primary-content-grid" className={`flex-1 w-full max-w-7xl mx-auto px-0 sm:px-4 md:px-6 py-2 sm:py-4 md:py-6 flex flex-col gap-4 md:gap-6 transition-all duration-300 ${isSidebarCollapsed ? 'lg:pr-20' : 'lg:pr-72'}`}>
+      <main id="primary-content-grid" className={`flex-1 w-full max-w-7xl mx-auto px-0 sm:px-4 md:px-6 py-2 sm:py-4 md:py-6 flex flex-col gap-4 md:gap-6 transition-all duration-300 ${isSidebarCollapsed ? 'lg:pl-20' : 'lg:pl-72'}`}>
         
         {/* WORKSPACE CONTENT BODY */}
         <section id="workspace-container" className="flex-1 w-full">
@@ -2260,7 +2260,7 @@ export default function App() {
               <div className="flex flex-col items-stretch lg:items-start animate-fade-in w-full min-h-0">
 
                   {/* Web Application Left Navigation Sidebar — Desktop only (hidden on < lg) */}
-                  <div className={`hidden lg:block transition-all duration-300 ease-in-out bg-slate-900 py-4 px-4 rounded-none border-l border-slate-800 space-y-4 lg:fixed lg:right-0 lg:top-0 lg:bottom-0 lg:h-screen lg:z-50 shrink-0 ${isSidebarCollapsed ? 'lg:w-20' : 'lg:w-72'}`}>
+                  <div className={`hidden lg:block transition-all duration-300 ease-in-out bg-slate-900 py-4 px-4 rounded-none border-r border-slate-800 space-y-4 lg:fixed lg:left-0 lg:top-0 lg:bottom-0 lg:h-screen lg:z-50 shrink-0 ${isSidebarCollapsed ? 'lg:w-20' : 'lg:w-72'}`}>
                     <div className={`flex items-center pb-3 border-b border-slate-800 ${isSidebarCollapsed ? 'justify-center' : 'justify-between'}`}>
                       <div className="flex items-center gap-2 min-w-0">
                         <LayoutGrid className="w-5 h-5 text-indigo-400 shrink-0" />
