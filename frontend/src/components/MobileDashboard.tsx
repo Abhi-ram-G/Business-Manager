@@ -20,7 +20,13 @@ import {
   HeartHandshake, 
   Home, 
   ArrowUpRight, 
-  ArrowDownLeft
+  ArrowDownLeft,
+  ChevronDown,
+  ChevronUp,
+  Phone,
+  MapPin,
+  BadgeCheck,
+  AlertTriangle
 } from "lucide-react";
 import { 
   BarChart, 
@@ -47,6 +53,8 @@ interface MobileDashboardProps {
   totalOutstandingLoanAmount?: number;
   totalMonthlyExpense?: number;
   familySavingsRate?: number;
+  language?: "en" | "ta";
+  t?: (key: any) => string;
 }
 
 export default function MobileDashboard({
@@ -61,9 +69,42 @@ export default function MobileDashboard({
   activeLabourCount = 0,
   totalOutstandingLoanAmount = 0,
   totalMonthlyExpense = 0,
-  familySavingsRate = 0
+  familySavingsRate = 0,
+  language = "en",
+  t
 }: MobileDashboardProps) {
+  // Local fallback translations helper if not passed from parent
+  const localT = (key: string) => {
+    if (t) return t(key);
+    // basic inline translations fallback
+    const fallbackDict: Record<string, Record<string, string>> = {
+      en: {
+        active_roster: "Active June Roster",
+        net_cash_flow: "Net Cash Flow",
+        labour_count: "Labour Count",
+        active: "Active",
+        lent_portfolio: "Lent Portfolio",
+        family_expenses: "Family Expenses",
+        family_savings: "Family Savings",
+        surplus: "Surplus"
+      },
+      ta: {
+        active_roster: "செயலில் உள்ள ஜூன் பட்டியல்",
+        net_cash_flow: "நிகர பணப்புழக்கம்",
+        labour_count: "பணியாளர்கள் எண்ணிக்கை",
+        active: "செயலில்",
+        lent_portfolio: "வழங்கிய கடன்கள்",
+        family_expenses: "குடும்ப செலவுகள்",
+        family_savings: "குடும்ப சேமிப்பு",
+        surplus: "கூடுதல் சேமிப்பு"
+      }
+    };
+    return fallbackDict[language]?.[key] || key;
+  };
   const [activeChartTab, setActiveChartTab] = useState<"salary" | "fuel" | "finance" | "family">("salary");
+  const [expandedSection, setExpandedSection] = useState<"workforce" | "fleet" | "loans" | "family" | null>(null);
+  const toggleSection = (s: "workforce" | "fleet" | "loans" | "family") =>
+    setExpandedSection(prev => (prev === s ? null : s));
 
   // Calculations for Business Analytics
   const totalDrivers = labours.filter(l => l.skillType === "Driver").length;
@@ -137,8 +178,8 @@ export default function MobileDashboard({
         <span id="brand-header-label" className="inline-block font-mono font-bold uppercase tracking-widest bg-slate-900/95 px-3 py-1.5 rounded-lg border border-sky-400/30">
           Smart Business & Family ERP
         </span>
-        <h2 className="text-base font-black text-slate-100 mt-2 tracking-tight">Financial & Operations Analytics</h2>
-        <p className="text-[10px] text-slate-400 mt-0.5">Real-time consolidated balance sheet & resource allocation</p>
+        <h2 className="text-base font-black text-slate-100 mt-2 tracking-tight">{localT("operations_analytics")}</h2>
+        <p className="text-[10px] text-slate-400 mt-0.5">{localT("ops_subtitle")}</p>
         
         <div className="flex flex-wrap items-center gap-2 mt-3.5">
           <span id="net-cash-flow-badge" className={`text-[10px] font-mono font-extrabold px-2.5 py-1 rounded-xl flex items-center gap-1 border ${
@@ -147,10 +188,10 @@ export default function MobileDashboard({
               : "bg-rose-950/80 text-rose-400 border-rose-500/30 shadow-[0_0_8px_rgba(244,63,94,0.1)]"
           }`}>
             {monthlyProfitLoss >= 0 ? <TrendingUp className="w-3 h-3 text-emerald-400" /> : <TrendingDown className="w-3 h-3 text-rose-400" />}
-            Net Cash Flow: ₹{monthlyProfitLoss.toLocaleString()}
+            {localT("net_cash_flow")}: ₹{monthlyProfitLoss.toLocaleString()}
           </span>
           <span className="text-[10px] text-slate-400 font-medium bg-slate-950/60 px-2 py-1 rounded-lg border border-slate-800/60">
-            Active June Roster
+            {localT("active_roster")}
           </span>
         </div>
       </div>
@@ -163,10 +204,10 @@ export default function MobileDashboard({
           <div className="absolute -right-4 -bottom-4 w-12 h-12 bg-indigo-500/5 rounded-full blur-md group-hover:scale-150 transition-transform duration-500" />
           <div className="flex justify-between items-start">
             <div>
-              <span className="text-[9.5px] font-mono text-slate-400 uppercase tracking-wider font-bold">Labour Count</span>
+              <span className="text-[9.5px] font-mono text-slate-400 uppercase tracking-wider font-bold">{localT("labour_count")}</span>
               <div className="text-lg font-black font-mono mt-1 text-indigo-300 flex items-baseline gap-1.5">
                 <span>{activeLabourCount}</span>
-                <span className="text-[10px] text-yellow-400 font-bold bg-yellow-950/40 px-1.5 py-0.5 rounded border border-yellow-900/30">Active</span>
+                <span className="text-[10px] text-yellow-400 font-bold bg-yellow-950/40 px-1.5 py-0.5 rounded border border-yellow-900/30">{localT("active")}</span>
               </div>
             </div>
             <div className="p-2 bg-indigo-950/80 rounded-xl text-indigo-400 border border-indigo-800/40">
@@ -180,7 +221,7 @@ export default function MobileDashboard({
           <div className="absolute -right-4 -bottom-4 w-12 h-12 bg-emerald-500/5 rounded-full blur-md group-hover:scale-150 transition-transform duration-500" />
           <div className="flex justify-between items-start">
             <div>
-              <span className="text-[9.5px] font-mono text-slate-400 uppercase tracking-wider font-bold">Lent Portfolio</span>
+              <span className="text-[9.5px] font-mono text-slate-400 uppercase tracking-wider font-bold">{localT("lent_portfolio")}</span>
               <div className="text-lg font-black font-mono mt-1 text-emerald-400">
                 ₹{totalOutstandingLoanAmount.toLocaleString()}
               </div>
@@ -196,7 +237,7 @@ export default function MobileDashboard({
           <div className="absolute -right-4 -bottom-4 w-12 h-12 bg-rose-500/5 rounded-full blur-md group-hover:scale-150 transition-transform duration-500" />
           <div className="flex justify-between items-start">
             <div>
-              <span className="text-[9.5px] font-mono text-slate-400 uppercase tracking-wider font-bold">Family Expenses</span>
+              <span className="text-[9.5px] font-mono text-slate-400 uppercase tracking-wider font-bold">{localT("family_expenses")}</span>
               <div className="text-lg font-black font-mono mt-1 text-rose-400">
                 ₹{totalMonthlyExpense.toLocaleString()}
               </div>
@@ -212,10 +253,10 @@ export default function MobileDashboard({
           <div className="absolute -right-4 -bottom-4 w-12 h-12 bg-purple-500/5 rounded-full blur-md group-hover:scale-150 transition-transform duration-500" />
           <div className="flex justify-between items-start">
             <div>
-              <span className="text-[9.5px] font-mono text-slate-400 uppercase tracking-wider font-bold">Family Savings</span>
+              <span className="text-[9.5px] font-mono text-slate-400 uppercase tracking-wider font-bold">{localT("family_savings")}</span>
               <div className="text-lg font-black font-mono mt-1 text-purple-400 flex items-baseline gap-1">
                 <span>{familySavingsRate}%</span>
-                <span className="text-[9px] text-purple-300 font-bold">Surplus</span>
+                <span className="text-[9px] text-purple-300 font-bold">{localT("surplus")}</span>
               </div>
             </div>
             <div className="p-2 bg-purple-950/80 rounded-xl text-purple-400 border border-purple-800/40">
@@ -233,19 +274,19 @@ export default function MobileDashboard({
             <div className="p-1.5 bg-indigo-500/10 rounded-lg text-indigo-400 border border-indigo-500/20">
               <Briefcase className="w-3.5 h-3.5" />
             </div>
-            <h3 className="text-xs font-bold text-slate-200 uppercase tracking-wider font-mono">Business Operations</h3>
+            <h3 className="text-xs font-bold text-slate-200 uppercase tracking-wider font-mono">{localT("business_ops")}</h3>
           </div>
-          <span className="text-[9px] font-mono text-slate-500">Fleet & Workforce</span>
+          <span className="text-[9px] font-mono text-slate-500">{localT("fleet_workforce")}</span>
         </div>
         
         <div className="grid grid-cols-2 gap-2.5 text-xs">
           {/* Item 1: Drivers & Helpers */}
           <div className="bg-slate-950/80 p-3 rounded-xl border border-indigo-500/10 hover:border-indigo-500/20 transition-colors">
-            <div className="text-slate-500 text-[9px] font-mono leading-none tracking-wider">WORKFORCE ROSTER</div>
+            <div className="text-slate-500 text-[9px] font-mono leading-none tracking-wider">{localT("workforce_roster")}</div>
             <div className="font-extrabold text-slate-200 mt-2 flex items-baseline gap-2">
-              <span className="text-indigo-400 text-sm font-mono">{totalDrivers} <span className="text-[9px] font-normal text-slate-500">Drivers</span></span>
+              <span className="text-indigo-400 text-sm font-mono">{totalDrivers} <span className="text-[9px] font-normal text-slate-500">{localT("drivers")}</span></span>
               <span className="text-slate-700 font-normal text-[10px]">•</span>
-              <span className="text-teal-400 text-sm font-mono">{totalHelpers} <span className="text-[9px] font-normal text-slate-500">Helpers</span></span>
+              <span className="text-teal-400 text-sm font-mono">{totalHelpers} <span className="text-[9px] font-normal text-slate-500">{localT("helpers")}</span></span>
             </div>
             {/* Visual dual bar representation */}
             <div className="mt-2.5 h-1.5 w-full bg-slate-900 rounded-full overflow-hidden flex">
@@ -257,12 +298,12 @@ export default function MobileDashboard({
           {/* Item 2: Active Vehicles */}
           <div className="bg-slate-950/80 p-3 rounded-xl border border-indigo-500/10 hover:border-indigo-500/20 transition-colors">
             <div className="flex justify-between items-start">
-              <div className="text-slate-500 text-[9px] font-mono leading-none tracking-wider">TOTAL VEHICLES</div>
+              <div className="text-slate-500 text-[9px] font-mono leading-none tracking-wider">{localT("total_vehicles")}</div>
               <Car className="w-3.5 h-3.5 text-indigo-400/50" />
             </div>
             <div className="font-mono font-extrabold text-slate-200 mt-2 text-sm flex items-baseline gap-1">
               <span className="text-indigo-400">{totalVehicles}</span>
-              <span className="text-[9.5px] font-normal text-slate-500">Registered</span>
+              <span className="text-[9.5px] font-normal text-slate-500">{localT("registered")}</span>
             </div>
 
           </div>
@@ -271,20 +312,18 @@ export default function MobileDashboard({
           <div className="bg-slate-950/80 p-3 rounded-xl border border-emerald-500/10 hover:border-emerald-500/20 transition-colors">
             <div className="text-slate-500 text-[9px] font-mono leading-none tracking-wider flex items-center gap-1 text-emerald-400/80">
               <span className="w-1.5 h-1.5 rounded-full bg-emerald-400" />
-              SALARY PAID
+              {localT("salary_paid")}
             </div>
             <div className="font-mono font-black text-emerald-400 mt-2 text-sm">₹{totalSalaryPaid.toLocaleString()}</div>
-
           </div>
 
           {/* Item 4: Salary Pending */}
           <div className="bg-slate-950/80 p-3 rounded-xl border-rose-500/10 hover:border-rose-500/20 transition-colors">
             <div className="text-slate-500 text-[9px] font-mono leading-none tracking-wider flex items-center gap-1 text-rose-455">
               <span className="w-1.5 h-1.5 rounded-full bg-rose-450" />
-              SALARY PENDING
+              {localT("salary_pending")}
             </div>
             <div className="font-mono font-black text-rose-400 mt-2 text-sm">₹{totalSalaryPending.toLocaleString()}</div>
-
           </div>
 
           {/* Item 5: Fuel Expenses */}
@@ -292,23 +331,22 @@ export default function MobileDashboard({
             <div className="flex justify-between items-start">
               <div className="text-slate-500 text-[9px] font-mono leading-none tracking-wider flex items-center gap-1 text-amber-500/80">
                 <Fuel className="w-3 h-3" />
-                FUEL EXPENSES
+                {localT("fuel_expenses")}
               </div>
             </div>
             <div className="font-mono font-black text-slate-200 mt-2 text-sm">₹{totalFuelExpense.toLocaleString()}</div>
-
           </div>
 
           {/* Item 6: Finance Flows */}
           <div className="bg-slate-950/80 p-3 rounded-xl border border-slate-800 hover:border-slate-700 transition-colors">
-            <div className="text-slate-500 text-[9px] font-mono leading-none tracking-wider">FINANCE FLOWS</div>
+            <div className="text-slate-500 text-[9px] font-mono leading-none tracking-wider">{localT("finance_flows")}</div>
             <div className="text-[10px] text-slate-300 mt-2 space-y-1 font-mono">
               <div className="flex justify-between items-center bg-slate-900/50 px-1.5 py-0.5 rounded border border-slate-800">
-                <span className="text-slate-500 text-[8px] uppercase">Lent:</span> 
+                <span className="text-slate-500 text-[8px] uppercase">{localT("lent")}:</span> 
                 <span className="text-emerald-400 font-bold">₹{totalFinanceGiven.toLocaleString()}</span>
               </div>
               <div className="flex justify-between items-center bg-slate-900/50 px-1.5 py-0.5 rounded border border-slate-800">
-                <span className="text-slate-500 text-[8px] uppercase">Borrowed:</span> 
+                <span className="text-slate-500 text-[8px] uppercase">{localT("borrowed")}:</span> 
                 <span className="text-amber-400 font-bold">₹{totalFinanceReceived.toLocaleString()}</span>
               </div>
             </div>
@@ -323,9 +361,9 @@ export default function MobileDashboard({
             <div className="p-1.5 bg-emerald-500/10 rounded-lg text-emerald-400 border border-emerald-500/20">
               <TrendingUp className="w-3.5 h-3.5" />
             </div>
-            <h3 className="text-xs font-bold text-slate-200 uppercase tracking-wider font-mono">Lending & Credit Desk</h3>
+            <h3 className="text-xs font-bold text-slate-200 uppercase tracking-wider font-mono">{localT("lending_credit")}</h3>
           </div>
-          <span className="text-[9px] font-mono text-slate-500">Interest-Bearing Portfolios</span>
+          <span className="text-[9px] font-mono text-slate-500">{localT("interest_portfolios")}</span>
         </div>
 
         <div className="grid grid-cols-2 gap-2.5 text-xs">
@@ -333,34 +371,34 @@ export default function MobileDashboard({
           <div className="bg-slate-950/80 p-3 rounded-xl border border-emerald-500/10 hover:border-emerald-500/20 transition-colors">
             <div className="text-slate-500 text-[9px] font-mono leading-none flex items-center gap-1 text-emerald-400">
               <ArrowUpRight className="w-3 h-3" />
-              <span>INTEREST ACCRUED</span>
+              <span>{localT("interest_accrued")}</span>
             </div>
             <div className="font-mono font-black text-emerald-400 mt-2 text-sm">₹{totalInterestEarned.toLocaleString()}</div>
-            <div className="mt-2 text-[8px] text-slate-500 font-mono">Earned from lent funds</div>
+            <div className="mt-2 text-[8px] text-slate-500 font-mono">{localT("earned_lent")}</div>
           </div>
 
           {/* Interest Paid (Cost of Capital) */}
           <div className="bg-slate-950/80 p-3 rounded-xl border border-rose-500/10 hover:border-rose-500/20 transition-colors">
             <div className="text-slate-500 text-[9px] font-mono leading-none flex items-center gap-1 text-rose-450">
               <ArrowDownLeft className="w-3 h-3" />
-              <span>INTEREST SERVICED</span>
+              <span>{localT("interest_serviced")}</span>
             </div>
             <div className="font-mono font-black text-rose-400 mt-2 text-sm">₹{totalInterestPaid.toLocaleString()}</div>
-            <div className="mt-2 text-[8px] text-slate-500 font-mono">Paid to outside lenders</div>
+            <div className="mt-2 text-[8px] text-slate-500 font-mono">{localT("paid_lenders")}</div>
           </div>
 
           {/* Pending Collections */}
           <div className="bg-slate-950/80 p-3 rounded-xl border border-teal-500/10 hover:border-teal-500/20 transition-colors">
-            <div className="text-slate-500 text-[9px] font-mono leading-none tracking-wider text-blue-800">PENDING COLLECTIONS</div>
+            <div className="text-slate-500 text-[9px] font-mono leading-none tracking-wider text-blue-800">{localT("pending_collections")}</div>
             <div className="font-mono font-black text-blue-700 pending-collections-value mt-2 text-sm">₹{pendingCollections.toLocaleString()}</div>
-            <div className="mt-2 text-[8px] text-slate-500 font-mono">Receivables with interest</div>
+            <div className="mt-2 text-[8px] text-slate-500 font-mono">{localT("receivables_interest")}</div>
           </div>
 
           {/* Pending Payments */}
           <div className="bg-slate-950/80 p-3 rounded-xl border border-amber-500/10 hover:border-amber-500/20 transition-colors">
-            <div className="text-slate-500 text-[9px] font-mono leading-none tracking-wider text-amber-500/80">PENDING PAYMENTS</div>
+            <div className="text-slate-500 text-[9px] font-mono leading-none tracking-wider text-amber-500/80">{localT("pending_payments")}</div>
             <div className="font-mono font-black text-amber-400 mt-2 text-sm">₹{pendingPayments.toLocaleString()}</div>
-            <div className="mt-2 text-[8px] text-slate-500 font-mono">Payables with interest</div>
+            <div className="mt-2 text-[8px] text-slate-500 font-mono">{localT("payables_interest")}</div>
           </div>
         </div>
       </div>
@@ -372,19 +410,19 @@ export default function MobileDashboard({
             <div className="p-1.5 bg-rose-500/10 rounded-lg text-rose-455 border border-rose-500/20">
               <Home className="w-3.5 h-3.5" />
             </div>
-            <h3 className="text-xs font-bold text-slate-200 uppercase tracking-wider font-mono">Family Budgets & Outlays</h3>
+            <h3 className="text-xs font-bold text-slate-200 uppercase tracking-wider font-mono">{localT("family_budgets")}</h3>
           </div>
-          <span className="text-[9px] font-mono text-slate-500">Domestic Expenses</span>
+          <span className="text-[9px] font-mono text-slate-500">{localT("domestic_expenses")}</span>
         </div>
 
         <div className="bg-slate-950/80 p-3.5 rounded-xl border border-rose-500/10 space-y-3">
           <div className="grid grid-cols-2 gap-4 text-xs">
             <div>
-              <span className="text-slate-500 text-[9.5px] font-mono leading-none block uppercase">Cumulative Outlay</span>
+              <span className="text-slate-500 text-[9.5px] font-mono leading-none block uppercase">{localT("cumulative_outlay")}</span>
               <span className="font-mono font-black text-slate-200 mt-1.5 block text-sm">₹{totalFamilyExpenses.toLocaleString()}</span>
             </div>
             <div>
-              <span className="text-slate-400 text-[9.5px] font-mono leading-none block uppercase font-bold">June Monthly Budget</span>
+              <span className="text-slate-400 text-[9.5px] font-mono leading-none block uppercase font-bold">{localT("monthly_budget")}</span>
               <span className="font-mono font-black text-rose-400 mt-1.5 block text-sm">₹{monthlyFamilyExpenses.toLocaleString()}</span>
             </div>
           </div>
@@ -392,7 +430,7 @@ export default function MobileDashboard({
           {/* Visual Indicator of June usage */}
           <div className="space-y-1">
             <div className="flex justify-between text-[8px] font-mono text-slate-500">
-              <span>Monthly Share of Cumulative Budget</span>
+              <span>{localT("monthly_share")}</span>
               <span className="font-bold text-rose-455">{Math.round((monthlyFamilyExpenses / (totalFamilyExpenses || 1)) * 100)}%</span>
             </div>
             <div className="h-2 w-full bg-slate-900 rounded-full overflow-hidden">
@@ -403,7 +441,7 @@ export default function MobileDashboard({
           {/* Category-wise loop list with colored indicator dots */}
           {categoryExpenses.length > 0 && (
             <div className="pt-2.5 border-t border-slate-800/80 text-[10px] space-y-2">
-              <span className="text-[9px] font-mono text-slate-500 uppercase tracking-tight">Active Categories:</span>
+              <span className="text-[9px] font-mono text-slate-500 uppercase tracking-tight">{localT("active_categories")}:</span>
               <div className="grid grid-cols-2 gap-x-3 gap-y-1.5">
                 {categoryExpenses.slice(0, 6).map((c, idx) => {
                   const categoryColors = [
@@ -432,9 +470,9 @@ export default function MobileDashboard({
         <div className="flex justify-between items-center pb-1 border-b border-slate-800">
           <span className="text-[10px] uppercase font-mono tracking-wider text-slate-400 font-black flex items-center gap-2">
             <PieChart className="w-3.5 h-3.5 text-indigo-400" />
-            Live Analytical Graphics
+            {localT("live_analytics")}
           </span>
-          <span className="text-[9px] font-mono text-slate-500">Interactive</span>
+          <span className="text-[9px] font-mono text-slate-500">{localT("interactive")}</span>
         </div>
 
         {/* Chart Selector Mini-pill-tabs - scrollable on small screens */}
@@ -444,28 +482,28 @@ export default function MobileDashboard({
             onClick={() => setActiveChartTab("salary")}
             className={`py-1.5 px-2 rounded-lg text-center transition shrink-0 ${activeChartTab === "salary" ? "bg-indigo-650 text-white shadow-sm shadow-indigo-950/80" : "text-slate-400 hover:text-slate-100"}`}
           >
-            Salary
+            {localT("salary")}
           </button>
           <button 
             type="button" 
             onClick={() => setActiveChartTab("fuel")}
             className={`py-1.5 px-2 rounded-lg text-center transition shrink-0 ${activeChartTab === "fuel" ? "bg-amber-600 text-white shadow-sm shadow-amber-950/80" : "text-slate-400 hover:text-slate-100"}`}
           >
-            Fuel
+            {localT("fuel")}
           </button>
           <button 
             type="button" 
             onClick={() => setActiveChartTab("finance")}
             className={`py-1.5 px-2 rounded-lg text-center transition shrink-0 ${activeChartTab === "finance" ? "bg-teal-600 text-white shadow-sm shadow-teal-950/80" : "text-slate-400 hover:text-slate-100"}`}
           >
-            Credit
+            {localT("credit")}
           </button>
           <button 
             type="button" 
             onClick={() => setActiveChartTab("family")}
             className={`py-1.5 px-2 rounded-lg text-center transition shrink-0 ${activeChartTab === "family" ? "bg-rose-600 text-white shadow-sm shadow-rose-950/80" : "text-slate-400 hover:text-slate-100"}`}
           >
-            Family
+            {localT("family")}
           </button>
         </div>
 
@@ -591,6 +629,277 @@ export default function MobileDashboard({
             </div>
           )}
 
+        </div>
+      </div>
+
+      {/* ===== 5. ALL DETAILS LEDGER SECTION ===== */}
+      <div className="space-y-3">
+        <div className="flex items-center gap-2 px-1">
+          <div className="h-px flex-1 bg-gradient-to-r from-transparent via-slate-700 to-transparent" />
+          <span className="text-[9px] font-mono font-bold text-slate-400 uppercase tracking-widest">{localT("all_details")}</span>
+          <div className="h-px flex-1 bg-gradient-to-r from-transparent via-slate-700 to-transparent" />
+        </div>
+
+        {/* --- WORKFORCE LEDGER --- */}
+        <div className="bg-indigo-950/30 rounded-2xl border border-indigo-900/40 overflow-hidden shadow-md">
+          <button
+            type="button"
+            onClick={() => toggleSection("workforce")}
+            className="w-full flex items-center justify-between px-4 py-3 hover:bg-indigo-900/20 transition-colors"
+          >
+            <div className="flex items-center gap-2">
+              <div className="p-1.5 bg-indigo-500/10 rounded-lg text-indigo-400 border border-indigo-500/20">
+                <Users className="w-3.5 h-3.5" />
+              </div>
+              <span className="text-xs font-bold text-slate-200 uppercase tracking-wider font-mono">{localT("workforce_details")}</span>
+              <span className="text-[9px] font-mono bg-indigo-900/50 text-indigo-300 px-1.5 py-0.5 rounded border border-indigo-800/40">{labours.length}</span>
+            </div>
+            {expandedSection === "workforce" ? <ChevronUp className="w-4 h-4 text-slate-400" /> : <ChevronDown className="w-4 h-4 text-slate-400" />}
+          </button>
+          {expandedSection === "workforce" && (
+            <div className="px-3 pb-3">
+              {labours.length === 0 ? (
+                <div className="text-center py-6 text-slate-500 text-[11px] font-mono">{localT("no_records")}</div>
+              ) : (
+                <div className="space-y-2">
+                  {labours.map(l => (
+                    <div key={l.id} className="bg-slate-950/80 rounded-xl border border-indigo-500/10 p-3 flex items-start justify-between gap-3">
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-2 mb-1">
+                          <span className="font-bold text-slate-100 text-[11px] font-mono truncate">{l.fullName}</span>
+                          <span className={`text-[8px] font-bold px-1.5 py-0.5 rounded font-mono border ${
+                            l.skillType === "Driver"
+                              ? "bg-indigo-950/80 text-indigo-300 border-indigo-800/40"
+                              : "bg-teal-950/80 text-teal-300 border-teal-800/40"
+                          }`}>{l.skillType}</span>
+                          {l.isActive ? (
+                            <span className="text-[7.5px] font-bold px-1 py-0.5 rounded bg-emerald-950/80 text-emerald-400 border border-emerald-800/40">● {localT("active")}</span>
+                          ) : (
+                            <span className="text-[7.5px] font-bold px-1 py-0.5 rounded bg-slate-800 text-slate-500 border border-slate-700">{localT("inactive")}</span>
+                          )}
+                        </div>
+                        <div className="grid grid-cols-2 gap-x-3 gap-y-0.5 text-[9px] font-mono text-slate-400">
+                          <div className="flex items-center gap-1 truncate">
+                            <Phone className="w-2.5 h-2.5 shrink-0 text-slate-500" />
+                            <span className="truncate">{l.phone || "—"}</span>
+                          </div>
+                          <div className="flex items-center gap-1 truncate">
+                            <BadgeCheck className="w-2.5 h-2.5 shrink-0 text-slate-500" />
+                            <span className="truncate">{l.aadhaarNumber || "—"}</span>
+                          </div>
+                          <div className="flex items-center gap-1 truncate col-span-2">
+                            <MapPin className="w-2.5 h-2.5 shrink-0 text-slate-500" />
+                            <span className="truncate">{l.address || "—"}</span>
+                          </div>
+                        </div>
+                      </div>
+                      <div className="text-right shrink-0">
+                        <div className="text-[8px] text-slate-500 font-mono uppercase">{localT("daily_wage")}</div>
+                        <div className="text-sm font-black font-mono text-indigo-300">₹{(l.dailyWage || l.salaryPerMonth || 0).toLocaleString()}</div>
+                        <div className="text-[8px] text-slate-500 font-mono mt-0.5">{l.joiningDate}</div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
+        </div>
+
+        {/* --- FLEET LEDGER --- */}
+        <div className="bg-amber-950/20 rounded-2xl border border-amber-900/35 overflow-hidden shadow-md">
+          <button
+            type="button"
+            onClick={() => toggleSection("fleet")}
+            className="w-full flex items-center justify-between px-4 py-3 hover:bg-amber-900/15 transition-colors"
+          >
+            <div className="flex items-center gap-2">
+              <div className="p-1.5 bg-amber-500/10 rounded-lg text-amber-400 border border-amber-500/20">
+                <Car className="w-3.5 h-3.5" />
+              </div>
+              <span className="text-xs font-bold text-slate-200 uppercase tracking-wider font-mono">{localT("fleet_details")}</span>
+              <span className="text-[9px] font-mono bg-amber-900/50 text-amber-300 px-1.5 py-0.5 rounded border border-amber-800/40">{vehicles.length}</span>
+            </div>
+            {expandedSection === "fleet" ? <ChevronUp className="w-4 h-4 text-slate-400" /> : <ChevronDown className="w-4 h-4 text-slate-400" />}
+          </button>
+          {expandedSection === "fleet" && (
+            <div className="px-3 pb-3 space-y-2">
+              {vehicles.length === 0 ? (
+                <div className="text-center py-6 text-slate-500 text-[11px] font-mono">{localT("no_records")}</div>
+              ) : (
+                vehicles.map(v => {
+                  const vFuels = fuelEntries.filter(f => f.vehicleId === v.id || f.vehicleName === v.vehicleName);
+                  const vFuelTotal = vFuels.reduce((s, f) => s + (Number(f.totalAmount ?? f.cost) || 0), 0);
+                  const isInsuranceExpiring = v.insuranceExpiry && new Date(v.insuranceExpiry) < new Date(Date.now() + 30*24*60*60*1000);
+                  return (
+                    <div key={v.id} className="bg-slate-950/80 rounded-xl border border-amber-500/10 p-3">
+                      <div className="flex items-start justify-between gap-2 mb-2">
+                        <div>
+                          <div className="flex items-center gap-2 mb-0.5">
+                            <span className="font-bold text-slate-100 text-[11px] font-mono">{v.vehicleName || v.id}</span>
+                            <span className="text-[8px] font-mono font-bold px-1.5 py-0.5 rounded bg-amber-950/80 text-amber-300 border border-amber-800/40">{v.vehicleType}</span>
+                          </div>
+                          <div className="text-[9px] font-mono text-slate-400">{v.brand} {v.model}</div>
+                          <div className="text-[9px] font-mono text-slate-500 mt-0.5">RC: {v.id}</div>
+                        </div>
+                        <div className="text-right shrink-0">
+                          <div className="text-[8px] text-slate-500 font-mono uppercase">{localT("fuel_total")}</div>
+                          <div className="text-sm font-black font-mono text-amber-300">₹{vFuelTotal.toLocaleString()}</div>
+                          <div className="text-[8px] font-mono text-slate-500">{vFuels.length} {localT("entries")}</div>
+                        </div>
+                      </div>
+                      <div className="grid grid-cols-2 gap-1.5 text-[8.5px] font-mono">
+                        <div className={`flex items-center gap-1 px-2 py-1 rounded border ${
+                          isInsuranceExpiring ? "bg-rose-950/50 border-rose-800/40 text-rose-400" : "bg-slate-900/60 border-slate-800 text-slate-400"
+                        }`}>
+                          {isInsuranceExpiring && <AlertTriangle className="w-2.5 h-2.5 shrink-0" />}
+                          <span>Ins: {v.insuranceExpiry || "—"}</span>
+                        </div>
+                        <div className="flex items-center gap-1 px-2 py-1 rounded border bg-slate-900/60 border-slate-800 text-slate-400">
+                          <span>Poll: {v.pollutionExpiry || "—"}</span>
+                        </div>
+                        {v.driverName && (
+                          <div className="flex items-center gap-1 px-2 py-1 rounded border bg-slate-900/60 border-slate-800 text-slate-400 col-span-2">
+                            <span>{localT("driver")}: {v.driverName}</span>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  );
+                })
+              )}
+            </div>
+          )}
+        </div>
+
+        {/* --- LOANS / DEBT LEDGER --- */}
+        <div className="bg-emerald-950/20 rounded-2xl border border-emerald-900/35 overflow-hidden shadow-md">
+          <button
+            type="button"
+            onClick={() => toggleSection("loans")}
+            className="w-full flex items-center justify-between px-4 py-3 hover:bg-emerald-900/15 transition-colors"
+          >
+            <div className="flex items-center gap-2">
+              <div className="p-1.5 bg-emerald-500/10 rounded-lg text-emerald-400 border border-emerald-500/20">
+                <CreditCard className="w-3.5 h-3.5" />
+              </div>
+              <span className="text-xs font-bold text-slate-200 uppercase tracking-wider font-mono">{localT("loans_details")}</span>
+              <span className="text-[9px] font-mono bg-emerald-900/50 text-emerald-300 px-1.5 py-0.5 rounded border border-emerald-800/40">{loansGiven.length + loansReceived.length}</span>
+            </div>
+            {expandedSection === "loans" ? <ChevronUp className="w-4 h-4 text-slate-400" /> : <ChevronDown className="w-4 h-4 text-slate-400" />}
+          </button>
+          {expandedSection === "loans" && (
+            <div className="px-3 pb-3 space-y-3">
+              {/* Loans Given */}
+              {loansGiven.length > 0 && (
+                <div className="space-y-1.5">
+                  <div className="flex items-center gap-1.5 pt-1">
+                    <ArrowUpRight className="w-3 h-3 text-emerald-400" />
+                    <span className="text-[9px] font-bold font-mono text-emerald-400 uppercase tracking-wider">{localT("loans_given")} ({loansGiven.length})</span>
+                  </div>
+                  {loansGiven.map(l => (
+                    <div key={l.id} className="bg-slate-950/80 rounded-xl border border-emerald-500/10 p-3 flex items-center justify-between gap-2">
+                      <div className="flex-1 min-w-0">
+                        <div className="font-bold text-slate-100 text-[11px] font-mono truncate">{l.personName || l.borrowerName || "—"}</div>
+                        <div className="text-[8.5px] font-mono text-slate-400 mt-0.5">
+                          {l.interestPercentage}% {l.interestType} · {l.startDate || "—"}
+                        </div>
+                        {l.mobileNumber && (
+                          <div className="flex items-center gap-1 text-[8.5px] font-mono text-slate-500 mt-0.5">
+                            <Phone className="w-2.5 h-2.5" />{l.mobileNumber}
+                          </div>
+                        )}
+                      </div>
+                      <div className="text-right shrink-0">
+                        <div className="text-sm font-black font-mono text-emerald-400">₹{(l.amountGiven ?? l.loanAmount ?? 0).toLocaleString()}</div>
+                        <span className={`text-[8px] font-bold px-1.5 py-0.5 rounded font-mono border mt-1 inline-block ${
+                          l.collectionStatus === "Paid"
+                            ? "bg-emerald-950/80 text-emerald-400 border-emerald-800/40"
+                            : "bg-amber-950/80 text-amber-400 border-amber-800/40"
+                        }`}>{l.collectionStatus || "Active"}</span>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+              {/* Loans Received */}
+              {loansReceived.length > 0 && (
+                <div className="space-y-1.5">
+                  <div className="flex items-center gap-1.5">
+                    <ArrowDownLeft className="w-3 h-3 text-amber-400" />
+                    <span className="text-[9px] font-bold font-mono text-amber-400 uppercase tracking-wider">{localT("loans_received")} ({loansReceived.length})</span>
+                  </div>
+                  {loansReceived.map(l => (
+                    <div key={l.id} className="bg-slate-950/80 rounded-xl border border-amber-500/10 p-3 flex items-center justify-between gap-2">
+                      <div className="flex-1 min-w-0">
+                        <div className="font-bold text-slate-100 text-[11px] font-mono truncate">{l.personName || l.lenderName || "—"}</div>
+                        <div className="text-[8.5px] font-mono text-slate-400 mt-0.5">
+                          {l.interestPercentage}% {l.interestType} · {l.startDate || "—"}
+                        </div>
+                        <div className="text-[8.5px] font-mono text-slate-500 mt-0.5">{l.category || ""}</div>
+                      </div>
+                      <div className="text-right shrink-0">
+                        <div className="text-sm font-black font-mono text-amber-400">₹{(l.amount ?? l.borrowedAmount ?? 0).toLocaleString()}</div>
+                        <span className={`text-[8px] font-bold px-1.5 py-0.5 rounded font-mono border mt-1 inline-block ${
+                          l.interestStatus === "Paid"
+                            ? "bg-emerald-950/80 text-emerald-400 border-emerald-800/40"
+                            : "bg-rose-950/80 text-rose-400 border-rose-800/40"
+                        }`}>{l.interestStatus || "Pending"}</span>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+              {loansGiven.length === 0 && loansReceived.length === 0 && (
+                <div className="text-center py-6 text-slate-500 text-[11px] font-mono">{localT("no_records")}</div>
+              )}
+            </div>
+          )}
+        </div>
+
+        {/* --- FAMILY EXPENSES LEDGER --- */}
+        <div className="bg-rose-950/20 rounded-2xl border border-rose-900/35 overflow-hidden shadow-md">
+          <button
+            type="button"
+            onClick={() => toggleSection("family")}
+            className="w-full flex items-center justify-between px-4 py-3 hover:bg-rose-900/15 transition-colors"
+          >
+            <div className="flex items-center gap-2">
+              <div className="p-1.5 bg-rose-500/10 rounded-lg text-rose-400 border border-rose-500/20">
+                <Home className="w-3.5 h-3.5" />
+              </div>
+              <span className="text-xs font-bold text-slate-200 uppercase tracking-wider font-mono">{localT("family_ledger")}</span>
+              <span className="text-[9px] font-mono bg-rose-900/50 text-rose-300 px-1.5 py-0.5 rounded border border-rose-800/40">{familyExpenses.length}</span>
+            </div>
+            {expandedSection === "family" ? <ChevronUp className="w-4 h-4 text-slate-400" /> : <ChevronDown className="w-4 h-4 text-slate-400" />}
+          </button>
+          {expandedSection === "family" && (
+            <div className="px-3 pb-3">
+              {familyExpenses.length === 0 ? (
+                <div className="text-center py-6 text-slate-500 text-[11px] font-mono">{localT("no_records")}</div>
+              ) : (
+                <div className="space-y-1.5">
+                  {/* Summary row */}
+                  <div className="flex items-center justify-between bg-rose-950/40 rounded-lg px-3 py-2 border border-rose-900/30 mb-2">
+                    <span className="text-[9px] font-mono text-slate-400 uppercase">{localT("total_expenses")}</span>
+                    <span className="font-black font-mono text-rose-400 text-sm">₹{totalFamilyExpenses.toLocaleString()}</span>
+                  </div>
+                  {familyExpenses.slice().sort((a, b) => b.date.localeCompare(a.date)).map(e => (
+                    <div key={e.id} className="bg-slate-950/80 rounded-xl border border-rose-500/10 p-2.5 flex items-center justify-between gap-2">
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-1.5">
+                          <span className="text-[10px] font-bold text-slate-200 font-mono truncate">{e.familyMemberName || "—"}</span>
+                          <span className="text-[8px] font-mono px-1.5 py-0.5 rounded bg-rose-950/60 text-rose-300 border border-rose-800/30 truncate">{e.reason || e.category || "Other"}</span>
+                        </div>
+                        <div className="text-[8.5px] font-mono text-slate-500 mt-0.5">{e.date} · {e.description || ""}</div>
+                      </div>
+                      <div className="font-black font-mono text-rose-400 text-[12px] shrink-0">₹{e.amount.toLocaleString()}</div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
         </div>
       </div>
     </div>

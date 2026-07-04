@@ -69,6 +69,241 @@ import {
 import { sqlSchemas, userStories, developmentRoadmap } from "./data";
 import { fetchSharedSnapshot, requestJson } from "./lib/sharedApi";
 
+const translations = {
+  en: {
+    dashboard: "Dashboard Hub",
+    business: "Business",
+    finance: "Finance",
+    expenses: "Family Budgeting",
+    vault: "Secure Vault",
+    reminders: "Reminders & Alerts",
+    settings: "System Settings",
+    lock: "Lock",
+    unlock: "Unlock App",
+    pin: "Passcode PIN",
+    enter_pin: "Enter PIN",
+    checking_pin: "Checking PIN...",
+    
+    operations_analytics: "Financial & Operations Analytics",
+    ops_subtitle: "Real-time consolidated balance sheet & resource allocation",
+    active_roster: "Active June Roster",
+    net_cash_flow: "Net Cash Flow",
+    labour_count: "Labour Count",
+    active: "Active",
+    lent_portfolio: "Lent Portfolio",
+    family_expenses: "Family Expenses",
+    family_savings: "Family Savings",
+    surplus: "Surplus",
+    
+    business_ops: "Business Operations",
+    fleet_workforce: "Fleet & Workforce",
+    workforce_roster: "WORKFORCE ROSTER",
+    drivers: "Drivers",
+    helpers: "Helpers",
+    total_vehicles: "TOTAL VEHICLES",
+    registered: "Registered",
+    salary_paid: "SALARY PAID",
+    salary_pending: "SALARY PENDING",
+    fuel_expenses: "FUEL EXPENSES",
+    finance_flows: "FINANCE FLOWS",
+    lent: "Lent",
+    borrowed: "Borrowed",
+    
+    lending_credit: "Lending & Credit Desk",
+    interest_portfolios: "Interest-Bearing Portfolios",
+    interest_accrued: "INTEREST ACCRUED",
+    interest_serviced: "INTEREST SERVICED",
+    pending_collections: "PENDING COLLECTIONS",
+    pending_payments: "PENDING PAYMENTS",
+    earned_lent: "Earned from lent funds",
+    paid_lenders: "Paid to outside lenders",
+    receivables_interest: "Receivables with interest",
+    payables_interest: "Payables with interest",
+    
+    family_budgets: "Family Budgets & Outlays",
+    domestic_expenses: "Domestic Expenses",
+    cumulative_outlay: "Cumulative Outlay",
+    june_budget: "June Monthly Budget",
+    monthly_share: "Monthly Share of Cumulative Budget",
+    active_categories: "Active Categories",
+    analytical_graphics: "Live Analytical Graphics",
+    interactive: "Interactive",
+    payroll_ratios: "Workforce Payroll Ratios",
+    paid_ratio: "Paid",
+    pending_ratio: "Pending",
+    diesel_outlay: "Weekly Fleet Diesel Outlay",
+    lending_borrowing: "Lending vs Borrowing Ratio",
+    active_domestic: "Active Domestic Budgets Ratio",
+    total: "Total",
+    spent: "Spent",
+    
+    all_details: "Detailed Operational Ledgers",
+    view_all_details: "Expand All Records Below",
+    hide_details: "Collapse Records",
+    workforce_details: "Workforce Directory Details",
+    fleet_details: "Fleet Registry & Fuel Logs",
+    debt_details: "Debt Portfolio Ledgers",
+    family_ledger_details: "Family Outflow & Income Logs",
+    name: "Name",
+    skill: "Skill/Role",
+    wage: "Daily Wage",
+    contact: "Contact Cell",
+    status: "Status",
+    vehicle_no: "Vehicle No",
+    driver: "Driver Name",
+    fuel_date: "Date",
+    liters: "Liters",
+    amount: "Amount",
+    borrower: "Borrower",
+    lender: "Lender",
+    rate: "Rate",
+    repaid: "Repaid",
+    category: "Category",
+    member: "Member Name",
+    date: "Date",
+    source: "Source",
+    
+    cancel: "Cancel",
+    save: "Save",
+    delete: "Delete",
+    add: "Add New",
+
+    // Ledger section keys
+    loans_details: "Loans & Debt Portfolio",
+    loans_given: "Loans Given (Lent)",
+    loans_received: "Loans Received (Borrowed)",
+    family_ledger: "Family Expense Ledger",
+    inactive: "Inactive",
+    daily_wage: "Daily Wage / Salary",
+    fuel_total: "Fuel Spent",
+    entries: "entries",
+    no_records: "No records found",
+    total_expenses: "Total Expenses",
+    monthly_budget: "Monthly Budget",
+    live_analytics: "Live Analytical Graphics",
+    salary: "Salary",
+    fuel: "Fuel",
+    credit: "Credit",
+    family: "Family"
+  },
+  ta: {
+    dashboard: "தகவல் பலகை",
+    business: "தொழில்",
+    finance: "நிதி நிலை",
+    expenses: "குடும்ப வரவு செலவு",
+    vault: "பாதுகாப்பான பெட்டகம்",
+    reminders: "நினைவூட்டல்கள்",
+    settings: "அமைப்பு அமைப்புகள்",
+    lock: "பூட்டு",
+    unlock: "செயலியைத் திற",
+    pin: "கடவுச்சொல் பின்",
+    enter_pin: "பின் எண்ணை உள்ளிடவும்",
+    checking_pin: "சரிபார்க்கப்படுகிறது...",
+    
+    operations_analytics: "நிதி மற்றும் செயல்பாட்டு பகுப்பாய்வு",
+    ops_subtitle: "உண்மையான நேர ஒருங்கிணைந்த இருப்புநிலை மற்றும் வள ஒதுக்கீடு",
+    active_roster: "செயலில் உள்ள ஜூன் பட்டியல்",
+    net_cash_flow: "நிகர பணப்புழக்கம்",
+    labour_count: "பணியாளர்கள் எண்ணிக்கை",
+    active: "செயலில்",
+    lent_portfolio: "வழங்கிய கடன்கள்",
+    family_expenses: "குடும்ப செலவுகள்",
+    family_savings: "குடும்ப சேமிப்பு",
+    surplus: "கூடுதல் சேமிப்பு",
+    
+    business_ops: "வணிக செயல்பாடுகள்",
+    fleet_workforce: "வாகனங்கள் மற்றும் பணியாளர்கள்",
+    workforce_roster: "பணியாளர்கள் பட்டியல்",
+    drivers: "ஓட்டுநர்கள்",
+    helpers: "உதவியாளர்கள்",
+    total_vehicles: "மொத்த வாகனங்கள்",
+    registered: "பதிவுசெய்யப்பட்டது",
+    salary_paid: "வழங்கப்பட்ட சம்பளம்",
+    salary_pending: "நிலுவையில் உள்ள சம்பளம்",
+    fuel_expenses: "எரிபொருள் செலவுகள்",
+    finance_flows: "நிதி ஓட்டங்கள்",
+    lent: "வழங்கியது",
+    borrowed: "வாங்கியது",
+    
+    lending_credit: "கடன் மற்றும் வரவு மேசை",
+    interest_portfolios: "வட்டி போர்ட்ஃபோலியோக்கள்",
+    interest_accrued: "வட்டி வருவாய்",
+    interest_serviced: "செலுத்தப்பட்ட வட்டி",
+    pending_collections: "நிலுவையில் உள்ள வசூல்",
+    pending_payments: "நிலுவையில் உள்ள கொடுப்பனவுகள்",
+    earned_lent: "வழங்கப்பட்ட கடன்களில் இருந்து வட்டி",
+    paid_lenders: "வெளிப்புற கடனாளிகளுக்கு செலுத்தியது",
+    receivables_interest: "வட்டியுடன் கூடிய வரவுகள்",
+    payables_interest: "வட்டியுடன் கூடிய செலுத்த வேண்டியவை",
+    
+    family_budgets: "குடும்ப வரவுசெலவுத் திட்டம்",
+    domestic_expenses: "வீட்டு செலவுகள்",
+    cumulative_outlay: "ஒட்டுமொத்த செலவு",
+    june_budget: "ஜூன் மாத பட்ஜெட்",
+    monthly_share: "ஒட்டுமொத்த செலவில் ஜூன் மாத பங்கு",
+    active_categories: "செயலில் உள்ள பிரிவுகள்",
+    analytical_graphics: "நேரடி பகுப்பாய்வு வரைபடங்கள்",
+    interactive: "ஊடாடும்",
+    payroll_ratios: "பணியாளர் ஊதிய விகிதங்கள்",
+    paid_ratio: "செலுத்தப்பட்டது",
+    pending_ratio: "நிலுவையில் உள்ளது",
+    diesel_outlay: "வாராந்திர டீசல் செலவு",
+    lending_borrowing: "கடன் மற்றும் கடன் வாங்கிய விகிதம்",
+    active_domestic: "செயலில் உள்ள வீட்டு பட்ஜெட் விகிதம்",
+    total: "மொத்தம்",
+    spent: "செலவிடப்பட்டது",
+    
+    all_details: "விவரமான செயல்பாட்டு பதிவேடுகள்",
+    view_all_details: "கீழே உள்ள அனைத்து பதிவுகளையும் விரிவுபடுத்துக",
+    hide_details: "விவரங்களை சுருக்கு",
+    workforce_details: "பணியாளர் விபரங்கள்",
+    fleet_details: "வாகனம் & எரிபொருள் பதிவுகள்",
+    debt_details: "கடன் விபரங்கள்",
+    family_ledger_details: "குடும்ப செலவு & வருமான பதிவுகள்",
+    name: "பெயர்",
+    skill: "பணி/பொறுப்பு",
+    wage: "தினசரி கூலி",
+    contact: "கைபேசி எண்",
+    status: "நிலை",
+    vehicle_no: "வண்டி எண்",
+    driver: "ஓட்டுநர் பெயர்",
+    fuel_date: "தேதி",
+    liters: "லிட்டர்",
+    amount: "தொகை",
+    borrower: "கடன் வாங்கியவர்",
+    lender: "கடன் கொடுத்தவர்",
+    rate: "வட்டி விகிதம்",
+    repaid: "திருப்பிச் செலுத்தப்பட்டது",
+    category: "வகை",
+    member: "உறுப்பினர் பெயர்",
+    date: "தேதி",
+    source: "ஆதாரம்",
+    
+    cancel: "ரத்து செய்",
+    save: "சேமி",
+    delete: "நீக்கு",
+    add: "புதிதாக சேர்",
+
+    // Ledger section keys
+    loans_details: "கடன் மற்றும் கடன் போர்ட்ஃபோலியோ",
+    loans_given: "வழங்கப்பட்ட கடன்கள்",
+    loans_received: "பெற்ற கடன்கள்",
+    family_ledger: "குடும்ப செலவு பதிவேடு",
+    inactive: "செயலற்றது",
+    daily_wage: "தினசரி கூலி / சம்பளம்",
+    fuel_total: "எரிபொருள் செலவு",
+    entries: "பதிவுகள்",
+    no_records: "பதிவுகள் எதுவும் இல்லை",
+    total_expenses: "மொத்த செலவுகள்",
+    monthly_budget: "மாத பட்ஜெட்",
+    live_analytics: "நேரடி பகுப்பாய்வு வரைபடங்கள்",
+    salary: "சம்பளம்",
+    fuel: "எரிபொருள்",
+    credit: "கடன்",
+    family: "குடும்பம்"
+  }
+};
+
 const DEFAULT_FAMILY_MEMBERS: FamilyMember[] = [
   { id: "fam-abhiram", name: "Abhiram", relationship: "Self" },
   { id: "fam-praneet", name: "Praneet", relationship: "Brother" },
@@ -105,6 +340,21 @@ export default function App() {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState<boolean>(false);
   // Mobile nav drawer (hamburger on small screens)
   const [isMobileNavOpen, setIsMobileNavOpen] = useState<boolean>(false);
+  const [language, setLanguage] = useState<"en" | "ta">(() => {
+    return (localStorage.getItem("srs_language") as "en" | "ta") || "en";
+  });
+
+  const toggleLanguage = () => {
+    setLanguage(prev => {
+      const next = prev === "en" ? "ta" : "en";
+      localStorage.setItem("srs_language", next);
+      return next;
+    });
+  };
+
+  const t = useCallback((key: keyof typeof translations.en) => {
+    return translations[language][key] || translations.en[key] || key;
+  }, [language]);
   const [loginPin, setLoginPin] = useState<string>("");
   const [showLoginPin, setShowLoginPin] = useState<boolean>(false);
   const [loginMessage, setLoginMessage] = useState<string>("");
@@ -1782,6 +2032,16 @@ export default function App() {
           {/* Right: Notifications & Lock */}
           <div className="flex items-center gap-1.5 sm:gap-3 shrink-0">
             
+            {/* Language Switcher */}
+            <button
+              type="button"
+              onClick={toggleLanguage}
+              className="px-2 py-1.5 rounded-lg bg-slate-950 border border-slate-800 text-[10px] sm:text-xs font-bold text-orange-450 hover:bg-slate-905 hover:text-orange-400 hover:border-orange-500/40 transition duration-150 cursor-pointer shrink-0"
+              title={language === "en" ? "தமிழ் மொழிக்கு மாற்றவும்" : "Switch to English"}
+            >
+              {language === "en" ? "தமிழ்" : "EN"}
+            </button>
+
             {/* Notifications Alert Center Toggle */}
             <div className="relative">
               <button 
@@ -2023,6 +2283,8 @@ export default function App() {
                               totalOutstandingLoanAmount={totalOutstandingLoanAmount}
                               totalMonthlyExpense={totalMonthlyExpense}
                               familySavingsRate={familySavingsRate}
+                              language={language}
+                              t={t}
                             />
                           )}
 
@@ -2475,6 +2737,8 @@ export default function App() {
                             loansReceived={loansReceived}
                             familyExpenses={familyExpenses}
                             attendance={attendance}
+                            language={language}
+                            t={t}
                           />
                         )}
 
