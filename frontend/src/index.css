@@ -215,5 +215,133 @@ svg {
   color: inherit !important;
 }
 
+/* ============================================================
+   RESPONSIVE DESIGN — Global base rules
+   ============================================================ */
+
+/* Prevent horizontal overflow on all screens */
+html, body {
+  overflow-x: hidden;
+  width: 100%;
+}
+
+/* iOS safe area padding support */
+.pb-safe {
+  padding-bottom: env(safe-area-inset-bottom, 0px);
+}
+.pt-safe {
+  padding-top: env(safe-area-inset-top, 0px);
+}
+
+/* Mobile bottom navigation bar */
+.mobile-bottom-nav {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  z-index: 50;
+  padding-bottom: env(safe-area-inset-bottom, 0px);
+}
+
+/* Sidebar drawer backdrop */
+.sidebar-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.5);
+  z-index: 48;
+  backdrop-filter: blur(2px);
+}
+
+/* Sidebar drawer panel */
+.sidebar-drawer {
+  position: fixed;
+  top: 0;
+  left: 0;
+  bottom: 0;
+  z-index: 49;
+  width: min(280px, 80vw);
+  overflow-y: auto;
+  transform: translateX(0);
+  transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+.sidebar-drawer.hidden-drawer {
+  transform: translateX(-100%);
+}
+
+/* Responsive font scaling on very small screens */
+@media (max-width: 380px) {
+  h1, h2, h3,
+  .title,
+  [class*="text-xl"],
+  [class*="text-2xl"],
+  [class*="text-3xl"],
+  [class*="text-4xl"],
+  .card-title {
+    font-size: 17px !important;
+    line-height: 24px !important;
+  }
+
+  h4, h5,
+  .subtitle,
+  [class*="text-lg"],
+  .card-subtitle {
+    font-size: 15px !important;
+    line-height: 21px !important;
+  }
+
+  p, span:not(.sr-only), label, button, input, select, textarea, li, td, th, a {
+    font-size: 14px !important;
+    line-height: 20px !important;
+  }
+}
+
+/* Add bottom spacing to main content on mobile to account for bottom nav */
+@media (max-width: 1023px) {
+  #primary-content-grid {
+    padding-bottom: 80px !important;
+  }
+}
+
+/* Notification dropdown — prevent overflow on mobile */
+@media (max-width: 640px) {
+  #notification-dropdown {
+    right: auto !important;
+    left: 50% !important;
+    transform: translateX(-50%) !important;
+    width: calc(100vw - 2rem) !important;
+    max-width: 22rem !important;
+  }
+}
+
+/* Horizontal scroll for tab bars inside content panels */
+.tab-bar-scroll {
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: none;
+}
+.tab-bar-scroll::-webkit-scrollbar {
+  display: none;
+}
+
+/* Ensure tables scroll horizontally on small screens */
+.table-responsive {
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+/* Card grids — ensure minimum column widths don't cause overflow */
+.responsive-grid-2 {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 200px), 1fr));
+  gap: 0.75rem;
+}
+
+.responsive-grid-3 {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 240px), 1fr));
+  gap: 0.75rem;
+}
+
+
 
 

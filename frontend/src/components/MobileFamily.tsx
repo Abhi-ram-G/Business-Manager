@@ -173,14 +173,13 @@ export default function MobileFamily({
           <Wallet className="w-4 h-4 text-rose-450" />
           <span className="text-[9px] uppercase font-mono tracking-wider font-bold text-slate-500">Family Pot Ledger</span>
         </div>
-        
-        <div className="grid grid-cols-2 gap-3 text-xs">
+               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
           <div>
-            <span className="text-slate-500 text-[8px] font-mono leading-none block">TOTAL INCOME SOURCE</span>
+            <span className="text-slate-550 text-[8px] font-mono leading-none block uppercase">TOTAL INCOME SOURCE</span>
             <span className="text-emerald-400 font-extrabold mt-0.5 block">₹{totalIncome.toLocaleString()}</span>
           </div>
           <div>
-            <span className="text-slate-500 text-[8px] font-mono leading-none block">TOTAL OUTGOINGS</span>
+            <span className="text-slate-550 text-[8px] font-mono leading-none block uppercase">TOTAL OUTGOINGS</span>
             <span className="text-rose-400 font-extrabold mt-0.5 block">₹{totalExpenses.toLocaleString()}</span>
           </div>
         </div>
@@ -219,7 +218,7 @@ export default function MobileFamily({
             </span>
 
             <div className="space-y-2 font-mono">
-              <div className="grid grid-cols-2 gap-2">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                 <div>
                   <label className="text-[9px] text-slate-500 block">FAMILY MEMBER</label>
                   <input
@@ -241,7 +240,7 @@ export default function MobileFamily({
                 </div>
               </div>
 
-              <div className="grid grid-cols-2 gap-2">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                 <div>
                   <label className="text-[9px] text-slate-500 block">REASON SPENT Category</label>
                   <select
@@ -302,7 +301,7 @@ export default function MobileFamily({
                   <button onClick={() => handleOpenEditExpense(e)} className="p-1 bg-slate-950 text-slate-500 hover:text-white rounded">
                     <Edit className="w-3 h-3" />
                   </button>
-                  <button onClick={() => handleDeleteExpense(e.id, `${e.reason} (₹${e.amount})`)} className="p-1 bg-rose-950/20 text-rose-450 rounded">
+                  <button onClick={() => handleDeleteExpense(e.id, `${e.reason} (₹${e.amount})`)} className="p-1 bg-rose-950/20 text-rose-455 rounded">
                     <Trash2 className="w-3 h-3" />
                   </button>
                 </div>
@@ -319,10 +318,10 @@ export default function MobileFamily({
         {/* A. Member Wise Expenses */}
         <div className="space-y-1.5 pt-1 text-[9.5px]">
           <span className="text-[8.5px] text-slate-500 font-mono font-bold block uppercase tracking-wider">A. MEMBER-WISE EXPENSES:</span>
-          <div className="grid grid-cols-2 gap-2 text-slate-350">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-slate-350">
             {memberExpenses.map((m, idx) => (
               <div key={idx} className="bg-slate-950 p-1.5 rounded flex justify-between">
-                <span className="truncate w-14 text-slate-500 font-sans">{m.name}:</span>
+                <span className="truncate w-14 text-slate-550 font-sans">{m.name}:</span>
                 <span className="font-bold font-mono text-rose-400/90">₹{m.total}</span>
               </div>
             ))}
@@ -334,16 +333,16 @@ export default function MobileFamily({
           <span className="text-[8.5px] text-slate-500 font-mono font-bold block uppercase">B. MONTHLY EXPENSES:</span>
           <div className="flex justify-between items-center bg-slate-950 p-2 rounded">
             <span className="font-semibold text-slate-400">Total Spent (June 2026):</span>
-            <span className="text-rose-450 font-black font-mono">₹{monthlyExpensesTotal.toLocaleString()}</span>
+            <span className="text-rose-455 font-black font-mono">₹{monthlyExpensesTotal.toLocaleString()}</span>
           </div>
         </div>
 
         {/* C. Category Wise Expenses */}
         <div className="space-y-1.5 border-t border-slate-850/60 pt-2.5 text-[9.5px]">
           <span className="text-[8.5px] text-slate-500 font-mono font-bold block uppercase">C. CATEGORY-WISE EXPENSES:</span>
-          <div className="grid grid-cols-2 gap-2 font-mono">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 font-mono">
             {categorySummary.map((c, idx) => (
-              <div key={idx} className="flex justify-between text-slate-350 bg-slate-950 p-1 rounded">
+              <div key={idx} className="flex justify-between text-slate-350 bg-slate-955 p-1 rounded">
                 <span className="text-slate-500 text-[8.5px]">{c.category}:</span>
                 <span className="font-bold">₹{c.total.toLocaleString()}</span>
               </div>

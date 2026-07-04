@@ -4043,7 +4043,7 @@ export default function MobileBusiness({
                   </span>
 
                   <div className="space-y-2 font-mono">
-                    <div className="grid grid-cols-2 gap-2">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                       <div>
                         <label className="text-[9px] text-slate-500 block">SELECT FLEET UNIT</label>
                         <select
@@ -4070,7 +4070,7 @@ export default function MobileBusiness({
                       </div>
                     </div>
 
-                    <div className="grid grid-cols-2 gap-2">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                       <div>
                         <label className="text-[9px] text-slate-500 block">SERVICE TYPE / REPAIR</label>
                         <input
@@ -4218,7 +4218,7 @@ export default function MobileBusiness({
                       </select>
                     </div>
 
-                    <div className="grid grid-cols-2 gap-2">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                       <div>
                         <label className="text-[9px] text-slate-500 block">FUEL TYPE</label>
                         <select
@@ -4242,7 +4242,7 @@ export default function MobileBusiness({
                       </div>
                     </div>
 
-                    <div className="grid grid-cols-2 gap-2">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                       <div>
                         <label className="text-[9px] text-slate-500 block">COST PER LITER (₹)</label>
                         <input
@@ -4332,7 +4332,7 @@ export default function MobileBusiness({
                   </span>
 
                   <div className="space-y-2 font-mono">
-                    <div className="grid grid-cols-2 gap-2">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                       <div>
                         <label className="text-[9px] text-slate-500 block">ASSOCIATED CARRIER</label>
                         <select
@@ -4371,7 +4371,7 @@ export default function MobileBusiness({
                       />
                     </div>
 
-                    <div className="grid grid-cols-3 gap-1.5">
+                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-1.5">
                       <div>
                         <label className="text-[9px] text-slate-500 block">QUANTITY</label>
                         <input
@@ -4407,7 +4407,7 @@ export default function MobileBusiness({
                       </div>
                     </div>
 
-                    <div className="grid grid-cols-2 gap-2">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                       <div>
                         <label className="text-[9px] text-slate-500 block">VENDOR NAME</label>
                         <input
@@ -4875,7 +4875,7 @@ export default function MobileBusiness({
                   />
                 </div>
 
-                <div className="grid grid-cols-2 gap-2 text-[10px]">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-[10px]">
                   <div>
                     <label className="text-[9px] text-slate-500 block uppercase font-mono tracking-wider">LOCATION</label>
                     <input
@@ -4898,7 +4898,7 @@ export default function MobileBusiness({
                   </div>
                 </div>
 
-                <div className="grid grid-cols-2 gap-2 text-[10px]">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-[10px]">
                   <div>
                     <label className="text-[9px] text-slate-500 block uppercase font-mono">BILL DATE</label>
                     <input type="date" value={billDate} onChange={(e) => setBillDate(e.target.value)} className="w-full bg-slate-950 p-1.5 rounded text-slate-300 font-mono border border-slate-850" />
@@ -4909,7 +4909,7 @@ export default function MobileBusiness({
                   </div>
                 </div>
 
-                <div className="grid grid-cols-2 gap-2 text-[10px]">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-[10px]">
                   <div>
                     <label className="text-[9px] text-slate-500 block uppercase font-mono">BOREWELL TYPE SLABS</label>
                     <select
@@ -4945,7 +4945,7 @@ export default function MobileBusiness({
                     </div>
 
                     {/* Bill Date automatic / manual */}
-                    <div className="grid grid-cols-2 gap-2 text-[10px] items-end">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-[10px] items-end">
                       <div>
                         <label className="text-[9px] text-indigo-400 block uppercase font-mono font-bold">BILL DATE TYPE</label>
                         <select
@@ -4971,7 +4971,7 @@ export default function MobileBusiness({
                     </div>
 
                     {/* Starting and Ending feet */}
-                    <div className="grid grid-cols-2 gap-2 text-[10px]">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-[10px]">
                       <div>
                         <label className="text-[9px] text-teal-400 block uppercase font-mono font-bold">STARTING FEET</label>
                         <input

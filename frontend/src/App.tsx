@@ -103,6 +103,8 @@ export default function App() {
   const currentUserRole: UserRole = "Admin";
   const [isMobileLoggedIn, setIsMobileLoggedIn] = useState<boolean>(() => sessionStorage.getItem("srs_session_active") === "true");
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState<boolean>(false);
+  // Mobile nav drawer (hamburger on small screens)
+  const [isMobileNavOpen, setIsMobileNavOpen] = useState<boolean>(false);
   const [loginPin, setLoginPin] = useState<string>("");
   const [showLoginPin, setShowLoginPin] = useState<boolean>(false);
   const [loginMessage, setLoginMessage] = useState<string>("");
@@ -1683,13 +1685,13 @@ export default function App() {
       <style dangerouslySetInnerHTML={{ __html: dynamicGlobalStyles }} />
 
       {!isMobileLoggedIn && (
-        <main className="fixed inset-0 z-50 flex items-center justify-center px-4 py-10 bg-[radial-gradient(circle_at_top,_rgba(249,115,22,0.18),_transparent_35%),linear-gradient(180deg,_#fff7ed_0%,_#fef3c7_100%)] text-slate-950 overflow-y-auto">
-          <div className="w-full max-w-md rounded-3xl border border-amber-200/70 bg-white/90 shadow-[0_30px_80px_-30px_rgba(124,45,18,0.35)] backdrop-blur p-6 md:p-8 space-y-6">
+        <main className="fixed inset-0 z-50 flex items-center justify-center px-3 sm:px-6 py-8 sm:py-10 bg-[radial-gradient(circle_at_top,_rgba(249,115,22,0.18),_transparent_35%),linear-gradient(180deg,_#fff7ed_0%,_#fef3c7_100%)] text-slate-950 overflow-y-auto">
+          <div className="w-full max-w-md rounded-3xl border border-amber-200/70 bg-white/90 shadow-[0_30px_80px_-30px_rgba(124,45,18,0.35)] backdrop-blur p-4 sm:p-6 md:p-8 space-y-5">
             <div className="space-y-2 text-center">
-              <div className="mx-auto w-14 h-14 rounded-2xl bg-amber-100 text-amber-700 flex items-center justify-center shadow-inner">
-                <Lock className="w-7 h-7" />
+              <div className="mx-auto w-12 h-12 sm:w-14 sm:h-14 rounded-2xl bg-amber-100 text-amber-700 flex items-center justify-center shadow-inner">
+                <Lock className="w-6 h-6 sm:w-7 sm:h-7" />
               </div>
-              <h1 className="text-2xl md:text-3xl font-black tracking-tight">Login</h1>
+              <h1 className="text-xl sm:text-2xl md:text-3xl font-black tracking-tight">Login</h1>
             </div>
 
             <form onSubmit={handleLogin} className="space-y-4">
@@ -1725,7 +1727,7 @@ export default function App() {
                         e.preventDefault();
                         handleLoginPinChange(index, e.clipboardData.getData("text"));
                       }}
-                      className={`h-16 md:h-[4.5rem] w-full min-w-0 flex-1 border-0 border-r border-slate-900/20 bg-white text-center text-3xl md:text-4xl font-black font-mono tracking-[0.02em] outline-none focus:bg-amber-50 ${index === 0 ? "rounded-l-2xl" : ""} ${index === loginPinLength - 1 ? "rounded-r-2xl border-r-0" : ""}`}
+                      className={`h-11 sm:h-14 md:h-[4.5rem] w-full min-w-0 flex-1 border-0 border-r border-slate-900/20 bg-white text-center text-xl sm:text-3xl md:text-4xl font-black font-mono tracking-[0.02em] outline-none focus:bg-amber-50 ${index === 0 ? "rounded-l-2xl" : ""} ${index === loginPinLength - 1 ? "rounded-r-2xl border-r-0" : ""}`}
                       aria-label={`PIN digit ${index + 1}`}
                     />
                   ))}
@@ -1752,23 +1754,33 @@ export default function App() {
       )}
       
       {/* 1. TOP MASTER ENTERPRISE HEADER BAR */}
-      <header id="master-header" className="bg-slate-900 border-b border-slate-800 px-6 py-4 sticky top-0 z-40 shadow-xl backdrop-blur-md bg-opacity-95">
-        <div className="max-w-7xl mx-auto flex flex-col md:flex-row md:items-center justify-between gap-4">
+      <header id="master-header" className="bg-slate-900 border-b border-slate-800 px-3 sm:px-4 md:px-6 py-3 sticky top-0 z-40 shadow-xl backdrop-blur-md bg-opacity-95">
+        <div className="max-w-7xl mx-auto flex items-center justify-between gap-2">
           
-          {/* Logo & Platform Name */}
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-gradient-to-tr from-indigo-600 to-indigo-400 flex items-center justify-center text-slate-100 shadow-md shadow-indigo-900/30">
-              <LayoutGrid className="w-5 h-5 text-slate-50" />
+          {/* Left: Hamburger (mobile only) + Logo */}
+          <div className="flex items-center gap-2 sm:gap-3 min-w-0">
+            {/* Hamburger menu — only on < lg */}
+            <button
+              type="button"
+              aria-label="Open navigation"
+              onClick={() => setIsMobileNavOpen(true)}
+              className="lg:hidden p-2 rounded-lg bg-slate-950 border border-slate-800 text-slate-300 hover:text-white hover:bg-slate-800 transition cursor-pointer shrink-0"
+            >
+              <Menu className="w-4 h-4" />
+            </button>
+
+            <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-xl bg-gradient-to-tr from-indigo-600 to-indigo-400 flex items-center justify-center text-slate-100 shadow-md shadow-indigo-900/30 shrink-0">
+              <LayoutGrid className="w-4 h-4 sm:w-5 sm:h-5 text-slate-50" />
             </div>
-            <div>
-              <h1 className="text-lg font-bold tracking-tight text-orange-300 flex items-center gap-2">
+            <div className="min-w-0">
+              <h1 className="text-sm sm:text-base lg:text-lg font-bold tracking-tight text-orange-300 truncate">
                 Manager
               </h1>
             </div>
           </div>
 
-          {/* Sync Engine, Notifications Status, & Multi-Role Controller */}
-          <div className="flex flex-wrap items-center gap-3">
+          {/* Right: Notifications & Lock */}
+          <div className="flex items-center gap-1.5 sm:gap-3 shrink-0">
             
             {/* Notifications Alert Center Toggle */}
             <div className="relative">
@@ -1786,14 +1798,14 @@ export default function App() {
               
               {/* Dropdown Notification Box */}
               {showNotificationDrawer && (
-                <div className="absolute right-0 mt-2 w-80 bg-slate-900 border border-slate-800 rounded-xl shadow-2xl z-50 p-4">
+                <div id="notification-dropdown" className="absolute right-0 mt-2 w-80 bg-slate-900 border border-slate-800 rounded-xl shadow-2xl z-50 p-4">
                   <div className="flex items-center justify-between pb-2 border-b border-slate-800 mb-3">
                     <span className="text-xs font-bold text-slate-300">Live FCM Push Notifications</span>
                     <button 
                       onClick={() => setNotifications(prev => prev.map(n => ({ ...n, isRead: true })))}
                       className="text-[10px] text-indigo-400 hover:underline"
                     >
-                      Clear all red
+                      Clear all
                     </button>
                   </div>
                   <div className="space-y-2 max-h-60 overflow-y-auto">
@@ -1827,30 +1839,96 @@ export default function App() {
             <button
               type="button"
               onClick={handleLockScreen}
-              className="flex items-center gap-1.5 bg-slate-950 px-3 py-1.5 rounded-lg border border-slate-800 text-xs text-slate-200 hover:bg-slate-900 hover:border-slate-700 transition cursor-pointer"
+              className="flex items-center gap-1.5 bg-slate-950 px-2 sm:px-3 py-1.5 rounded-lg border border-slate-800 text-xs text-slate-200 hover:bg-slate-900 hover:border-slate-700 transition cursor-pointer"
               aria-label="Lock screen"
               title="Lock screen"
             >
               <Lock className="w-3.5 h-3.5 text-amber-400" />
-              <span className="font-mono font-bold tracking-wide">Lock</span>
+              <span className="font-mono font-bold tracking-wide hidden sm:inline">Lock</span>
             </button>
 
           </div>
         </div>
       </header>
 
+      {/* MOBILE SIDEBAR DRAWER BACKDROP (< lg) */}
+      {isMobileNavOpen && (
+        <div
+          className="sidebar-backdrop"
+          onClick={() => setIsMobileNavOpen(false)}
+          aria-hidden="true"
+        />
+      )}
+
+      {/* MOBILE SIDEBAR DRAWER PANEL (< lg) */}
+      <div
+        className={`sidebar-drawer bg-slate-900 border-r border-slate-800 flex flex-col p-4 lg:hidden ${
+          isMobileNavOpen ? "" : "hidden-drawer"
+        }`}
+        role="dialog"
+        aria-modal="true"
+        aria-label="Navigation menu"
+      >
+        <div className="flex items-center justify-between pb-4 border-b border-slate-800 mb-4">
+          <div className="flex items-center gap-2">
+            <LayoutGrid className="w-5 h-5 text-indigo-400" />
+            <span className="text-xs font-black tracking-wider text-slate-100 font-mono uppercase">Navigation</span>
+          </div>
+          <button
+            onClick={() => setIsMobileNavOpen(false)}
+            className="p-1.5 rounded-lg bg-slate-950 border border-slate-800 text-slate-400 hover:text-white transition cursor-pointer"
+            aria-label="Close navigation"
+          >
+            <X className="w-4 h-4" />
+          </button>
+        </div>
+
+        <div className="flex-1 space-y-1.5 overflow-y-auto">
+          {[
+            { id: "dashboard", label: "Dashboard Hub", desc: "Overview & Analytics", icon: Home },
+            { id: "business", label: "Business", desc: "Labour, Fleet & Logistics", icon: Briefcase },
+            { id: "finance", label: "Finance", desc: "Debit & Lending Books", icon: DollarSign },
+            { id: "expenses", label: "Family Budgeting", desc: "Budgets & Income", icon: Users },
+            { id: "legacy-documents", label: "Secure Vault", desc: "Aadhaar, PAN & RC Book", icon: FileText },
+            { id: "legacy-notifications", label: "Reminders & Alerts", desc: "Compliance Auditing", icon: Bell },
+            { id: "settings", label: "System Settings", desc: "Biometrics & Seeds", icon: Settings },
+          ].map((item) => {
+            const isSelected = selectedMobileModule === item.id ||
+              (item.id === "business" && (selectedMobileModule === "labour" || selectedMobileModule === "vehicle"));
+            return (
+              <button
+                key={item.id}
+                onClick={() => {
+                  setSelectedMobileModule(item.id as any);
+                  setIsMobileNavOpen(false);
+                }}
+                className={`w-full text-left p-3 rounded-xl flex items-center gap-3 transition cursor-pointer ${
+                  isSelected ? "nav-item-selected" : "nav-item-unselected border border-transparent"
+                }`}
+              >
+                <item.icon className="w-4 h-4 shrink-0" />
+                <div className="flex-1 min-w-0">
+                  <div className="text-xs font-bold truncate">{item.label}</div>
+                  <div className="text-[10px] opacity-70 truncate">{item.desc}</div>
+                </div>
+              </button>
+            );
+          })}
+        </div>
+      </div>
+
       {/* 3. PRIMARY CONTENT PANEL - DESKTOP LAYOUT SHIFT CONTROLS */}
-      <main id="primary-content-grid" className="flex-1 max-w-7xl w-full mx-auto p-4 md:p-6 flex flex-col gap-6">
+      <main id="primary-content-grid" className="flex-1 max-w-7xl w-full mx-auto p-2 sm:p-4 md:p-6 flex flex-col gap-4 md:gap-6">
         
         {/* WORKSPACE CONTENT BODY */}
         <section id="workspace-container" className="flex-1">
-          <div className="space-y-6 animate-fade-in">
+          <div className="space-y-4 md:space-y-6 animate-fade-in">
               
               {/* Widescreen Desktop Web Application View Block */}
-              <div className="flex flex-col lg:flex-row gap-6 items-start animate-fade-in w-full">
+              <div className="flex flex-col lg:flex-row gap-4 lg:gap-6 items-start animate-fade-in w-full">
 
-                  {/* Web Application Left Navigation Sidebar */}
-                  <div className={`transition-all duration-300 ease-in-out bg-slate-900 py-4 pr-4 pl-0 rounded-2xl border border-slate-800 space-y-4 lg:sticky lg:top-24 h-fit shrink-0 ${isSidebarCollapsed ? 'w-full lg:w-20' : 'w-full lg:w-72'}`}>
+                  {/* Web Application Left Navigation Sidebar — Desktop only (hidden on < lg) */}
+                  <div className={`hidden lg:block transition-all duration-300 ease-in-out bg-slate-900 py-4 pr-4 pl-0 rounded-2xl border border-slate-800 space-y-4 lg:sticky lg:top-24 h-fit shrink-0 ${isSidebarCollapsed ? 'lg:w-20' : 'lg:w-72'}`}>
                     <div className={`flex items-center pb-3 border-b border-slate-800 ${isSidebarCollapsed ? 'justify-center' : 'justify-between'}`}>
                       <div className="flex items-center gap-2 min-w-0">
                         <LayoutGrid className="w-5 h-5 text-indigo-400 shrink-0" />
@@ -1912,7 +1990,7 @@ export default function App() {
                   </div>
 
                   {/* Web Application Right Content Board */}
-                  <div id="right-content-board" className="flex-1 min-w-0 space-y-6">
+                  <div id="right-content-board" className="flex-1 min-w-0 space-y-4 md:space-y-6">
 
                     {isModuleBlockedForRole(selectedMobileModule) ? (
                       <div className="bg-slate-900 p-8 rounded-2xl border border-slate-800 text-center flex flex-col justify-center items-center">
@@ -1929,7 +2007,7 @@ export default function App() {
                         </button>
                       </div>
                     ) : (
-                      <div className="bg-slate-900 p-6 rounded-2xl border border-slate-800 space-y-6">
+                      <div className="bg-slate-900 p-3 sm:p-4 md:p-6 rounded-2xl border border-slate-800 space-y-4 md:space-y-6">
                         <div className="w-full">
                           {selectedMobileModule === "dashboard" && (
                             <MobileDashboard
@@ -3380,9 +3458,63 @@ export default function App() {
       </main>
 
       {/* 4. FOOTER CREDITS */}
-      <footer id="master-footer" className="bg-slate-900 border-t border-slate-800 py-3.5 text-center text-xs text-slate-500 font-mono mt-8">
+      <footer id="master-footer" className="bg-slate-900 border-t border-slate-800 py-3.5 text-center text-xs text-slate-500 font-mono mt-4 md:mt-8 mb-16 lg:mb-0">
         <p>© 2026 Smart Business & Family Manager. All rights reserved. Prepared for abhiram.ad23@bitsathy.ac.in.</p>
       </footer>
+
+      {/* 5. MOBILE BOTTOM NAVIGATION BAR (only visible on < lg screens) */}
+      <nav
+        className="mobile-bottom-nav lg:hidden bg-slate-900 border-t border-slate-800 shadow-[0_-4px_20px_rgba(0,0,0,0.3)] fixed bottom-0 left-0 right-0 z-50"
+        aria-label="Mobile navigation"
+      >
+        <div className="flex items-stretch">
+          {[
+            { id: "dashboard", label: "Home", icon: Home },
+            { id: "business", label: "Business", icon: Briefcase },
+            { id: "finance", label: "Finance", icon: DollarSign },
+            { id: "expenses", label: "Family", icon: Users },
+            { id: "settings", label: "Settings", icon: Settings },
+          ].map((item) => {
+            const isActive =
+              selectedMobileModule === item.id ||
+              (item.id === "business" &&
+                (selectedMobileModule === "labour" ||
+                  selectedMobileModule === "vehicle" ||
+                  selectedMobileModule === "legacy-labour" ||
+                  selectedMobileModule === "legacy-vehicle"));
+            return (
+              <button
+                key={item.id}
+                onClick={() => {
+                  setSelectedMobileModule(item.id as any);
+                  setIsMobileNavOpen(false);
+                }}
+                className={`flex-1 flex flex-col items-center justify-center gap-0.5 py-2.5 px-1 transition-colors duration-150 cursor-pointer border-0 outline-none ${
+                  isActive
+                    ? "text-orange-500 bg-orange-950/20"
+                    : "text-slate-500 hover:text-slate-300 hover:bg-slate-800/50"
+                }`}
+                aria-label={item.label}
+                aria-current={isActive ? "page" : undefined}
+              >
+                <item.icon
+                  className={`w-5 h-5 transition-transform duration-150 ${isActive ? "scale-110" : ""}`}
+                />
+                <span
+                  className={`text-[9px] font-bold tracking-wide leading-none ${
+                    isActive ? "text-orange-500" : ""
+                  }`}
+                >
+                  {item.label}
+                </span>
+                {isActive && (
+                  <span className="absolute bottom-0 w-8 h-0.5 rounded-full bg-orange-500" />
+                )}
+              </button>
+            );
+          })}
+        </div>
+      </nav>
 
     </div>
   );

@@ -1109,7 +1109,7 @@ export default function MobileFinance({
               </span>
 
               <div className="space-y-2 font-mono text-slate-350">
-                <div className="grid grid-cols-2 gap-2">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                   <div>
                     <label className="text-[9px] text-slate-500 block">LENDER / DEBT OWNER</label>
                     <input
@@ -1133,7 +1133,7 @@ export default function MobileFinance({
                   </div>
                 </div>
 
-                <div className="grid grid-cols-3 gap-1">
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-1.5">
                   <div>
                     <label className="text-[9px] text-slate-500 block">INTEREST TYPE</label>
                     <select
@@ -1185,7 +1185,7 @@ export default function MobileFinance({
                   </div>
                 </div>
 
-                <div className="grid grid-cols-3 gap-1">
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-1.5">
                   <div>
                     <label className="text-[9px] text-slate-500 block">MY NAME</label>
                     <input
@@ -1214,7 +1214,7 @@ export default function MobileFinance({
                   </div>
                 </div>
 
-                <div className="grid grid-cols-3 gap-1">
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-1.5">
                   <div>
                     <label className="text-[9px] text-slate-500 block">PAYMENT STATUS</label>
                     <select
@@ -1262,7 +1262,7 @@ export default function MobileFinance({
                       Vehicle Loan Configuration
                     </span>
                     
-                    <div className="grid grid-cols-2 gap-2">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                       <div>
                         <label className="text-[9px] text-slate-400 block">SELECT FLEET VEHICLE</label>
                         <select

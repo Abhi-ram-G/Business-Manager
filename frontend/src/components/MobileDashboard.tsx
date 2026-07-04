@@ -437,33 +437,33 @@ export default function MobileDashboard({
           <span className="text-[9px] font-mono text-slate-500">Interactive</span>
         </div>
 
-        {/* Chart Selector Mini-pill-tabs */}
-        <div className="grid grid-cols-4 gap-1.5 bg-slate-950 p-1 rounded-xl text-[9.5px] font-bold font-mono border border-slate-800/80">
+        {/* Chart Selector Mini-pill-tabs - scrollable on small screens */}
+        <div className="tab-bar-scroll flex gap-1.5 bg-slate-950 p-1 rounded-xl text-[9.5px] font-bold font-mono border border-slate-800/80 min-w-0">
           <button 
             type="button" 
             onClick={() => setActiveChartTab("salary")}
-            className={`py-1.5 rounded-lg text-center transition ${activeChartTab === "salary" ? "bg-indigo-650 text-white shadow-sm shadow-indigo-950/80" : "text-slate-400 hover:text-slate-100"}`}
+            className={`py-1.5 px-2 rounded-lg text-center transition shrink-0 ${activeChartTab === "salary" ? "bg-indigo-650 text-white shadow-sm shadow-indigo-950/80" : "text-slate-400 hover:text-slate-100"}`}
           >
             Salary
           </button>
           <button 
             type="button" 
             onClick={() => setActiveChartTab("fuel")}
-            className={`py-1.5 rounded-lg text-center transition ${activeChartTab === "fuel" ? "bg-amber-600 text-white shadow-sm shadow-amber-950/80" : "text-slate-400 hover:text-slate-100"}`}
+            className={`py-1.5 px-2 rounded-lg text-center transition shrink-0 ${activeChartTab === "fuel" ? "bg-amber-600 text-white shadow-sm shadow-amber-950/80" : "text-slate-400 hover:text-slate-100"}`}
           >
             Fuel
           </button>
           <button 
             type="button" 
             onClick={() => setActiveChartTab("finance")}
-            className={`py-1.5 rounded-lg text-center transition ${activeChartTab === "finance" ? "bg-teal-600 text-white shadow-sm shadow-teal-950/80" : "text-slate-400 hover:text-slate-100"}`}
+            className={`py-1.5 px-2 rounded-lg text-center transition shrink-0 ${activeChartTab === "finance" ? "bg-teal-600 text-white shadow-sm shadow-teal-950/80" : "text-slate-400 hover:text-slate-100"}`}
           >
             Credit
           </button>
           <button 
             type="button" 
             onClick={() => setActiveChartTab("family")}
-            className={`py-1.5 rounded-lg text-center transition ${activeChartTab === "family" ? "bg-rose-600 text-white shadow-sm shadow-rose-950/80" : "text-slate-400 hover:text-slate-100"}`}
+            className={`py-1.5 px-2 rounded-lg text-center transition shrink-0 ${activeChartTab === "family" ? "bg-rose-600 text-white shadow-sm shadow-rose-950/80" : "text-slate-400 hover:text-slate-100"}`}
           >
             Family
           </button>
