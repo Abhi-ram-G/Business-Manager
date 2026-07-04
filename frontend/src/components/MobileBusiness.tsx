@@ -2205,7 +2205,7 @@ export default function MobileBusiness({
   const vehicleWiseFuelCosts = vehicles.map(v => {
     const total = fuelEntries
       .filter(f => f.vehicleName === v.vehicleName)
-      .reduce((sum, f) => sum + Number(f.totalAmount ?? f.cost ?? ((f.liters ?? 0) * (f.perLiterCost ?? 0)) ?? 0), 0);
+      .reduce((sum, f) => sum + Number(f.totalAmount ?? f.cost ?? ((f.liters ?? 0) * (f.perLiterCost ?? 0))), 0);
     return { name: v.vehicleName, cost: total };
   });
 
@@ -3279,9 +3279,6 @@ export default function MobileBusiness({
               )}
 
               {/* Roster Cards Flow */}
-  )}
-
-              {/* Roster Cards Flow */}
               <div className="space-y-2">
                 {activeLaboursList.length === 0 ? (
                   <div className="text-center p-6 bg-slate-900/30 rounded-xl text-[10px] text-slate-500">
@@ -3833,8 +3830,10 @@ export default function MobileBusiness({
                 </div>
               </div>
             </div>
+          )}
         </div>
       )}
+
 
 
       {/* ======================= B. ATTENDANCE SUBSECTION ======================= */}
@@ -6028,7 +6027,43 @@ export default function MobileBusiness({
                 {/* UNCONDITIONAL CASING & BATTA SPECIFICATIONS */}
                 <div className="border-t border-slate-850 pt-2.5 space-y-2">
                   <div className="text-[9px] text-indigo-400 font-mono uppercase font-black tracking-wider">
-                    Casing Pipe Specifications (Both 10" and 7" Entry)
+                    Casing Pipe Specifications & Internal Equipment Selection
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-2 text-[10px] bg-slate-950/40 p-2 rounded-xl border border-slate-850">
+                    <div>
+                      <label className="text-[8.5px] text-indigo-400 font-bold uppercase block mb-1">Drilling Bit Used</label>
+                      <select
+                        value={selectedBitId}
+                        onChange={(e) => setSelectedBitId(e.target.value)}
+                        className="w-full bg-slate-950 p-1.5 rounded text-slate-200 border border-slate-850 font-mono text-[9px] focus:outline-none focus:border-indigo-500"
+                      >
+                        <option value="">No Bit Selected</option>
+                        {bitEntries.map((bit) => (
+                          <option key={bit.id} value={bit.id}>
+                            {bit.bitNo} ({bit.brand} • {bit.sizeMm}mm)
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+                    <div>
+                      <label className="text-[8.5px] text-indigo-400 font-bold uppercase block mb-1">Drilling Hammer Used</label>
+                      <select
+                        value={selectedHammerId}
+                        onChange={(e) => setSelectedHammerId(e.target.value)}
+                        className="w-full bg-slate-950 p-1.5 rounded text-slate-200 border border-slate-850 font-mono text-[9px] focus:outline-none focus:border-indigo-500"
+                      >
+                        <option value="">No Hammer Selected</option>
+                        {hammerEntries.map((h) => {
+                          const totalUsed = (h.usageHistory || []).reduce((sum, item) => sum + item.calculatedFeet, 0);
+                          return (
+                            <option key={h.id} value={h.id}>
+                              {h.hammerNo} • {h.brand} ({totalUsed}/{h.capableFeetDepth} ft)
+                            </option>
+                          );
+                        })}
+                      </select>
+                    </div>
                   </div>
                   
                   <div className="grid grid-cols-2 gap-2 text-[10px] bg-slate-950/40 p-2 rounded-xl border border-slate-850">

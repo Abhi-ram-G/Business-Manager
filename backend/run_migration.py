@@ -30,6 +30,9 @@ SQL_STATEMENTS = [
     "ALTER TABLE labours ALTER COLUMN aadhaar_number DROP NOT NULL;",
     "ALTER TABLE labours ALTER COLUMN address DROP NOT NULL;",
     "ALTER TABLE labours ALTER COLUMN emergency_contact DROP NOT NULL;",
+    # Add bit_id and hammer_id to business_bills
+    "ALTER TABLE business_bills ADD COLUMN IF NOT EXISTS bit_id varchar(50);",
+    "ALTER TABLE business_bills ADD COLUMN IF NOT EXISTS hammer_id varchar(50);",
 ]
 
 print(f"Connecting to database...")

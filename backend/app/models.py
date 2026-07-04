@@ -161,6 +161,9 @@ class BusinessBill(Base, TimestampMixin):
     casing7_rate: Mapped[float | None] = mapped_column(Numeric(10, 2))
     custom_slab_rates: Mapped[dict[str, Any] | None] = mapped_column(JSON)
     discount_amount: Mapped[float | None] = mapped_column(Numeric(10, 2))
+    bit_id: Mapped[str | None] = mapped_column(String(50))
+    hammer_id: Mapped[str | None] = mapped_column(String(50))
+
 
 
 class FuelEntry(Base, TimestampMixin):
