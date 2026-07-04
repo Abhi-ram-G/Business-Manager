@@ -2075,6 +2075,67 @@ export default function App() {
         </main>
       )}
       
+      {/* Web Application Left Navigation Sidebar — Desktop only (hidden on < lg) */}
+      <div className={`hidden lg:block transition-all duration-300 ease-in-out bg-slate-900 py-4 px-4 rounded-none border-r border-slate-800 space-y-4 lg:fixed lg:left-0 lg:top-0 lg:bottom-0 lg:h-screen lg:z-50 shrink-0 ${isSidebarCollapsed ? 'lg:w-20' : 'lg:w-72'}`}>
+        <div className={`flex items-center pb-3 border-b border-slate-800 ${isSidebarCollapsed ? 'justify-center' : 'justify-between'}`}>
+          <div className="flex items-center gap-2 min-w-0">
+            <LayoutGrid className="w-5 h-5 text-indigo-400 shrink-0" />
+            {!isSidebarCollapsed && (
+              <span className="text-xs font-black tracking-wider text-slate-100 font-mono uppercase truncate">Control Console</span>
+            )}
+          </div>
+          <button 
+            onClick={() => {
+              setIsSidebarCollapsed(!isSidebarCollapsed);
+              localStorage.setItem("srs_sidebar_collapsed", String(!isSidebarCollapsed));
+            }}
+            title={isSidebarCollapsed ? "Expand Sidebar" : "Collapse Sidebar"}
+            className="p-1 rounded bg-slate-950 border border-slate-850 hover:border-indigo-500 text-slate-400 hover:text-white transition duration-150 cursor-pointer ml-1"
+          >
+            {isSidebarCollapsed ? <ChevronRight className="w-3.5 h-3.5" /> : <ChevronLeft className="w-3.5 h-3.5" />}
+          </button>
+        </div>
+
+        <div className="space-y-1.5">
+          {[
+            { id: "dashboard", label: "Dashboard Hub", desc: "Overview & Analytics Graphs", icon: Home },
+            { id: "business", label: "Business", desc: "Labour Pool, Fleet & Logistics", icon: Briefcase },
+            { id: "finance", label: "Finance", desc: "Debit & Lending Account Books", icon: DollarSign },
+            { id: "expenses", label: "Family Budgeting", desc: "Category Budgets & Income", icon: Users },
+            { id: "legacy-documents", label: "Secure Vault", desc: "Aadhaar, PAN & RC Book PDFs", icon: FileText },
+            { id: "legacy-notifications", label: "Reminders & Alerts", desc: "Automated Compliance Auditing", icon: Bell },
+            { id: "settings", label: "System Settings", desc: "Biometrics & Console Seeds", icon: Settings },
+          ].map((item) => {
+            const isSelected = selectedMobileModule === item.id || 
+              (item.id === "business" && (selectedMobileModule === "labour" || selectedMobileModule === "vehicle" || selectedMobileModule === "legacy-labour" || selectedMobileModule === "legacy-vehicle"));
+
+            return (
+              <button
+                key={item.id}
+                onClick={() => {
+                  setSelectedMobileModule(item.id as any);
+                }}
+                title={isSidebarCollapsed ? item.label : undefined}
+                className={`w-full rounded-xl flex items-center transition cursor-pointer ${
+                  isSidebarCollapsed ? 'justify-center p-3' : 'text-left p-3 gap-3'
+                } ${
+                  isSelected 
+                    ? "nav-item-selected shadow-md shadow-indigo-950/30" 
+                    : "nav-item-unselected border border-transparent"
+                }`}
+              >
+                <item.icon className="w-4 h-4 shrink-0" />
+                {!isSidebarCollapsed && (
+                  <div className="flex-1 min-w-0">
+                    <div className="text-xs font-bold truncate">{item.label}</div>
+                  </div>
+                )}
+              </button>
+            );
+          })}
+        </div>
+      </div>
+
       {/* 1. TOP MASTER ENTERPRISE HEADER BAR */}
       <header id="master-header" className={`bg-slate-900 border-b border-slate-800 px-3 sm:px-4 md:px-6 py-3 sticky top-0 z-40 shadow-xl backdrop-blur-md bg-opacity-95 transition-all duration-300 ${isSidebarCollapsed ? 'lg:pl-20' : 'lg:pl-72'}`}>
         <div className="max-w-7xl mx-auto flex items-center justify-between gap-2">
@@ -2259,67 +2320,7 @@ export default function App() {
               {/* Widescreen Desktop Web Application View Block */}
               <div className="flex flex-col items-stretch lg:items-start animate-fade-in w-full min-h-0">
 
-                  {/* Web Application Left Navigation Sidebar — Desktop only (hidden on < lg) */}
-                  <div className={`hidden lg:block transition-all duration-300 ease-in-out bg-slate-900 py-4 px-4 rounded-none border-r border-slate-800 space-y-4 lg:fixed lg:left-0 lg:top-0 lg:bottom-0 lg:h-screen lg:z-50 shrink-0 ${isSidebarCollapsed ? 'lg:w-20' : 'lg:w-72'}`}>
-                    <div className={`flex items-center pb-3 border-b border-slate-800 ${isSidebarCollapsed ? 'justify-center' : 'justify-between'}`}>
-                      <div className="flex items-center gap-2 min-w-0">
-                        <LayoutGrid className="w-5 h-5 text-indigo-400 shrink-0" />
-                        {!isSidebarCollapsed && (
-                          <span className="text-xs font-black tracking-wider text-slate-100 font-mono uppercase truncate">Control Console</span>
-                        )}
-                      </div>
-                      <button 
-                        onClick={() => {
-                          setIsSidebarCollapsed(!isSidebarCollapsed);
-                          localStorage.setItem("srs_sidebar_collapsed", String(!isSidebarCollapsed));
-                        }}
-                        title={isSidebarCollapsed ? "Expand Sidebar" : "Collapse Sidebar"}
-                        className="p-1 rounded bg-slate-950 border border-slate-850 hover:border-indigo-500 text-slate-400 hover:text-white transition duration-150 cursor-pointer ml-1"
-                      >
-                        {isSidebarCollapsed ? <ChevronRight className="w-3.5 h-3.5" /> : <ChevronLeft className="w-3.5 h-3.5" />}
-                      </button>
-                    </div>
 
-                    <div className="space-y-1.5">
-                      {[
-                        { id: "dashboard", label: "Dashboard Hub", desc: "Overview & Analytics Graphs", icon: Home },
-                        { id: "business", label: "Business", desc: "Labour Pool, Fleet & Logistics", icon: Briefcase },
-                        { id: "finance", label: "Finance", desc: "Debit & Lending Account Books", icon: DollarSign },
-                        { id: "expenses", label: "Family Budgeting", desc: "Category Budgets & Income", icon: Users },
-                        { id: "legacy-documents", label: "Secure Vault", desc: "Aadhaar, PAN & RC Book PDFs", icon: FileText },
-                        { id: "legacy-notifications", label: "Reminders & Alerts", desc: "Automated Compliance Auditing", icon: Bell },
-                        { id: "settings", label: "System Settings", desc: "Biometrics & Console Seeds", icon: Settings },
-                      ].map((item) => {
-                        const isSelected = selectedMobileModule === item.id || 
-                          (item.id === "business" && (selectedMobileModule === "labour" || selectedMobileModule === "vehicle" || selectedMobileModule === "legacy-labour" || selectedMobileModule === "legacy-vehicle"));
-
-                        return (
-                          <button
-                            key={item.id}
-                            onClick={() => {
-                              setSelectedMobileModule(item.id as any);
-                            }}
-                            title={isSidebarCollapsed ? item.label : undefined}
-                            className={`w-full rounded-xl flex items-center transition cursor-pointer ${
-                              isSidebarCollapsed ? 'justify-center p-3' : 'text-left p-3 gap-3'
-                            } ${
-                              isSelected 
-                                ? "nav-item-selected shadow-md shadow-indigo-950/30" 
-                                : "nav-item-unselected border border-transparent"
-                            }`}
-                          >
-                            <item.icon className="w-4 h-4 shrink-0" />
-                            {!isSidebarCollapsed && (
-                              <div className="flex-1 min-w-0">
-                                <div className="text-xs font-bold truncate">{item.label}</div>
-                              </div>
-                            )}
-                          </button>
-                        );
-                      })}
-                    </div>
-
-                  </div>
 
                   {/* Web Application Right Content Board */}
                   <div id="right-content-board" className="flex-1 w-full min-w-0 space-y-4 md:space-y-6">
