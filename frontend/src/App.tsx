@@ -70,6 +70,8 @@ import {
 import { sqlSchemas, userStories, developmentRoadmap } from "./data";
 import { fetchSharedSnapshot, requestJson } from "./lib/sharedApi";
 
+const SHARED_DATA_REVISION_KEY = "srs_shared_data_revision";
+
 const translations = {
   en: {
     dashboard: "Dashboard Hub",
@@ -785,7 +787,11 @@ export default function App() {
       setAttendance(snapshot.attendance);
       setSalaryPayments(snapshot.salaryPayments);
       setVehicles(snapshot.vehicles);
-      setBusinessBills((prev) => (snapshot.businessBills.length > 0 ? snapshot.businessBills : prev));
+      setBusinessBills((prev) => {
+        const localBills = prev.filter((bill) => bill.source !== "server");
+        const serverBills = snapshot.businessBills.map((bill) => ({ ...bill, source: "server" as const }));
+        return [...serverBills, ...localBills];
+      });
       setFuelEntries(snapshot.fuelEntries);
       setTrips(snapshot.trips);
       setLoansGiven(snapshot.loansGiven);
@@ -800,6 +806,15 @@ export default function App() {
       console.error("Unable to refresh shared records", error);
     }
   }, [apiBaseUrl]);
+
+  const announceSharedDataChange = useCallback(async () => {
+    try {
+      localStorage.setItem(SHARED_DATA_REVISION_KEY, String(Date.now()));
+    } catch (error) {
+      console.error("Unable to announce shared data change", error);
+    }
+    await refreshSharedData();
+  }, [refreshSharedData]);
 
   // Save states to localStorage on state changes
   useEffect(() => {
@@ -868,6 +883,17 @@ export default function App() {
       void refreshSharedData();
     }, 15000);
     return () => window.clearInterval(interval);
+  }, [refreshSharedData]);
+
+  useEffect(() => {
+    const handleSharedDataRevision = (event: StorageEvent) => {
+      if (event.key === SHARED_DATA_REVISION_KEY) {
+        void refreshSharedData();
+      }
+    };
+
+    window.addEventListener("storage", handleSharedDataRevision);
+    return () => window.removeEventListener("storage", handleSharedDataRevision);
   }, [refreshSharedData]);
 
   // --- FORM STATE ENGINE FOR ADD NEW ITEMS (CRUD) ---
@@ -998,7 +1024,7 @@ export default function App() {
     try {
       await requestJson(apiBaseUrl, `/api/v1/notifications/${id}`, { method: "DELETE" });
       setNotifications(prev => prev.filter(n => n.id !== id));
-      void refreshSharedData();
+      void announceSharedDataChange();
     } catch (error) {
       console.error(error);
     }
@@ -1054,7 +1080,7 @@ export default function App() {
         }),
       });
       setLabours(prev => [entry, ...prev]);
-      void refreshSharedData();
+      void announceSharedDataChange();
     } catch (error) {
       console.error(error);
     }
@@ -1111,7 +1137,7 @@ export default function App() {
         }),
       });
       setVehicles(prev => [entry, ...prev]);
-      void refreshSharedData();
+      void announceSharedDataChange();
     } catch (error) {
       console.error(error);
     }
@@ -1151,7 +1177,7 @@ export default function App() {
         }),
       });
       setFuelEntries(prev => [entry, ...prev]);
-      void refreshSharedData();
+      void announceSharedDataChange();
     } catch (error) {
       console.error(error);
     }
@@ -1203,7 +1229,7 @@ export default function App() {
         }),
       });
       setLoansGiven(prev => [entry, ...prev]);
-      void refreshSharedData();
+      void announceSharedDataChange();
     } catch (error) {
       console.error(error);
     }
@@ -1303,6 +1329,8 @@ export default function App() {
       }));
     });
 
+    void announceSharedDataChange();
+
     setNewExpMemberName("");
     setNewExpDate("2026-06-15");
     setNewExpOtherReason("");
@@ -1341,7 +1369,7 @@ export default function App() {
     triggerLocalAction(`Upload Document: ${newDocName}`, () => {
       setDocuments(prev => [entry, ...prev]);
     });
-    void refreshSharedData();
+    void announceSharedDataChange();
 
     setNewDocName("");
     setNewDocOwner("");
@@ -1351,7 +1379,7 @@ export default function App() {
     try {
       await requestJson(apiBaseUrl, `/api/v1/labours/${id}`, { method: "DELETE" });
       setLabours(prev => prev.filter(l => l.id !== id));
-      void refreshSharedData();
+      void announceSharedDataChange();
     } catch (error) {
       console.error(error);
     }
@@ -1361,7 +1389,7 @@ export default function App() {
     try {
       await requestJson(apiBaseUrl, `/api/v1/vehicles/${id}`, { method: "DELETE" });
       setVehicles(prev => prev.filter(v => v.id !== id));
-      void refreshSharedData();
+      void announceSharedDataChange();
     } catch (error) {
       console.error(error);
     }
@@ -1401,7 +1429,7 @@ export default function App() {
         }),
       });
       setLabours(prev => prev.map(l => l.id === id ? next : l));
-      void refreshSharedData();
+      void announceSharedDataChange();
     } catch (error) {
       console.error(error);
     }
@@ -1432,7 +1460,7 @@ export default function App() {
           { id: `att-${Date.now()}`, labourId, date: activeDate, status }
         ]);
       }
-      void refreshSharedData();
+      void announceSharedDataChange();
     } catch (error) {
       console.error(error);
     }
@@ -2375,7 +2403,7 @@ export default function App() {
                               setAttendance={setAttendance}
                               isOnline={isOnline}
                               triggerOnlineSync={(op) => triggerLocalAction(op, () => {})}
-                              onSharedDataChanged={refreshSharedData}
+                              onSharedDataChanged={announceSharedDataChange}
                               initialSubSection="labour"
                             />
                           )}
@@ -2389,7 +2417,7 @@ export default function App() {
                               setLoansReceived={setLoansReceived}
                               vehicles={vehicles}
                               triggerOnlineSync={(op) => triggerLocalAction(op, () => {})}
-                              onSharedDataChanged={refreshSharedData}
+                              onSharedDataChanged={announceSharedDataChange}
                             />
                           )}
 
@@ -2400,7 +2428,7 @@ export default function App() {
                               setFamilyExpenses={setFamilyExpenses}
                               familyMembers={familyMembers}
                               incomeEntries={incomeEntries}
-                              onSharedDataChanged={refreshSharedData}
+                              onSharedDataChanged={announceSharedDataChange}
                             />
                           )}
 
