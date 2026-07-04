@@ -299,6 +299,8 @@ html, body {
 @media (max-width: 1023px) {
   #primary-content-grid {
     padding-bottom: 80px !important;
+    padding-left: 0 !important;
+    padding-right: 0 !important;
   }
 }
 

@@ -1918,14 +1918,14 @@ export default function App() {
       </div>
 
       {/* 3. PRIMARY CONTENT PANEL - DESKTOP LAYOUT SHIFT CONTROLS */}
-      <main id="primary-content-grid" className="flex-1 max-w-7xl w-full mx-auto p-2 sm:p-4 md:p-6 flex flex-col gap-4 md:gap-6">
+      <main id="primary-content-grid" className="flex-1 w-full mx-auto px-0 sm:px-4 md:px-6 py-2 sm:py-4 md:py-6 flex flex-col gap-4 md:gap-6">
         
         {/* WORKSPACE CONTENT BODY */}
         <section id="workspace-container" className="flex-1">
           <div className="space-y-4 md:space-y-6 animate-fade-in">
               
               {/* Widescreen Desktop Web Application View Block */}
-              <div className="flex flex-col lg:flex-row gap-4 lg:gap-6 items-start animate-fade-in w-full">
+              <div className="flex flex-col lg:flex-row gap-4 lg:gap-6 items-start animate-fade-in w-full min-h-0">
 
                   {/* Web Application Left Navigation Sidebar — Desktop only (hidden on < lg) */}
                   <div className={`hidden lg:block transition-all duration-300 ease-in-out bg-slate-900 py-4 pr-4 pl-0 rounded-2xl border border-slate-800 space-y-4 lg:sticky lg:top-24 h-fit shrink-0 ${isSidebarCollapsed ? 'lg:w-20' : 'lg:w-72'}`}>
@@ -2007,7 +2007,7 @@ export default function App() {
                         </button>
                       </div>
                     ) : (
-                      <div className="bg-slate-900 p-3 sm:p-4 md:p-6 rounded-2xl border border-slate-800 space-y-4 md:space-y-6">
+                      <div className="bg-slate-900 p-3 sm:p-4 md:p-6 rounded-none sm:rounded-2xl border-y sm:border border-slate-800 space-y-4 md:space-y-6">
                         <div className="w-full">
                           {selectedMobileModule === "dashboard" && (
                             <MobileDashboard
@@ -2481,6 +2481,7 @@ export default function App() {
                         {(selectedMobileModule === "business" || selectedMobileModule === "labour" || selectedMobileModule === "vehicle") && (
                           <MobileBusiness
                             key={selectedMobileModule}
+                            apiBaseUrl={apiBaseUrl}
                             labours={labours}
                             setLabours={setLabours}
                             vehicles={vehicles}
@@ -2499,6 +2500,7 @@ export default function App() {
 
                         {selectedMobileModule === "finance" && (
                           <MobileFinance
+                            apiBaseUrl={apiBaseUrl}
                             loansGiven={loansGiven}
                             setLoansGiven={setLoansGiven}
                             loansReceived={loansReceived}
@@ -2510,6 +2512,7 @@ export default function App() {
 
                         {selectedMobileModule === "expenses" && (
                           <MobileFamily
+                            apiBaseUrl={apiBaseUrl}
                             familyExpenses={familyExpenses}
                             setFamilyExpenses={setFamilyExpenses}
                             familyMembers={familyMembers}
@@ -3457,10 +3460,7 @@ export default function App() {
 
       </main>
 
-      {/* 4. FOOTER CREDITS */}
-      <footer id="master-footer" className="bg-slate-900 border-t border-slate-800 py-3.5 text-center text-xs text-slate-500 font-mono mt-4 md:mt-8 mb-16 lg:mb-0">
-        <p>© 2026 Smart Business & Family Manager. All rights reserved. Prepared for abhiram.ad23@bitsathy.ac.in.</p>
-      </footer>
+
 
       {/* 5. MOBILE BOTTOM NAVIGATION BAR (only visible on < lg screens) */}
       <nav
