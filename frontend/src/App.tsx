@@ -70,7 +70,7 @@ import {
 } from "./types";
 import { sqlSchemas, userStories, developmentRoadmap } from "./data";
 import { fetchSharedSnapshot, requestJson } from "./lib/sharedApi";
-import srsLogo from "./assets/images/borewell_machine_logo_1782797350175.jpg";
+import srsLogo from "./assets/images/srs_logo.svg";
 
 const SHARED_DATA_REVISION_KEY = "srs_shared_data_revision";
 
@@ -2001,8 +2001,8 @@ export default function App() {
         <main className="fixed inset-0 z-50 flex items-center justify-center px-3 sm:px-6 py-8 sm:py-10 bg-[radial-gradient(circle_at_top,_rgba(249,115,22,0.18),_transparent_35%),linear-gradient(180deg,_#fff7ed_0%,_#fef3c7_100%)] text-slate-950 overflow-y-auto">
           <div className="w-full max-w-md rounded-3xl border border-amber-200/70 bg-white/90 shadow-[0_30px_80px_-30px_rgba(124,45,18,0.35)] backdrop-blur p-4 sm:p-6 md:p-8 space-y-5">
             <div className="space-y-2 text-center">
-              <div className="mx-auto w-14 h-14 sm:w-16 sm:h-16 rounded-2xl bg-amber-50 border border-amber-200 overflow-hidden shadow-inner flex items-center justify-center">
-                <img src={srsLogo} alt="SRS Logo" className="w-full h-full object-cover" />
+              <div className="mx-auto w-40 sm:w-48 md:w-56 h-auto rounded-2xl overflow-hidden">
+                <img src={srsLogo} alt="SRS Logo" className="w-full h-auto object-contain" />
               </div>
               <h1 className="text-xl sm:text-2xl md:text-3xl font-black tracking-tight">Login</h1>
             </div>

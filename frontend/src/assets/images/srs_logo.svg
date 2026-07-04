@@ -1,0 +1,28 @@
+<svg width="1024" height="512" viewBox="0 0 1024 512" fill="none" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="SRS logo">
+  <defs>
+    <linearGradient id="srsBlue" x1="169" y1="142" x2="847" y2="368" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#0D3B92"/>
+      <stop offset="0.45" stop-color="#227CC9"/>
+      <stop offset="1" stop-color="#37B6F2"/>
+    </linearGradient>
+    <linearGradient id="srsDark" x1="181" y1="154" x2="837" y2="356" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#152B75"/>
+      <stop offset="1" stop-color="#0A4D8E"/>
+    </linearGradient>
+    <linearGradient id="arrowBlue" x1="473" y1="118" x2="669" y2="354" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#37B6F2"/>
+      <stop offset="1" stop-color="#165AA8"/>
+    </linearGradient>
+    <filter id="softShadow" x="140" y="90" width="760" height="332" filterUnits="userSpaceOnUse" color-interpolation-filters="sRGB">
+      <feDropShadow dx="0" dy="10" stdDeviation="10" flood-color="#0B4A93" flood-opacity="0.18"/>
+    </filter>
+  </defs>
+  <g filter="url(#softShadow)">
+    <path d="M223 331C183 331 152 300 152 260C152 220 183 189 223 189H349C369 189 385 205 385 225C385 245 369 261 349 261H223C222 261 221 262 221 263C221 264 222 265 223 265H309C360 265 402 306 402 357C402 408 360 450 309 450H190C170 450 154 434 154 414C154 394 170 378 190 378H309C319 378 327 370 327 360C327 350 319 342 309 342H223Z" fill="url(#srsBlue)"/>
+    <path d="M493 158H611C666 158 711 203 711 258C711 311 671 353 618 356L742 450H626L512 357V450H430V158H493ZM512 235V288H610C625 288 637 276 637 261C637 246 625 235 610 235H512Z" fill="url(#srsBlue)"/>
+    <path d="M792 331C752 331 721 300 721 260C721 220 752 189 792 189H918C938 189 954 205 954 225C954 245 938 261 918 261H792C791 261 790 262 790 263C790 264 791 265 792 265H878C929 265 971 306 971 357C971 408 929 450 878 450H759C739 450 723 434 723 414C723 394 739 378 759 378H878C888 378 896 370 896 360C896 350 888 342 878 342H792Z" fill="url(#srsBlue)"/>
+    <path d="M603 126L723 202L680 244L634 219L542 333L485 301L575 189L531 161L603 126Z" fill="url(#arrowBlue)"/>
+    <path d="M605 141L654 176L634 193L590 165L509 266L492 256L605 141Z" fill="url(#srsDark)" opacity="0.35"/>
+    <path d="M520 288L541 301L571 264L559 256L520 288Z" fill="#0A4D8E" opacity="0.65"/>
+  </g>
+</svg>
