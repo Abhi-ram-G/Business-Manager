@@ -196,6 +196,9 @@ class BusinessBillCreate(BaseModel):
     casing7_rate: float | None = None
     custom_slab_rates: dict[str, Any] | None = None
     discount_amount: float | None = None
+    bit_id: str | None = None
+    hammer_id: str | None = None
+
 
 
 class BusinessBillUpdate(BaseModel):
@@ -232,6 +235,9 @@ class BusinessBillUpdate(BaseModel):
     casing7_rate: float | None = None
     custom_slab_rates: dict[str, Any] | None = None
     discount_amount: float | None = None
+    bit_id: str | None = None
+    hammer_id: str | None = None
+
 
 
 class FuelEntryCreate(BaseModel):

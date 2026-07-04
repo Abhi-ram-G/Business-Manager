@@ -130,6 +130,8 @@ export const mapBusinessBillFromApi = (item: ApiRecord): BusinessBill => ({
   casing7Rate: item.casing7_rate != null ? toNumber(item.casing7_rate) : undefined,
   customSlabRates: (item.custom_slab_rates as BusinessBill["customSlabRates"]) ?? undefined,
   discountAmount: item.discount_amount != null ? toNumber(item.discount_amount) : undefined,
+  usedBitId: item.bit_id ? String(item.bit_id) : undefined,
+  usedHammerId: item.hammer_id ? String(item.hammer_id) : undefined,
   source: "server",
 });
 
@@ -370,6 +372,8 @@ export const toBusinessBillApiPayload = (bill: BusinessBill) => ({
   casing7_rate: bill.casing7Rate ?? null,
   custom_slab_rates: bill.customSlabRates ?? null,
   discount_amount: bill.discountAmount ?? null,
+  bit_id: bill.usedBitId ?? null,
+  hammer_id: bill.usedHammerId ?? null,
 });
 
 export const toLoanGivenApiPayload = (loan: LoanGiven) => ({

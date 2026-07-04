@@ -208,6 +208,8 @@ export default function MobileBusiness({
   // Bill form: bit/hammer selection (internal use only — NOT printed in PDF)
   const [selectedBitId, setSelectedBitId] = useState<string>("");
   const [selectedHammerId, setSelectedHammerId] = useState<string>("");
+  const [selectedCasing10HammerId, setSelectedCasing10HammerId] = useState<string>("");
+  const [selectedCasing7HammerId, setSelectedCasing7HammerId] = useState<string>("");
 
   const persistLabour = async (record: Labour, method: "POST" | "PUT") => {
     const response = await requestJson(
@@ -3335,9 +3337,9 @@ export default function MobileBusiness({
                   })
                 )}
               </div>
-              </div>
-            </div>
-          )}
+            )}
+          </div>
+        )}
 
                   {/* ======================= B-1. BIT & HAMMER PURCHASE SUBSECTION ======================= */}
       {activeMainSection === "management" && activeSubSection === "bit" && (
