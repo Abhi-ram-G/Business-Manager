@@ -70,6 +70,7 @@ import {
 } from "./types";
 import { sqlSchemas, userStories, developmentRoadmap } from "./data";
 import { fetchSharedSnapshot, requestJson } from "./lib/sharedApi";
+import srsLogo from "./assets/images/borewell_machine_logo_1782797350175.jpg";
 
 const SHARED_DATA_REVISION_KEY = "srs_shared_data_revision";
 
@@ -2000,8 +2001,8 @@ export default function App() {
         <main className="fixed inset-0 z-50 flex items-center justify-center px-3 sm:px-6 py-8 sm:py-10 bg-[radial-gradient(circle_at_top,_rgba(249,115,22,0.18),_transparent_35%),linear-gradient(180deg,_#fff7ed_0%,_#fef3c7_100%)] text-slate-950 overflow-y-auto">
           <div className="w-full max-w-md rounded-3xl border border-amber-200/70 bg-white/90 shadow-[0_30px_80px_-30px_rgba(124,45,18,0.35)] backdrop-blur p-4 sm:p-6 md:p-8 space-y-5">
             <div className="space-y-2 text-center">
-              <div className="mx-auto w-12 h-12 sm:w-14 sm:h-14 rounded-2xl bg-amber-100 text-amber-700 flex items-center justify-center shadow-inner">
-                <Lock className="w-6 h-6 sm:w-7 sm:h-7" />
+              <div className="mx-auto w-14 h-14 sm:w-16 sm:h-16 rounded-2xl bg-amber-50 border border-amber-200 overflow-hidden shadow-inner flex items-center justify-center">
+                <img src={srsLogo} alt="SRS Logo" className="w-full h-full object-cover" />
               </div>
               <h1 className="text-xl sm:text-2xl md:text-3xl font-black tracking-tight">Login</h1>
             </div>
@@ -3795,6 +3796,7 @@ export default function App() {
 
 
       {/* 5. MOBILE BOTTOM NAVIGATION BAR (only visible on < lg screens) */}
+      {isMobileLoggedIn && (
       <nav
         className="mobile-bottom-nav lg:hidden bg-slate-900 border-t border-slate-800 shadow-[0_-4px_20px_rgba(0,0,0,0.3)] fixed bottom-0 left-0 right-0 z-50"
         aria-label="Mobile navigation"
@@ -3847,6 +3849,7 @@ export default function App() {
           })}
         </div>
       </nav>
+      )}
 
     </div>
   );
