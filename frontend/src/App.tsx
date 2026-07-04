@@ -55,6 +55,7 @@ import {
   AttendanceRecord, 
   SalaryPayment, 
   Vehicle, 
+  BusinessBill,
   FuelEntry, 
   TripRecord, 
   LoanGiven, 
@@ -311,6 +312,60 @@ const DEFAULT_FAMILY_MEMBERS: FamilyMember[] = [
   { id: "fam-govindarajan", name: "Govindarajan", relationship: "Father" },
   { id: "fam-venkattammal", name: "Venkattammal", relationship: "Family" },
   { id: "fam-palanathal", name: "Palanathal", relationship: "Family" },
+];
+
+const DEFAULT_BUSINESS_BILLS: BusinessBill[] = [
+  {
+    id: "bill-1",
+    invoiceNo: "INV-2026-001",
+    clientName: "Senthil Kumar",
+    billDate: "2026-06-18",
+    dueDate: "2026-07-03",
+    description: "Borewell Drilling Service Report for Tight Formation Borewell - 950 ft depth.",
+    amount: 173500,
+    taxRate: 0,
+    status: "Pending",
+    borewellType: "Tight Formation",
+    billMode: "New",
+    existingDepth: 0,
+    finalDepth: 950,
+    casingFeet: 20,
+    casingRate: 350,
+    batta: 1500,
+    totalDrillingCharges: 165000,
+    casingCharges: 7000,
+    calculatedBreakdown: [
+      { slabRange: "1 - 300", feet: 300, rate: 100, amount: 30000 },
+      { slabRange: "300 - 400", feet: 100, rate: 110, amount: 11000 },
+      { slabRange: "400 - 500", feet: 100, rate: 130, amount: 13000 },
+      { slabRange: "500 - 600", feet: 100, rate: 160, amount: 16000 },
+      { slabRange: "600 - 700", feet: 100, rate: 200, amount: 20000 },
+      { slabRange: "700 - 800", feet: 100, rate: 250, amount: 25000 },
+      { slabRange: "800 - 900", feet: 100, rate: 310, amount: 31000 },
+      { slabRange: "900 - 1000", feet: 50, rate: 380, amount: 19000 },
+    ],
+  },
+  {
+    id: "bill-2",
+    invoiceNo: "INV-2026-002",
+    clientName: "Praneeth Heavy Earthmovers",
+    billDate: "2026-06-15",
+    dueDate: "2026-06-30",
+    description: "Borewell Drilling Loose Formation Slabs Service.",
+    amount: 114500,
+    taxRate: 0,
+    status: "Paid",
+    borewellType: "Loose Formation",
+    billMode: "New",
+    existingDepth: 0,
+    finalDepth: 800,
+    casingFeet: 30,
+    casingRate: 350,
+    batta: 1500,
+    totalDrillingCharges: 102505,
+    casingCharges: 10500,
+    calculatedBreakdown: [],
+  },
 ];
 
 export default function App() {
@@ -653,6 +708,11 @@ export default function App() {
     return loadStoredArray<Vehicle>("srs_vehicles", []);
   });
 
+  const [businessBills, setBusinessBills] = useState<BusinessBill[]>(() => {
+    const stored = loadStoredArray<BusinessBill>("srs_business_bills", []);
+    return stored.length > 0 ? stored : DEFAULT_BUSINESS_BILLS;
+  });
+
   const [fuelEntries, setFuelEntries] = useState<FuelEntry[]>(() => {
     return loadStoredArray<FuelEntry>("srs_fuel_entries", []);
   });
@@ -720,6 +780,7 @@ export default function App() {
       setAttendance(snapshot.attendance);
       setSalaryPayments(snapshot.salaryPayments);
       setVehicles(snapshot.vehicles);
+      setBusinessBills((prev) => (snapshot.businessBills.length > 0 ? snapshot.businessBills : prev));
       setFuelEntries(snapshot.fuelEntries);
       setTrips(snapshot.trips);
       setLoansGiven(snapshot.loansGiven);
@@ -751,6 +812,10 @@ export default function App() {
   useEffect(() => {
     localStorage.setItem("srs_vehicles", JSON.stringify(vehicles));
   }, [vehicles]);
+
+  useEffect(() => {
+    localStorage.setItem("srs_business_bills", JSON.stringify(businessBills));
+  }, [businessBills]);
 
   useEffect(() => {
     localStorage.setItem("srs_fuel_entries", JSON.stringify(fuelEntries));
@@ -2295,6 +2360,8 @@ export default function App() {
                               setLabours={setLabours}
                               vehicles={vehicles}
                               setVehicles={setVehicles}
+                              businessBills={businessBills}
+                              setBusinessBills={setBusinessBills}
                               fuelEntries={fuelEntries}
                               setFuelEntries={setFuelEntries}
                               salaryPayments={salaryPayments}

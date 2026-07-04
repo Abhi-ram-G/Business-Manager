@@ -112,6 +112,45 @@ class Vehicle(Base, TimestampMixin):
     fitness_data: Mapped[str | None] = mapped_column(Text)
 
 
+class BusinessBill(Base, TimestampMixin):
+    __tablename__ = "business_bills"
+
+    id: Mapped[str] = mapped_column(String(50), primary_key=True)
+    invoice_no: Mapped[str] = mapped_column(String(50), nullable=False, unique=True)
+    client_name: Mapped[str] = mapped_column(String(150), nullable=False)
+    bill_date: Mapped[date] = mapped_column(Date, nullable=False)
+    due_date: Mapped[date] = mapped_column(Date, nullable=False)
+    description: Mapped[str] = mapped_column(Text, nullable=False)
+    amount: Mapped[float] = mapped_column(Numeric(12, 2), nullable=False)
+    tax_rate: Mapped[float] = mapped_column(Numeric(10, 2), nullable=False, default=0)
+    status: Mapped[str] = mapped_column(String(20), nullable=False, default="Pending")
+    borewell_type: Mapped[str | None] = mapped_column(String(30))
+    bill_mode: Mapped[str | None] = mapped_column(String(20))
+    existing_depth: Mapped[int | None] = mapped_column(Integer)
+    final_depth: Mapped[int | None] = mapped_column(Integer)
+    casing_feet: Mapped[int | None] = mapped_column(Integer)
+    casing_rate: Mapped[float | None] = mapped_column(Numeric(10, 2))
+    batta: Mapped[float | None] = mapped_column(Numeric(10, 2))
+    starting_price: Mapped[float | None] = mapped_column(Numeric(10, 2))
+    old_feet_rate: Mapped[float | None] = mapped_column(Numeric(10, 2))
+    casing_type: Mapped[str | None] = mapped_column(String(20))
+    calculated_breakdown: Mapped[list[dict[str, Any]] | None] = mapped_column(JSON)
+    total_drilling_charges: Mapped[float | None] = mapped_column(Numeric(12, 2))
+    casing_charges: Mapped[float | None] = mapped_column(Numeric(12, 2))
+    is_custom_bill: Mapped[bool | None] = mapped_column(Boolean)
+    location: Mapped[str | None] = mapped_column(String(150))
+    broker_name: Mapped[str | None] = mapped_column(String(150))
+    custom_date_type: Mapped[str | None] = mapped_column(String(20))
+    custom_starting_feet: Mapped[int | None] = mapped_column(Integer)
+    custom_ending_feet: Mapped[int | None] = mapped_column(Integer)
+    casing10_feet: Mapped[int | None] = mapped_column(Integer)
+    casing10_rate: Mapped[float | None] = mapped_column(Numeric(10, 2))
+    casing7_feet: Mapped[int | None] = mapped_column(Integer)
+    casing7_rate: Mapped[float | None] = mapped_column(Numeric(10, 2))
+    custom_slab_rates: Mapped[dict[str, Any] | None] = mapped_column(JSON)
+    discount_amount: Mapped[float | None] = mapped_column(Numeric(10, 2))
+
+
 class FuelEntry(Base, TimestampMixin):
     __tablename__ = "fuel_entries"
 
@@ -249,4 +288,3 @@ class AppNotification(Base, TimestampMixin):
     date: Mapped[str] = mapped_column(String(50), nullable=False)
     type: Mapped[str] = mapped_column(String(50), nullable=False)
     is_read: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
-

@@ -37,12 +37,14 @@ import {
   UserX,
   UserCheck
 } from "lucide-react";
-import { Labour, Vehicle, FuelEntry, SalaryPayment, AdvanceEntry, AttendanceRecord } from "../types";
+import { Labour, Vehicle, BusinessBill, FuelEntry, SalaryPayment, AdvanceEntry, AttendanceRecord } from "../types";
 import { downloadSalarySlipPDF, downloadAttendanceReportPDF, downloadSingleLabourAttendancePDF } from "../utils/pdfGenerator";
 import {
+  mapBusinessBillFromApi,
   mapLabourFromApi,
   mapVehicleFromApi,
   requestJson,
+  toBusinessBillApiPayload,
   toLabourApiPayload,
   toVehicleApiPayload,
 } from "../lib/sharedApi";
@@ -79,6 +81,8 @@ interface MobileBusinessProps {
   setLabours: React.Dispatch<React.SetStateAction<Labour[]>>;
   vehicles: Vehicle[];
   setVehicles: React.Dispatch<React.SetStateAction<Vehicle[]>>;
+  businessBills: BusinessBill[];
+  setBusinessBills: React.Dispatch<React.SetStateAction<BusinessBill[]>>;
   fuelEntries: FuelEntry[];
   setFuelEntries: React.Dispatch<React.SetStateAction<FuelEntry[]>>;
   salaryPayments: SalaryPayment[];
@@ -97,6 +101,8 @@ export default function MobileBusiness({
   setLabours,
   vehicles,
   setVehicles,
+  businessBills,
+  setBusinessBills,
   fuelEntries,
   setFuelEntries,
   salaryPayments,
@@ -143,8 +149,15 @@ export default function MobileBusiness({
     if (!deleteConfirmation) return;
     const { id, name, type } = deleteConfirmation;
     if (type === "bill") {
-      setBusinessBills(prev => prev.filter(b => b.id !== id));
-      triggerOnlineSync(`DELETED BILL FOR ${name}`);
+      try {
+        await requestJson(apiBaseUrl, `/api/v1/business/bills/${id}`, { method: "DELETE" });
+        setBusinessBills((prev) => prev.filter((bill) => bill.id !== id));
+        await onSharedDataChanged?.();
+        triggerOnlineSync(`DELETED BILL FOR ${name}`);
+      } catch (error) {
+        console.error(error);
+        alert("Unable to delete the bill right now.");
+      }
     } else if (type === "labour") {
       try {
         await requestJson(apiBaseUrl, `/api/v1/labours/${id}`, { method: "DELETE" });
@@ -175,110 +188,6 @@ export default function MobileBusiness({
     }
     setDeleteConfirmation(null);
   };
-
-  const [businessBills, setBusinessBills] = useState<{
-    id: string;
-    invoiceNo: string;
-    clientName: string;
-    billDate: string;
-    dueDate: string;
-    description: string;
-    amount: number;
-    taxRate: number;
-    status: "Paid" | "Pending";
-    borewellType?: "Tight Formation" | "Loose Formation";
-    billMode?: "New" | "Re-Borewell" | "Customize";
-    existingDepth?: number;
-    finalDepth?: number;
-    casingFeet?: number;
-    casingRate?: number;
-    batta?: number;
-    startingPrice?: number;
-    oldFeetRate?: number;
-    casingType?: "7 inch" | "10 inch";
-    calculatedBreakdown?: { slabRange: string; feet: number; rate: number; amount: number }[];
-    totalDrillingCharges?: number;
-    casingCharges?: number;
-    // Customize Bill Fields
-    isCustomBill?: boolean;
-    location?: string;
-    brokerName?: string;
-    customDateType?: "automatic" | "manual";
-    customStartingFeet?: number;
-    customEndingFeet?: number;
-    casing10Feet?: number;
-    casing10Rate?: number;
-    casing7Feet?: number;
-    casing7Rate?: number;
-    customSlabRates?: Record<string, number>;
-    discountAmount?: number;
-  }[]>(() => {
-    const saved = localStorage.getItem("business_bills_store");
-    if (saved) {
-      try {
-        return JSON.parse(saved);
-      } catch (e) {
-        // ignore
-      }
-    }
-    return [
-      {
-        id: "bill-1",
-        invoiceNo: "INV-2026-001",
-        clientName: "Senthil Kumar",
-        billDate: "2026-06-18",
-        dueDate: "2026-07-03",
-        description: "Borewell Drilling Service Report for Tight Formation Borewell - 950 ft depth.",
-        amount: 173500,
-        taxRate: 0,
-        status: "Pending",
-        borewellType: "Tight Formation",
-        billMode: "New",
-        existingDepth: 0,
-        finalDepth: 950,
-        casingFeet: 20,
-        casingRate: 350,
-        batta: 1500,
-        totalDrillingCharges: 165000,
-        casingCharges: 7000,
-        calculatedBreakdown: [
-          { slabRange: "1 - 300", feet: 300, rate: 100, amount: 30000 },
-          { slabRange: "300 - 400", feet: 100, rate: 110, amount: 11000 },
-          { slabRange: "400 - 500", feet: 100, rate: 130, amount: 13000 },
-          { slabRange: "500 - 600", feet: 100, rate: 160, amount: 16000 },
-          { slabRange: "600 - 700", feet: 100, rate: 200, amount: 20000 },
-          { slabRange: "700 - 800", feet: 100, rate: 250, amount: 25000 },
-          { slabRange: "800 - 900", feet: 100, rate: 310, amount: 31000 },
-          { slabRange: "900 - 1000", feet: 50, rate: 380, amount: 19000 }
-        ]
-      },
-      {
-        id: "bill-2",
-        invoiceNo: "INV-2026-002",
-        clientName: "Praneeth Heavy Earthmovers",
-        billDate: "2026-06-15",
-        dueDate: "2026-06-30",
-        description: "Borewell Drilling Loose Formation Slabs Service.",
-        amount: 114500,
-        taxRate: 0,
-        status: "Paid",
-        borewellType: "Loose Formation",
-        billMode: "New",
-        existingDepth: 0,
-        finalDepth: 800,
-        casingFeet: 30,
-        casingRate: 350,
-        batta: 1500,
-        totalDrillingCharges: 102505, // will recalculate, let's keep dummy or precomputed
-        casingCharges: 10500,
-        calculatedBreakdown: []
-      }
-    ];
-  });
-
-  React.useEffect(() => {
-    localStorage.setItem("business_bills_store", JSON.stringify(businessBills));
-  }, [businessBills]);
 
   const [isBillFormOpen, setIsBillFormOpen] = useState(false);
   const [editingBillId, setEditingBillId] = useState<string | null>(null);
@@ -575,7 +484,7 @@ export default function MobileBusiness({
     }
   }, [billMode, customBillDateType]);
 
-  const handleSaveBill = (e: React.FormEvent) => {
+  const handleSaveBill = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!billClient.trim()) {
       alert("Please provide customer name.");
@@ -636,69 +545,59 @@ export default function MobileBusiness({
 
     const finalBillTotal = Math.max(0, calc.grand - discountAmount);
 
-    if (editingBillId) {
-      setBusinessBills(prev => prev.map(b => {
-        if (b.id === editingBillId) {
-          return {
-            ...b,
-            clientName: billClient,
-            billDate,
-            dueDate: billDueDate,
-            description: fullDesc,
-            amount: finalBillTotal,
-            discountAmount: discountAmount,
-            taxRate: 0,
-            status: billStatus,
-            borewellType,
-            billMode,
-            existingDepth,
-            finalDepth: isCustom ? customEndingFeet : finalDepth,
-            startingPrice,
-            oldFeetRate,
-            casingType: casing7Feet > 0 ? "7 inch" as const : "10 inch" as const,
-            casingFeet: casing7Feet > 0 ? casing7Feet : casing10Feet,
-            casingRate: casing7Feet > 0 ? casing7Rate : casing10Rate,
-            batta,
-            calculatedBreakdown: calc.breakdownLines,
-            totalDrillingCharges: calc.totalDrilling,
-            casingCharges: calc.casingTotal,
-            ...savedCustomFields
-          };
+    const payloadBill: BusinessBill = {
+      id: editingBillId || `bill-${Date.now()}`,
+      invoiceNo: businessBills.find((bill) => bill.id === editingBillId)?.invoiceNo || "",
+      clientName: billClient,
+      billDate,
+      dueDate: billDueDate,
+      description: fullDesc,
+      amount: finalBillTotal,
+      discountAmount,
+      taxRate: 0,
+      status: billStatus,
+      borewellType,
+      billMode,
+      existingDepth,
+      finalDepth: isCustom ? customEndingFeet : finalDepth,
+      startingPrice,
+      oldFeetRate,
+      casingType: casing7Feet > 0 ? "7 inch" : "10 inch",
+      casingFeet: casing7Feet > 0 ? casing7Feet : casing10Feet,
+      casingRate: casing7Feet > 0 ? casing7Rate : casing10Rate,
+      batta,
+      calculatedBreakdown: calc.breakdownLines,
+      totalDrillingCharges: calc.totalDrilling,
+      casingCharges: calc.casingTotal,
+      ...savedCustomFields
+    };
+
+    try {
+      const response = await requestJson(
+        apiBaseUrl,
+        editingBillId ? `/api/v1/business/bills/${editingBillId}` : "/api/v1/business/bills",
+        {
+          method: editingBillId ? "PUT" : "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(toBusinessBillApiPayload(payloadBill)),
         }
-        return b;
-      }));
-      triggerOnlineSync(`UPDATED BOREWELL BILL: ${billClient} (Rs. ${finalBillTotal.toLocaleString()})`);
-      setEditingBillId(null);
-    } else {
-      const newInvoiceNo = `INV-SRS-00${businessBills.length + 1}`;
-      const newBill = {
-        id: `bill-${Date.now()}`,
-        invoiceNo: newInvoiceNo,
-        clientName: billClient,
-        billDate,
-        dueDate: billDueDate,
-        description: fullDesc,
-        amount: finalBillTotal,
-        discountAmount: discountAmount,
-        taxRate: 0,
-        status: billStatus,
-        borewellType,
-        billMode,
-        existingDepth,
-        finalDepth: isCustom ? customEndingFeet : finalDepth,
-        startingPrice,
-        oldFeetRate,
-        casingType: casing7Feet > 0 ? "7 inch" as const : "10 inch" as const,
-        casingFeet: casing7Feet > 0 ? casing7Feet : casing10Feet,
-        casingRate: casing7Feet > 0 ? casing7Rate : casing10Rate,
-        batta,
-        calculatedBreakdown: calc.breakdownLines,
-        totalDrillingCharges: calc.totalDrilling,
-        casingCharges: calc.casingTotal,
-        ...savedCustomFields
-      };
-      setBusinessBills(prev => [newBill, ...prev]);
-      triggerOnlineSync(`GENERATED BOREWELL BILL #${newInvoiceNo} for ${billClient} (Rs. ${finalBillTotal.toLocaleString()})`);
+      );
+      const savedBill = mapBusinessBillFromApi(response);
+
+      if (editingBillId) {
+        setBusinessBills((prev) => prev.map((bill) => (bill.id === editingBillId ? savedBill : bill)));
+        triggerOnlineSync(`UPDATED BOREWELL BILL: ${savedBill.invoiceNo} for ${savedBill.clientName} (Rs. ${savedBill.amount.toLocaleString()})`);
+        setEditingBillId(null);
+      } else {
+        setBusinessBills((prev) => [savedBill, ...prev.filter((bill) => bill.id !== savedBill.id)]);
+        triggerOnlineSync(`GENERATED BOREWELL BILL #${savedBill.invoiceNo} for ${savedBill.clientName} (Rs. ${savedBill.amount.toLocaleString()})`);
+      }
+
+      await onSharedDataChanged?.();
+    } catch (error) {
+      console.error(error);
+      alert("Unable to save the borewell bill right now. Please try again.");
+      return;
     }
     
     // reset form inputs
@@ -731,7 +630,7 @@ export default function MobileBusiness({
     setIsBillFormOpen(false);
   };
 
-  const handleEditBillClick = (bill: any) => {
+  const handleEditBillClick = (bill: BusinessBill) => {
     setEditingBillId(bill.id);
     setBillClient(bill.clientName);
     setBillDate(bill.billDate);
@@ -5475,13 +5374,23 @@ export default function MobileBusiness({
                         <button
                           type="button"
                           onClick={() => {
-                            setBusinessBills(prev => prev.map(item => {
-                              if (item.id === b.id) {
-                                return { ...item, status: item.status === "Paid" ? "Pending" : "Paid" };
+                            void (async () => {
+                              const nextStatus = b.status === "Paid" ? "Pending" : "Paid";
+                              try {
+                                const response = await requestJson(apiBaseUrl, `/api/v1/business/bills/${b.id}`, {
+                                  method: "PUT",
+                                  headers: { "Content-Type": "application/json" },
+                                  body: JSON.stringify({ status: nextStatus }),
+                                });
+                                const savedBill = mapBusinessBillFromApi(response);
+                                setBusinessBills((prev) => prev.map((item) => (item.id === b.id ? savedBill : item)));
+                                await onSharedDataChanged?.();
+                                triggerOnlineSync(`Toggled status of Invoice ${savedBill.invoiceNo}`);
+                              } catch (error) {
+                                console.error(error);
+                                alert("Unable to update bill status right now.");
                               }
-                              return item;
-                            }));
-                            triggerOnlineSync(`Toggled status of Invoice ${b.invoiceNo}`);
+                            })();
                           }}
                           className={`px-2 py-0.5 rounded text-[8px] font-extrabold transition cursor-pointer border ${
                             b.status === "Paid"

@@ -142,6 +142,79 @@ class VehicleUpdate(BaseModel):
     fitness_data: str | None = None
 
 
+class BusinessBillCreate(BaseModel):
+    id: str
+    invoice_no: str | None = None
+    client_name: str
+    bill_date: dt_date
+    due_date: dt_date
+    description: str
+    amount: float
+    tax_rate: float = 0
+    status: str = "Pending"
+    borewell_type: str | None = None
+    bill_mode: str | None = None
+    existing_depth: int | None = None
+    final_depth: int | None = None
+    casing_feet: int | None = None
+    casing_rate: float | None = None
+    batta: float | None = None
+    starting_price: float | None = None
+    old_feet_rate: float | None = None
+    casing_type: str | None = None
+    calculated_breakdown: list[dict[str, Any]] | None = None
+    total_drilling_charges: float | None = None
+    casing_charges: float | None = None
+    is_custom_bill: bool | None = None
+    location: str | None = None
+    broker_name: str | None = None
+    custom_date_type: str | None = None
+    custom_starting_feet: int | None = None
+    custom_ending_feet: int | None = None
+    casing10_feet: int | None = None
+    casing10_rate: float | None = None
+    casing7_feet: int | None = None
+    casing7_rate: float | None = None
+    custom_slab_rates: dict[str, Any] | None = None
+    discount_amount: float | None = None
+
+
+class BusinessBillUpdate(BaseModel):
+    invoice_no: str | None = None
+    client_name: str | None = None
+    bill_date: dt_date | None = None
+    due_date: dt_date | None = None
+    description: str | None = None
+    amount: float | None = None
+    tax_rate: float | None = None
+    status: str | None = None
+    borewell_type: str | None = None
+    bill_mode: str | None = None
+    existing_depth: int | None = None
+    final_depth: int | None = None
+    casing_feet: int | None = None
+    casing_rate: float | None = None
+    batta: float | None = None
+    starting_price: float | None = None
+    old_feet_rate: float | None = None
+    casing_type: str | None = None
+    calculated_breakdown: list[dict[str, Any]] | None = None
+    total_drilling_charges: float | None = None
+    casing_charges: float | None = None
+    is_custom_bill: bool | None = None
+    location: str | None = None
+    broker_name: str | None = None
+    custom_date_type: str | None = None
+    custom_starting_feet: int | None = None
+    custom_ending_feet: int | None = None
+    casing10_feet: int | None = None
+    casing10_rate: float | None = None
+    casing7_feet: int | None = None
+    casing7_rate: float | None = None
+    custom_slab_rates: dict[str, Any] | None = None
+    discount_amount: float | None = None
+
+
 class FuelEntryCreate(BaseModel):
     id: str
     vehicle_id: str | None = None

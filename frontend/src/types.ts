@@ -103,6 +103,43 @@ export interface Vehicle {
   fitnessData?: string;
 }
 
+export interface BusinessBill {
+  id: string;
+  invoiceNo: string;
+  clientName: string;
+  billDate: string;
+  dueDate: string;
+  description: string;
+  amount: number;
+  taxRate: number;
+  status: "Paid" | "Pending";
+  borewellType?: "Tight Formation" | "Loose Formation";
+  billMode?: "New" | "Re-Borewell" | "Customize";
+  existingDepth?: number;
+  finalDepth?: number;
+  casingFeet?: number;
+  casingRate?: number;
+  batta?: number;
+  startingPrice?: number;
+  oldFeetRate?: number;
+  casingType?: "7 inch" | "10 inch";
+  calculatedBreakdown?: { slabRange: string; feet: number; rate: number; amount: number }[];
+  totalDrillingCharges?: number;
+  casingCharges?: number;
+  isCustomBill?: boolean;
+  location?: string;
+  brokerName?: string;
+  customDateType?: "automatic" | "manual";
+  customStartingFeet?: number;
+  customEndingFeet?: number;
+  casing10Feet?: number;
+  casing10Rate?: number;
+  casing7Feet?: number;
+  casing7Rate?: number;
+  customSlabRates?: Record<string, number>;
+  discountAmount?: number;
+}
+
 export interface FuelEntry {
   id: string;
   dateTime?: string;

@@ -13,6 +13,7 @@ from .core.security import create_access_token, hash_password, verify_password
 from .models import (
     AppNotification,
     Attendance,
+    BusinessBill,
     CategoryBudget,
     FamilyExpense,
     FamilyMember,
@@ -29,6 +30,8 @@ from .models import (
 )
 from .schemas import (
     AttendanceBatch,
+    BusinessBillCreate,
+    BusinessBillUpdate,
     CategoryBudgetCreate,
     CategoryBudgetUpdate,
     ChangePasswordRequest,
@@ -201,6 +204,10 @@ def update_instance(db: Session, instance: Any, payload: dict[str, Any]):
     db.commit()
     db.refresh(instance)
     return instance
+
+
+def generate_bill_invoice_no() -> str:
+    return f"INV-SRS-{datetime.now(timezone.utc).strftime('%Y%m%d%H%M%S%f')[:-3]}"
 
 
 @app.post("/api/v1/auth/token", response_model=TokenResponse)
@@ -448,6 +455,37 @@ def create_trip(payload: TripCreate, db: Session = Depends(get_db)):
 @app.get("/api/v1/vehicles/trips")
 def list_trips(db: Session = Depends(get_db)):
     return [serialize_model(item) for item in db.execute(select(TripRecord).order_by(TripRecord.created_at.desc())).scalars()]
+
+
+@app.get("/api/v1/business/bills")
+def list_business_bills(db: Session = Depends(get_db)):
+    return [serialize_model(item) for item in db.execute(select(BusinessBill).order_by(BusinessBill.created_at.desc())).scalars()]
+
+
+@app.post("/api/v1/business/bills", status_code=status.HTTP_201_CREATED)
+def create_business_bill(payload: BusinessBillCreate, db: Session = Depends(get_db)):
+    payload_data = payload.model_dump()
+    if not payload_data.get("invoice_no"):
+        payload_data["invoice_no"] = generate_bill_invoice_no()
+    bill = BusinessBill(**payload_data)
+    return serialize_model(create_or_400(db, BusinessBill, bill, "Unable to create business bill"))
+
+
+@app.put("/api/v1/business/bills/{bill_id}")
+def update_business_bill(bill_id: str, payload: BusinessBillUpdate, db: Session = Depends(get_db)):
+    bill = db.get(BusinessBill, bill_id)
+    if not bill:
+        raise HTTPException(status_code=404, detail="Business bill not found")
+    return serialize_model(update_instance(db, bill, payload.model_dump(exclude_unset=True)))
+
+
+@app.delete("/api/v1/business/bills/{bill_id}", status_code=status.HTTP_204_NO_CONTENT)
+def delete_business_bill(bill_id: str, db: Session = Depends(get_db)):
+    bill = db.get(BusinessBill, bill_id)
+    if not bill:
+        raise HTTPException(status_code=404, detail="Business bill not found")
+    db.delete(bill)
+    db.commit()
 
 
 @app.get("/api/v1/loans/given")

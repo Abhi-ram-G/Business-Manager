@@ -91,6 +91,45 @@ create table if not exists vehicles (
   updated_at timestamptz not null default now()
 );
 
+create table if not exists business_bills (
+  id varchar(50) primary key,
+  invoice_no varchar(50) not null unique,
+  client_name varchar(150) not null,
+  bill_date date not null,
+  due_date date not null,
+  description text not null,
+  amount numeric(12,2) not null,
+  tax_rate numeric(10,2) not null default 0,
+  status varchar(20) not null default 'Pending',
+  borewell_type varchar(30),
+  bill_mode varchar(20),
+  existing_depth int,
+  final_depth int,
+  casing_feet int,
+  casing_rate numeric(10,2),
+  batta numeric(10,2),
+  starting_price numeric(10,2),
+  old_feet_rate numeric(10,2),
+  casing_type varchar(20),
+  calculated_breakdown jsonb,
+  total_drilling_charges numeric(12,2),
+  casing_charges numeric(12,2),
+  is_custom_bill boolean,
+  location varchar(150),
+  broker_name varchar(150),
+  custom_date_type varchar(20),
+  custom_starting_feet int,
+  custom_ending_feet int,
+  casing10_feet int,
+  casing10_rate numeric(10,2),
+  casing7_feet int,
+  casing7_rate numeric(10,2),
+  custom_slab_rates jsonb,
+  discount_amount numeric(10,2),
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now()
+);
+
 create table if not exists fuel_entries (
   id varchar(50) primary key,
   vehicle_id varchar(50) references vehicles(id) on delete set null,
