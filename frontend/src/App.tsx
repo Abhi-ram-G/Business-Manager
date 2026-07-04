@@ -2137,7 +2137,7 @@ export default function App() {
       </div>
 
       {/* 1. TOP MASTER ENTERPRISE HEADER BAR */}
-      <header id="master-header" className="bg-slate-900 border-b border-slate-800 px-3 sm:px-4 md:px-6 py-3 sticky top-0 z-40 shadow-xl backdrop-blur-md bg-opacity-95">
+      <header id="master-header" className="bg-slate-900 border-b border-slate-800 px-3 sm:px-4 md:px-6 py-3 fixed top-0 left-0 right-0 z-40 shadow-xl backdrop-blur-md bg-opacity-95">
         <div className="max-w-7xl mx-auto flex items-center justify-between gap-2">
           
           {/* Left: Hamburger (mobile only) + Logo */}
@@ -2311,7 +2311,7 @@ export default function App() {
       </div>
 
       {/* 3. PRIMARY CONTENT PANEL - DESKTOP LAYOUT SHIFT CONTROLS */}
-      <main id="primary-content-grid" className={`flex-1 w-full max-w-7xl mx-auto px-0 sm:px-4 md:px-6 py-2 sm:py-4 md:py-6 flex flex-col gap-4 md:gap-6 transition-all duration-300 ${isSidebarCollapsed ? 'lg:pl-20' : 'lg:pl-72'}`}>
+      <main id="primary-content-grid" className={`flex-1 w-full max-w-7xl mx-auto px-0 sm:px-4 md:px-6 py-2 sm:py-4 md:py-6 flex flex-col gap-4 md:gap-6 transition-all duration-300 mt-[65px] ${isSidebarCollapsed ? 'lg:pl-20' : 'lg:pl-72'}`}>
         
         {/* WORKSPACE CONTENT BODY */}
         <section id="workspace-container" className="flex-1 w-full">
