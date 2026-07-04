@@ -588,10 +588,10 @@ export default function MobileBusiness({
       ...savedCustomFields
     };
 
-    try {
-      const response = await requestJson(
-        apiBaseUrl,
-        editingBillId ? `/api/v1/business/bills/${editingBillId}` : "/api/v1/business/bills",
+      try {
+        const response = await requestJson(
+          apiBaseUrl,
+          editingBillId ? `/api/v1/business/bills/${editingBillId}` : "/api/v1/business/bills",
         {
           method: editingBillId ? "PUT" : "POST",
           headers: { "Content-Type": "application/json" },
@@ -612,6 +612,44 @@ export default function MobileBusiness({
       await onSharedDataChanged?.();
     } catch (error) {
       console.error(error);
+      const message = error instanceof Error ? error.message.toLowerCase() : "";
+      if (editingBillId && (message.includes("not found") || message.includes("404"))) {
+        setBusinessBills((prev) =>
+          prev.map((bill) =>
+            bill.id === editingBillId
+              ? {
+                  ...bill,
+                  clientName: billClient,
+                  billDate,
+                  dueDate: billDueDate,
+                  description: fullDesc,
+                  amount: finalBillTotal,
+                  discountAmount,
+                  taxRate: 0,
+                  status: billStatus,
+                  borewellType,
+                  billMode,
+                  existingDepth,
+                  finalDepth: isCustom ? customEndingFeet : finalDepth,
+                  startingPrice,
+                  oldFeetRate,
+                  casingType: casing7Feet > 0 ? "7 inch" : "10 inch",
+                  casingFeet: casing7Feet > 0 ? casing7Feet : casing10Feet,
+                  casingRate: casing7Feet > 0 ? casing7Rate : casing10Rate,
+                  batta,
+                  calculatedBreakdown: calc.breakdownLines,
+                  totalDrillingCharges: calc.totalDrilling,
+                  casingCharges: calc.casingTotal,
+                  ...savedCustomFields,
+                }
+              : bill
+          )
+        );
+        triggerOnlineSync(`UPDATED BOREWELL BILL: ${billClient} (local sync)`);
+        setEditingBillId(null);
+        await onSharedDataChanged?.();
+        return;
+      }
       alert("Unable to save the borewell bill right now. Please try again.");
       return;
     }
@@ -5476,6 +5514,16 @@ export default function MobileBusiness({
                                 triggerOnlineSync(`Toggled status of Invoice ${savedBill.invoiceNo}`);
                               } catch (error) {
                                 console.error(error);
+                                const message = error instanceof Error ? error.message.toLowerCase() : "";
+                                if (message.includes("not found") || message.includes("404")) {
+                                  setBusinessBills((prev) =>
+                                    prev.map((item) =>
+                                      item.id === b.id ? { ...item, status: nextStatus } : item
+                                    )
+                                  );
+                                  triggerOnlineSync(`Toggled status of Invoice ${b.invoiceNo} (local sync)`);
+                                  return;
+                                }
                                 alert("Unable to update bill status right now.");
                               }
                             })();
