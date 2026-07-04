@@ -2201,7 +2201,7 @@ export default function MobileBusiness({
               }`}
             >
               <Package className="w-3.5 h-3.5" />
-              <span>Bit Details</span>
+              <span>Bit and Hammer</span>
             </button>
             <button
               onClick={() => {
@@ -3240,7 +3240,7 @@ export default function MobileBusiness({
           {(isBitFormOpen || editingBitId) && (
           <form onSubmit={handleSaveBit} className="bg-slate-900 border border-slate-800 rounded-2xl p-3 space-y-3 text-xs">
             <span className="text-[10px] font-mono font-bold text-amber-500 uppercase tracking-widest block">
-              {editingBitId ? "Edit Bit Entry" : "Add New Bit Entry"}
+              {editingBitId ? "Edit Bit and Hammer Entry" : "Add New Bit and Hammer Entry"}
             </span>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
@@ -3319,7 +3319,7 @@ export default function MobileBusiness({
                 onClick={handleOpenAddBit}
                 className="bg-indigo-650 hover:bg-indigo-500 py-1 px-2.5 rounded-lg text-[9px] font-bold text-white uppercase tracking-wider flex items-center gap-0.5"
               >
-                <Plus className="w-3.5 h-3.5" /> Add Bit (+)
+                <Plus className="w-3.5 h-3.5" /> Add Bit and Hammer (+)
               </button>
             </div>
 
