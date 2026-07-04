@@ -4245,11 +4245,11 @@ export default function MobileBusiness({
                     return (
                       <div key={f.id} className="bg-slate-950 p-2 rounded-xl text-[10px] font-mono flex justify-between items-center gap-2">
                         <div className="min-w-0">
-                          <span className="text-[8.5px] text-slate-500 block truncate">{f.dateTime} ? {f.vehicleName}</span>
-                          <span className="font-bold text-slate-350 block truncate">{f.fuelType} ? {f.liters} Liters ({f.perLiterCost}/L)</span>
+                          <span className="text-[8.5px] text-slate-500 block truncate">{f.dateTime} ₹ {f.vehicleName}</span>
+                          <span className="font-bold text-slate-350 block truncate">{f.fuelType} ₹ {f.liters} Liters ({f.perLiterCost}/L)</span>
                         </div>
                         <div className="flex items-center gap-2 shrink-0">
-                          <span className="font-black text-rose-450 text-[10.5px]">?{displayAmount.toLocaleString()}</span>
+                          <span className="font-black text-rose-450 text-[10.5px]">₹{displayAmount.toLocaleString()}</span>
                           <button
                             type="button"
                             onClick={() => handleOpenEditFuel(f)}
@@ -4679,7 +4679,7 @@ export default function MobileBusiness({
                         <span className={`text-[8.5px] font-mono font-bold uppercase px-2 py-0.5 rounded border ${
                           hasPayment?.status === "Paid" 
                             ? "bg-emerald-950 text-emerald-400 border-emerald-950" 
-                            : "bg-amber-950 text-amber-500 border-amber-950"
+                            : "bg-amber-950 text-orange-300 border-amber-950"
                         }`}>
                           {hasPayment?.status || "Pending"}
                         </span>
