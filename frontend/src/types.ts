@@ -103,6 +103,14 @@ export interface Vehicle {
   fitnessData?: string;
 }
 
+export interface BitEntry {
+  id: string;
+  bitNo: string;
+  brand: string;
+  sizeMm: number;
+  rate: number;
+}
+
 export interface BusinessBill {
   id: string;
   invoiceNo: string;

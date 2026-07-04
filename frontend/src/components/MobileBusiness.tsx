@@ -35,17 +35,21 @@ import {
   Wrench,
   Package,
   UserX,
-  UserCheck
+  UserCheck,
+  Mars,
+  Venus
 } from "lucide-react";
-import { Labour, Vehicle, BusinessBill, FuelEntry, SalaryPayment, AdvanceEntry, AttendanceRecord } from "../types";
+import { Labour, Vehicle, BitEntry, BusinessBill, FuelEntry, SalaryPayment, AdvanceEntry, AttendanceRecord } from "../types";
 import { downloadSalarySlipPDF, downloadAttendanceReportPDF, downloadSingleLabourAttendancePDF } from "../utils/pdfGenerator";
 import {
   mapFuelFromApi,
   mapBusinessBillFromApi,
+  mapBitFromApi,
   mapLabourFromApi,
   mapVehicleFromApi,
   requestJson,
   toBusinessBillApiPayload,
+  toBitApiPayload,
   toLabourApiPayload,
   toVehicleApiPayload,
 } from "../lib/sharedApi";
@@ -81,6 +85,43 @@ const isLegacyDemoServiceEntry = (service: ServiceRecord) =>
   service.vehicleId === "KA-51-MM-9999" ||
   service.vehicleId === "MH-12-GP-5678";
 
+const renderLabourAvatar = (
+  labour: Labour,
+  options: {
+    className: string;
+    iconClassName: string;
+    animated?: boolean;
+    roundedClassName: string;
+  }
+) => {
+  if (labour.profilePhoto) {
+    return (
+      <img
+        src={labour.profilePhoto}
+        alt={labour.fullName}
+        className={options.className}
+        referrerPolicy="no-referrer"
+      />
+    );
+  }
+
+  const isFemale = labour.gender === "Female";
+  const Icon = isFemale ? Venus : Mars;
+
+  return (
+    <div
+      className={`${options.className} ${options.roundedClassName} ${
+        isFemale
+          ? "bg-pink-950/40 border-pink-700/40 text-pink-300"
+          : "bg-blue-950/40 border-blue-700/40 text-blue-300"
+      } ${options.animated ? "animate-pulse" : ""} flex items-center justify-center shadow-sm`}
+      aria-label={`${labour.fullName} ${isFemale ? "female" : "male"} profile placeholder`}
+    >
+      <Icon className={`${options.iconClassName} ${options.animated ? "animate-bounce" : ""}`} />
+    </div>
+  );
+};
+
 
 interface MobileBusinessProps {
   key?: string;
@@ -89,6 +130,8 @@ interface MobileBusinessProps {
   setLabours: React.Dispatch<React.SetStateAction<Labour[]>>;
   vehicles: Vehicle[];
   setVehicles: React.Dispatch<React.SetStateAction<Vehicle[]>>;
+  bitEntries: BitEntry[];
+  setBitEntries: React.Dispatch<React.SetStateAction<BitEntry[]>>;
   businessBills: BusinessBill[];
   setBusinessBills: React.Dispatch<React.SetStateAction<BusinessBill[]>>;
   fuelEntries: FuelEntry[];
@@ -100,7 +143,7 @@ interface MobileBusinessProps {
   isOnline: boolean;
   triggerOnlineSync: (op: string) => void;
   onSharedDataChanged?: () => Promise<void> | void;
-  initialSubSection?: "labour" | "attendance" | "vehicles" | "salaries";
+  initialSubSection?: "labour" | "bit" | "attendance" | "vehicles" | "salaries";
 }
 
 export default function MobileBusiness({
@@ -109,6 +152,8 @@ export default function MobileBusiness({
   setLabours,
   vehicles,
   setVehicles,
+  bitEntries,
+  setBitEntries,
   businessBills,
   setBusinessBills,
   fuelEntries,
@@ -123,9 +168,9 @@ export default function MobileBusiness({
   initialSubSection = "labour"
 }: MobileBusinessProps) {
   // Navigation tabs inside Business Section
-  const [activeSubSection, setActiveSubSection] = React.useState<"labour" | "attendance" | "vehicles" | "salaries">(initialSubSection);
+  const [activeSubSection, setActiveSubSection] = React.useState<"labour" | "bit" | "attendance" | "vehicles" | "salaries">(initialSubSection);
   const [activeMainSection, setActiveMainSection] = React.useState<"management" | "bill" >("management");
-  const [deleteConfirmation, setDeleteConfirmation] = useState<{ id: string; name: string; type: "bill" | "labour" | "vehicle" | "fuel" | "service" | "material"; } | null>(null);
+  const [deleteConfirmation, setDeleteConfirmation] = useState<{ id: string; name: string; type: "bill" | "bit" | "labour" | "vehicle" | "fuel" | "service" | "material"; } | null>(null);
 
   const persistLabour = async (record: Labour, method: "POST" | "PUT") => {
     const response = await requestJson(
@@ -153,6 +198,19 @@ export default function MobileBusiness({
     return mapVehicleFromApi(response);
   };
 
+  const persistBit = async (record: BitEntry, method: "POST" | "PUT") => {
+    const response = await requestJson(
+      apiBaseUrl,
+      method === "POST" ? "/api/v1/business/bits" : `/api/v1/business/bits/${record.id}`,
+      {
+        method,
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(toBitApiPayload(record)),
+      }
+    );
+    return mapBitFromApi(response);
+  };
+
   const executeDelete = async (confirmation: NonNullable<typeof deleteConfirmation>) => {
     const { id, name, type } = confirmation;
     if (type === "bill") {
@@ -170,6 +228,16 @@ export default function MobileBusiness({
       } catch (error) {
         console.error(error);
         alert("Unable to delete the bill right now.");
+      }
+    } else if (type === "bit") {
+      try {
+        await requestJson(apiBaseUrl, `/api/v1/business/bits/${id}`, { method: "DELETE" });
+        setBitEntries((prev) => prev.filter((entry) => entry.id !== id));
+        await onSharedDataChanged?.();
+        triggerOnlineSync(`DELETED BIT ENTRY: ${name}`);
+      } catch (error) {
+        console.error(error);
+        alert("Unable to delete the bit entry right now.");
       }
     } else if (type === "fuel") {
       try {
@@ -1170,6 +1238,14 @@ export default function MobileBusiness({
   const [vehFitnessFile, setVehFitnessFile] = useState<string | null>(null);
   const [vehFitnessData, setVehFitnessData] = useState<string | null>(null);
 
+  // B-1. Bit purchase ledger state
+  const [isBitFormOpen, setIsBitFormOpen] = useState(false);
+  const [editingBitId, setEditingBitId] = useState<string | null>(null);
+  const [bitNo, setBitNo] = useState("");
+  const [bitBrand, setBitBrand] = useState("");
+  const [bitSizeMm, setBitSizeMm] = useState(150);
+  const [bitRate, setBitRate] = useState(0);
+
   // Core state for active file preview modal
   const [selectedFileToView, setSelectedFileToView] = useState<{
     vehicleId: string;
@@ -1626,6 +1702,60 @@ export default function MobileBusiness({
     setDeleteConfirmation({ id, name: id, type: "vehicle" });
   };
 
+  // --- ACTIONS BIT CRUD ---
+  const handleOpenAddBit = () => {
+    setEditingBitId(null);
+    setBitNo("");
+    setBitBrand("");
+    setBitSizeMm(150);
+    setBitRate(0);
+    setIsBitFormOpen(true);
+  };
+
+  const handleOpenEditBit = (bit: BitEntry) => {
+    setEditingBitId(bit.id);
+    setBitNo(bit.bitNo);
+    setBitBrand(bit.brand);
+    setBitSizeMm(bit.sizeMm);
+    setBitRate(bit.rate);
+    setIsBitFormOpen(true);
+  };
+
+  const handleSaveBit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!bitNo.trim() || !bitBrand.trim()) return;
+
+    const next: BitEntry = {
+      id: editingBitId || `bit-${Date.now()}`,
+      bitNo: bitNo.trim(),
+      brand: bitBrand.trim(),
+      sizeMm: Number(bitSizeMm),
+      rate: Number(bitRate),
+    };
+
+    try {
+      const saved = await persistBit(next, editingBitId ? "PUT" : "POST");
+      setBitEntries((prev) =>
+        editingBitId ? prev.map((entry) => (entry.id === editingBitId ? saved : entry)) : [saved, ...prev]
+      );
+      await onSharedDataChanged?.();
+      triggerOnlineSync(editingBitId ? `UPDATED BIT ENTRY: ${next.bitNo}` : `ADDED BIT ENTRY: ${next.bitNo}`);
+      setIsBitFormOpen(false);
+      setEditingBitId(null);
+      setBitNo("");
+      setBitBrand("");
+      setBitSizeMm(150);
+      setBitRate(0);
+    } catch (error) {
+      console.error(error);
+      alert("Unable to save the bit entry right now.");
+    }
+  };
+
+  const handleDeleteBit = (id: string, name: string) => {
+    setDeleteConfirmation({ id, name, type: "bit" });
+  };
+
   // --- ACTIONS FUEL CRUD ---
   const handleOpenAddFuel = () => {
     setEditingFuelId(null);
@@ -1987,6 +2117,28 @@ export default function MobileBusiness({
     return { name: v.vehicleName, cost: total };
   });
 
+  const bitSizeSummary = React.useMemo(() => {
+    const grouped = new Map<number, number>();
+    bitEntries.forEach((bit) => {
+      const size = Number(bit.sizeMm || 0);
+      grouped.set(size, (grouped.get(size) || 0) + 1);
+    });
+    return [...grouped.entries()]
+      .map(([sizeMm, count]) => ({ sizeMm, count }))
+      .sort((a, b) => a.sizeMm - b.sizeMm);
+  }, [bitEntries]);
+
+  const bitBrandSummary = React.useMemo(() => {
+    const grouped = new Map<string, number>();
+    bitEntries.forEach((bit) => {
+      const brand = (bit.brand || "Unknown").trim();
+      grouped.set(brand, (grouped.get(brand) || 0) + 1);
+    });
+    return [...grouped.entries()]
+      .map(([brand, count]) => ({ brand, count }))
+      .sort((a, b) => a.brand.localeCompare(b.brand));
+  }, [bitEntries]);
+
   return (
     <div id="mobile-business-root" className="space-y-4">
       
@@ -2020,7 +2172,7 @@ export default function MobileBusiness({
       {activeMainSection === "management" && (
         <div className="space-y-2 animate-fade-in">
           {/* First Tier: Main Division */}
-          <div className="grid grid-cols-2 gap-1.5 bg-slate-900 p-1.5 rounded-xl border border-slate-850">
+          <div className="grid grid-cols-3 gap-1.5 bg-slate-900 p-1.5 rounded-xl border border-slate-850">
             <button
               onClick={() => {
                 setActiveSubSection("labour");
@@ -2035,6 +2187,21 @@ export default function MobileBusiness({
             >
               <Users className="w-3.5 h-3.5" />
               <span>Labour Details</span>
+            </button>
+            <button
+              onClick={() => {
+                setActiveSubSection("bit");
+                setSelectedLabourForProfile(null);
+                setSelectedLabourForPayout(null);
+              }}
+              className={`py-2 rounded-lg text-[10px] font-bold uppercase tracking-widest flex items-center justify-center gap-1.5 transition duration-150 cursor-pointer ${
+                activeSubSection === "bit"
+                  ? "bg-indigo-650 text-white"
+                  : "text-slate-400 hover:text-slate-200"
+              }`}
+            >
+              <Package className="w-3.5 h-3.5" />
+              <span>Bit Details</span>
             </button>
             <button
               onClick={() => {
@@ -2119,11 +2286,12 @@ export default function MobileBusiness({
               </button>
 
               <div className="flex gap-3">
-                <img
-                  src={selectedLabourForProfile.profilePhoto || "https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&q=80&w=120&h=120"}
-                  alt="avatar"
-                  className="w-14 h-14 rounded-xl border border-slate-750 object-cover"
-                />
+                {renderLabourAvatar(selectedLabourForProfile, {
+                  className: "w-14 h-14 border border-slate-750 object-cover",
+                  iconClassName: "w-7 h-7",
+                  roundedClassName: "rounded-xl",
+                  animated: true,
+                })}
                 <div className="min-w-0 flex-1">
                   <div className="flex items-center gap-1.5 flex-wrap">
                     <h4 className={`text-sm font-black text-red-500 truncate ${selectedLabourForProfile.isFreezed ? "line-through text-slate-400" : ""}`}>{selectedLabourForProfile.fullName}</h4>
@@ -2977,13 +3145,12 @@ export default function MobileBusiness({
                         }`}
                       >
                         <div className="flex items-center gap-2.5 min-w-0">
-                          <img
-                            src={lab.profilePhoto || "https://images.unsplash.com/photo-1544005313-94ddf0286df2?auto=format&fit=crop&q=80&w=120&h=120"}
-                            alt=""
-                            className={`w-9 h-9 rounded-xl border object-cover ${
-                              isLabFreezed ? "border-amber-950/40 grayscale" : "border-slate-800"
-                            }`}
-                          />
+                          {renderLabourAvatar(lab, {
+                            className: `w-9 h-9 border object-cover ${isLabFreezed ? "border-amber-950/40 grayscale" : "border-slate-800"}`,
+                            iconClassName: "w-4 h-4",
+                            roundedClassName: "rounded-xl",
+                            animated: true,
+                          })}
                           <div className="min-w-0">
                             <div className="flex items-center gap-1.5 flex-wrap">
                               <h4 className={`text-xs font-bold truncate group-hover:text-indigo-400 ${
@@ -3017,6 +3184,184 @@ export default function MobileBusiness({
 
             </div>
           )}
+        </div>
+      )}
+
+      {/* ======================= B-1. BIT PURCHASE SUBSECTION ======================= */}
+      {activeMainSection === "management" && activeSubSection === "bit" && (
+        <div className="space-y-4">
+          <div className="grid grid-cols-2 gap-2">
+            <div className="bg-slate-900 border border-slate-850 rounded-xl p-3">
+              <span className="text-[8px] uppercase tracking-wider text-slate-500 font-mono font-bold block">Total Bits Purchased</span>
+              <div className="text-2xl font-black text-indigo-400 mt-1">{bitEntries.length}</div>
+            </div>
+            <div className="bg-slate-900 border border-slate-850 rounded-xl p-3">
+              <span className="text-[8px] uppercase tracking-wider text-slate-500 font-mono font-bold block">Total Amount</span>
+              <div className="text-2xl font-black text-emerald-400 mt-1">₹{bitEntries.reduce((sum, bit) => sum + Number(bit.rate || 0), 0).toLocaleString()}</div>
+            </div>
+          </div>
+
+          <div className="bg-slate-900 border border-slate-850 rounded-2xl p-3 space-y-3">
+            <div className="space-y-2">
+              <div className="flex items-center justify-between">
+                <span className="text-[9px] font-mono font-bold uppercase tracking-widest text-slate-400">Count by Size (mm)</span>
+              </div>
+              <div className="flex flex-wrap gap-2">
+                {bitSizeSummary.length === 0 ? (
+                  <span className="text-[9px] text-slate-500 italic">No bit sizes yet.</span>
+                ) : (
+                  bitSizeSummary.map((item) => (
+                    <span key={item.sizeMm} className="px-2.5 py-1 rounded-full border border-indigo-900/40 bg-indigo-950/30 text-[9px] font-bold text-indigo-300 font-mono">
+                      {item.sizeMm} mm • {item.count}
+                    </span>
+                  ))
+                )}
+              </div>
+            </div>
+
+            <div className="space-y-2">
+              <div className="flex items-center justify-between">
+                <span className="text-[9px] font-mono font-bold uppercase tracking-widest text-slate-400">Count by Brand</span>
+              </div>
+              <div className="flex flex-wrap gap-2">
+                {bitBrandSummary.length === 0 ? (
+                  <span className="text-[9px] text-slate-500 italic">No bit brands yet.</span>
+                ) : (
+                  bitBrandSummary.map((item) => (
+                    <span key={item.brand} className="px-2.5 py-1 rounded-full border border-emerald-900/40 bg-emerald-950/30 text-[9px] font-bold text-emerald-300 font-mono">
+                      {item.brand} • {item.count}
+                    </span>
+                  ))
+                )}
+              </div>
+            </div>
+          </div>
+
+          {(isBitFormOpen || editingBitId) && (
+          <form onSubmit={handleSaveBit} className="bg-slate-900 border border-slate-800 rounded-2xl p-3 space-y-3 text-xs">
+            <span className="text-[10px] font-mono font-bold text-amber-500 uppercase tracking-widest block">
+              {editingBitId ? "Edit Bit Entry" : "Add New Bit Entry"}
+            </span>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+              <div>
+                <label className="text-[9px] text-slate-500 block font-mono">BIT NUMBER</label>
+                <input
+                  type="text"
+                  value={bitNo}
+                  onChange={(e) => setBitNo(e.target.value)}
+                  className="w-full bg-slate-950 p-1.5 rounded text-slate-100 border border-slate-850"
+                  placeholder="BT-001"
+                  required
+                />
+              </div>
+              <div>
+                <label className="text-[9px] text-slate-500 block font-mono">BIT BRAND</label>
+                <input
+                  type="text"
+                  value={bitBrand}
+                  onChange={(e) => setBitBrand(e.target.value)}
+                  className="w-full bg-slate-950 p-1.5 rounded text-slate-100 border border-slate-850"
+                  placeholder="Atlas Copco"
+                  required
+                />
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+              <div>
+                <label className="text-[9px] text-slate-500 block font-mono">BIT SIZE IN MM</label>
+                <input
+                  type="number"
+                  value={bitSizeMm}
+                  onChange={(e) => setBitSizeMm(Number(e.target.value))}
+                  className="w-full bg-slate-950 p-1.5 rounded text-slate-100 border border-slate-850 font-bold"
+                  min="1"
+                  required
+                />
+              </div>
+              <div>
+                <label className="text-[9px] text-slate-500 block font-mono">RATE OF BIT (₹)</label>
+                <input
+                  type="number"
+                  value={bitRate}
+                  onChange={(e) => setBitRate(Number(e.target.value))}
+                  className="w-full bg-slate-950 p-1.5 rounded text-slate-100 border border-slate-850 font-bold"
+                  min="0"
+                  required
+                />
+              </div>
+            </div>
+
+            <div className="flex gap-2 justify-end pt-1">
+              <button
+                type="button"
+                onClick={() => {
+                  setIsBitFormOpen(false);
+                  setEditingBitId(null);
+                }}
+                className="px-3 bg-slate-950 text-slate-400 py-1 rounded"
+              >
+                Cancel
+              </button>
+              <button type="submit" className="px-4 bg-indigo-650 text-white font-bold py-1 rounded">
+                {editingBitId ? "Update Bit" : "Save Bit"}
+              </button>
+            </div>
+          </form>
+          )}
+
+          <div className="space-y-2">
+            <div className="flex justify-between items-center">
+              <span className="text-xs font-mono font-bold text-slate-400 uppercase">Bit Purchase Ledger</span>
+              <button
+                type="button"
+                onClick={handleOpenAddBit}
+                className="bg-indigo-650 hover:bg-indigo-500 py-1 px-2.5 rounded-lg text-[9px] font-bold text-white uppercase tracking-wider flex items-center gap-0.5"
+              >
+                <Plus className="w-3.5 h-3.5" /> Add Bit (+)
+              </button>
+            </div>
+
+            <div className="space-y-2">
+              {bitEntries.length === 0 ? (
+                <div className="text-center p-6 bg-slate-900/30 rounded-xl text-[10px] text-slate-500">
+                  No bit entries in database
+                </div>
+              ) : (
+                bitEntries.map((bit) => (
+                  <div key={bit.id} className="bg-slate-900 border border-slate-850 rounded-2xl p-3 flex items-center justify-between gap-3">
+                    <div className="min-w-0">
+                      <div className="flex flex-wrap items-center gap-1.5">
+                        <span className="text-[8px] uppercase tracking-wider font-bold text-indigo-400 font-mono">{bit.bitNo}</span>
+                        <span className="text-[8px] uppercase tracking-wider font-bold text-slate-500 font-mono">Size: {bit.sizeMm} mm</span>
+                      </div>
+                      <h4 className="text-xs font-bold text-red-500 truncate mt-0.5">{bit.brand}</h4>
+                      <p className="text-[8.5px] text-slate-500 font-mono mt-1">Rate: ₹{Number(bit.rate || 0).toLocaleString()}</p>
+                    </div>
+                    <div className="flex items-center gap-1.5 shrink-0">
+                      <button
+                        type="button"
+                        onClick={() => handleOpenEditBit(bit)}
+                        className="p-1 bg-slate-950 text-slate-400 hover:text-white border border-slate-800 rounded"
+                        title="Edit bit"
+                      >
+                        <Edit className="w-3 h-3" />
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => handleDeleteBit(bit.id, bit.bitNo)}
+                        className="p-1 bg-rose-950/40 text-rose-450 border border-rose-900/40 rounded"
+                        title="Delete bit"
+                      >
+                        <Trash2 className="w-3 h-3" />
+                      </button>
+                    </div>
+                  </div>
+                ))
+              )}
+            </div>
+          </div>
         </div>
       )}
 
@@ -3224,14 +3569,12 @@ export default function MobileBusiness({
                     {/* Worker Core Row */}
                     <div className="flex flex-col xs:flex-row gap-3 items-start xs:items-center justify-between">
                       <div className="flex items-center gap-2.5">
-                        <img
-                          src={lab.profilePhoto || "https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&q=80&w=120&h=120"}
-                          alt={lab.fullName}
-                          className={`w-8.5 h-8.5 rounded-full border object-cover ${
-                            isLabFreezed ? "border-amber-950/40 grayscale" : "border-slate-800"
-                          }`}
-                          referrerPolicy="no-referrer"
-                        />
+                        {renderLabourAvatar(lab, {
+                          className: `w-8.5 h-8.5 border object-cover ${isLabFreezed ? "border-amber-950/40 grayscale" : "border-slate-800"}`,
+                          iconClassName: "w-4 h-4",
+                          roundedClassName: "rounded-full",
+                          animated: true,
+                        })}
                         <div className="space-y-0.5">
                           <div className="flex items-center gap-1.5 flex-wrap">
                             <h4 className={`text-xs font-black truncate ${
@@ -5790,6 +6133,7 @@ export default function MobileBusiness({
                 deleteConfirmation.type === "vehicle" ? "vehicle" :
                 deleteConfirmation.type === "fuel" ? "fuel log" :
                 deleteConfirmation.type === "service" ? "service log" :
+                deleteConfirmation.type === "bit" ? "bit entry" :
                 "materials purchase entry"
               } <strong className="text-white">'{deleteConfirmation.name}'</strong>?
             </p>

@@ -142,6 +142,21 @@ class VehicleUpdate(BaseModel):
     fitness_data: str | None = None
 
 
+class BitEntryCreate(BaseModel):
+    id: str
+    bit_no: str
+    brand: str
+    size_mm: int
+    rate: float
+
+
+class BitEntryUpdate(BaseModel):
+    bit_no: str | None = None
+    brand: str | None = None
+    size_mm: int | None = None
+    rate: float | None = None
+
+
 class BusinessBillCreate(BaseModel):
     id: str
     invoice_no: str | None = None

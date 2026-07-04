@@ -55,6 +55,7 @@ import {
   AttendanceRecord, 
   SalaryPayment, 
   Vehicle, 
+  BitEntry,
   BusinessBill,
   FuelEntry, 
   TripRecord, 
@@ -664,6 +665,10 @@ export default function App() {
     return loadStoredArray<Vehicle>("srs_vehicles", []);
   });
 
+  const [bitEntries, setBitEntries] = useState<BitEntry[]>(() => {
+    return loadStoredArray<BitEntry>("srs_bit_entries", []);
+  });
+
   const [businessBills, setBusinessBills] = useState<BusinessBill[]>(() => {
     const stored = loadStoredArray<BusinessBill>("srs_business_bills", []);
     if (stored.length > 0) {
@@ -741,6 +746,7 @@ export default function App() {
       setAttendance(snapshot.attendance);
       setSalaryPayments(snapshot.salaryPayments);
       setVehicles(snapshot.vehicles);
+      setBitEntries(snapshot.bitEntries);
       setBusinessBills((prev) => {
         const localBills = prev.filter((bill) => bill.source !== "server");
         const serverBills = snapshot.businessBills.map((bill) => ({ ...bill, source: "server" as const }));
@@ -786,6 +792,10 @@ export default function App() {
   useEffect(() => {
     localStorage.setItem("srs_vehicles", JSON.stringify(vehicles));
   }, [vehicles]);
+
+  useEffect(() => {
+    localStorage.setItem("srs_bit_entries", JSON.stringify(bitEntries));
+  }, [bitEntries]);
 
   useEffect(() => {
     localStorage.setItem("srs_business_bills", JSON.stringify(businessBills));
@@ -2342,12 +2352,14 @@ export default function App() {
 
                           {selectedMobileModule === "business" && (
                             <MobileBusiness
-                              apiBaseUrl={apiBaseUrl}
-                              labours={labours}
-                              setLabours={setLabours}
-                              vehicles={vehicles}
-                              setVehicles={setVehicles}
-                              businessBills={businessBills}
+                            apiBaseUrl={apiBaseUrl}
+                            labours={labours}
+                            setLabours={setLabours}
+                            vehicles={vehicles}
+                            setVehicles={setVehicles}
+                            bitEntries={bitEntries}
+                            setBitEntries={setBitEntries}
+                            businessBills={businessBills}
                               setBusinessBills={setBusinessBills}
                               fuelEntries={fuelEntries}
                               setFuelEntries={setFuelEntries}
@@ -2804,6 +2816,8 @@ export default function App() {
                             setLabours={setLabours}
                             vehicles={vehicles}
                             setVehicles={setVehicles}
+                            bitEntries={bitEntries}
+                            setBitEntries={setBitEntries}
                             fuelEntries={fuelEntries}
                             setFuelEntries={setFuelEntries}
                             salaryPayments={salaryPayments}

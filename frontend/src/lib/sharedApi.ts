@@ -12,6 +12,7 @@ import {
   LoanReceived,
   SalaryPayment,
   FuelEntry,
+  BitEntry,
   TripRecord,
   Vehicle,
 } from "../types";
@@ -82,6 +83,14 @@ export const mapVehicleFromApi = (item: ApiRecord): Vehicle => ({
   insuranceData: item.insurance_data ? String(item.insurance_data) : undefined,
   permitData: item.permit_data ? String(item.permit_data) : undefined,
   fitnessData: item.fitness_data ? String(item.fitness_data) : undefined,
+});
+
+export const mapBitFromApi = (item: ApiRecord): BitEntry => ({
+  id: String(item.id ?? ""),
+  bitNo: String(item.bit_no ?? ""),
+  brand: String(item.brand ?? ""),
+  sizeMm: toNumber(item.size_mm ?? 0),
+  rate: toNumber(item.rate ?? 0),
 });
 
 export const mapBusinessBillFromApi = (item: ApiRecord): BusinessBill => ({
@@ -314,6 +323,14 @@ export const toVehicleApiPayload = (vehicle: Vehicle) => ({
   fitness_data: vehicle.fitnessData ?? null,
 });
 
+export const toBitApiPayload = (bit: BitEntry) => ({
+  id: bit.id,
+  bit_no: bit.bitNo,
+  brand: bit.brand,
+  size_mm: bit.sizeMm,
+  rate: bit.rate,
+});
+
 export const toBusinessBillApiPayload = (bill: BusinessBill) => ({
   id: bill.id,
   invoice_no: bill.invoiceNo,
@@ -447,11 +464,12 @@ export const toSalaryPaymentApiPayload = (payment: SalaryPayment) => ({
 });
 
 export const fetchSharedSnapshot = async (apiBaseUrl: string) => {
-  const [labours, attendance, salaryPayments, vehicles, businessBills, fuelEntries, trips, loansGiven, loansReceived, familyMembers, incomeEntries, familyExpenses, categoryBudgets, documents, notifications] = await Promise.all([
+  const [labours, attendance, salaryPayments, vehicles, bitEntries, businessBills, fuelEntries, trips, loansGiven, loansReceived, familyMembers, incomeEntries, familyExpenses, categoryBudgets, documents, notifications] = await Promise.all([
     requestJson(apiBaseUrl, "/api/v1/labours"),
     requestJson(apiBaseUrl, "/api/v1/labours/attendance"),
     requestJson(apiBaseUrl, "/api/v1/labours/salary-payments"),
     requestJson(apiBaseUrl, "/api/v1/vehicles"),
+    requestJson(apiBaseUrl, "/api/v1/business/bits"),
     requestJson(apiBaseUrl, "/api/v1/business/bills"),
     requestJson(apiBaseUrl, "/api/v1/vehicles/fuel"),
     requestJson(apiBaseUrl, "/api/v1/vehicles/trips"),
@@ -470,6 +488,7 @@ export const fetchSharedSnapshot = async (apiBaseUrl: string) => {
     attendance: Array.isArray(attendance) ? attendance.map(mapAttendanceFromApi) : [],
     salaryPayments: Array.isArray(salaryPayments) ? salaryPayments.map(mapSalaryPaymentFromApi) : [],
     vehicles: Array.isArray(vehicles) ? vehicles.map(mapVehicleFromApi) : [],
+    bitEntries: Array.isArray(bitEntries) ? bitEntries.map(mapBitFromApi) : [],
     businessBills: Array.isArray(businessBills) ? businessBills.map(mapBusinessBillFromApi) : [],
     fuelEntries: Array.isArray(fuelEntries) ? fuelEntries.map(mapFuelFromApi) : [],
     trips: Array.isArray(trips) ? trips.map(mapTripFromApi) : [],

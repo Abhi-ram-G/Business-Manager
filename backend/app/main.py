@@ -13,6 +13,7 @@ from .core.security import create_access_token, hash_password, verify_password
 from .models import (
     AppNotification,
     Attendance,
+    BitEntry,
     BusinessBill,
     CategoryBudget,
     FamilyExpense,
@@ -30,6 +31,8 @@ from .models import (
 )
 from .schemas import (
     AttendanceBatch,
+    BitEntryCreate,
+    BitEntryUpdate,
     BusinessBillCreate,
     BusinessBillUpdate,
     CategoryBudgetCreate,
@@ -442,6 +445,34 @@ def delete_vehicle(vehicle_id: str, db: Session = Depends(get_db)):
     if not vehicle:
         raise HTTPException(status_code=404, detail="Vehicle not found")
     db.delete(vehicle)
+    db.commit()
+
+
+@app.get("/api/v1/business/bits")
+def list_bit_entries(db: Session = Depends(get_db)):
+    return [serialize_model(item) for item in db.execute(select(BitEntry).order_by(BitEntry.created_at.desc())).scalars()]
+
+
+@app.post("/api/v1/business/bits", status_code=status.HTTP_201_CREATED)
+def create_bit_entry(payload: BitEntryCreate, db: Session = Depends(get_db)):
+    bit = BitEntry(**payload.model_dump())
+    return serialize_model(create_or_400(db, BitEntry, bit, "Unable to create bit entry"))
+
+
+@app.put("/api/v1/business/bits/{bit_id}")
+def update_bit_entry(bit_id: str, payload: BitEntryUpdate, db: Session = Depends(get_db)):
+    bit = db.get(BitEntry, bit_id)
+    if not bit:
+        raise HTTPException(status_code=404, detail="Bit entry not found")
+    return serialize_model(update_instance(db, bit, payload.model_dump(exclude_unset=True)))
+
+
+@app.delete("/api/v1/business/bits/{bit_id}", status_code=status.HTTP_204_NO_CONTENT)
+def delete_bit_entry(bit_id: str, db: Session = Depends(get_db)):
+    bit = db.get(BitEntry, bit_id)
+    if not bit:
+        raise HTTPException(status_code=404, detail="Bit entry not found")
+    db.delete(bit)
     db.commit()
 
 

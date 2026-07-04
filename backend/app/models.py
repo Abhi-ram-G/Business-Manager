@@ -112,6 +112,16 @@ class Vehicle(Base, TimestampMixin):
     fitness_data: Mapped[str | None] = mapped_column(Text)
 
 
+class BitEntry(Base, TimestampMixin):
+    __tablename__ = "bit_entries"
+
+    id: Mapped[str] = mapped_column(String(50), primary_key=True)
+    bit_no: Mapped[str] = mapped_column(String(100), nullable=False)
+    brand: Mapped[str] = mapped_column(String(100), nullable=False)
+    size_mm: Mapped[int] = mapped_column(Integer, nullable=False)
+    rate: Mapped[float] = mapped_column(Numeric(12, 2), nullable=False)
+
+
 class BusinessBill(Base, TimestampMixin):
     __tablename__ = "business_bills"
 
