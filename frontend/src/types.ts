@@ -113,6 +113,27 @@ export interface BitEntry {
   rate: number;
 }
 
+export interface HammerUsageRecord {
+  id: string;
+  date: string;             // YYYY-MM-DD
+  clientName: string;
+  location: string;
+  calculatedFeet: number;   // finalDepth - (casing7Feet + casing10Feet)
+  billId?: string;
+}
+
+export interface HammerEntry {
+  id: string;
+  hammerNo: string;          // e.g. H-001
+  brand: string;
+  dateEntry: string;         // YYYY-MM-DD
+  rate: number;
+  capableFeetDepth: number;  // max drilling capacity in feet
+  isPaid: boolean;
+  casingType?: "7 inch" | "10 inch"; // set after limit is reached
+  usageHistory: HammerUsageRecord[];
+}
+
 export interface BusinessBill {
   id: string;
   invoiceNo: string;
@@ -149,6 +170,10 @@ export interface BusinessBill {
   customSlabRates?: Record<string, number>;
   discountAmount?: number;
   source?: "local" | "server";
+  // Internal tracking only — NOT printed in invoice PDF
+  usedBitId?: string;
+  usedHammerId?: string;
+  hammerFeetUsed?: number;
 }
 
 export interface FuelEntry {

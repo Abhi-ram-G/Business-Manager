@@ -39,7 +39,7 @@ import {
   Mars,
   Venus
 } from "lucide-react";
-import { Labour, Vehicle, BitEntry, BusinessBill, FuelEntry, SalaryPayment, AdvanceEntry, AttendanceRecord } from "../types";
+import { Labour, Vehicle, BitEntry, HammerEntry, HammerUsageRecord, BusinessBill, FuelEntry, SalaryPayment, AdvanceEntry, AttendanceRecord } from "../types";
 import { downloadSalarySlipPDF, downloadAttendanceReportPDF, downloadSingleLabourAttendancePDF } from "../utils/pdfGenerator";
 import {
   mapFuelFromApi,
@@ -132,6 +132,8 @@ interface MobileBusinessProps {
   setVehicles: React.Dispatch<React.SetStateAction<Vehicle[]>>;
   bitEntries: BitEntry[];
   setBitEntries: React.Dispatch<React.SetStateAction<BitEntry[]>>;
+  hammerEntries: HammerEntry[];
+  setHammerEntries: React.Dispatch<React.SetStateAction<HammerEntry[]>>;
   businessBills: BusinessBill[];
   setBusinessBills: React.Dispatch<React.SetStateAction<BusinessBill[]>>;
   fuelEntries: FuelEntry[];
@@ -154,6 +156,8 @@ export default function MobileBusiness({
   setVehicles,
   bitEntries,
   setBitEntries,
+  hammerEntries,
+  setHammerEntries,
   businessBills,
   setBusinessBills,
   fuelEntries,
@@ -170,7 +174,40 @@ export default function MobileBusiness({
   // Navigation tabs inside Business Section
   const [activeSubSection, setActiveSubSection] = React.useState<"labour" | "bit" | "attendance" | "vehicles" | "salaries">(initialSubSection);
   const [activeMainSection, setActiveMainSection] = React.useState<"management" | "bill" >("management");
-  const [deleteConfirmation, setDeleteConfirmation] = useState<{ id: string; name: string; type: "bill" | "bit" | "labour" | "vehicle" | "fuel" | "service" | "material"; } | null>(null);
+
+
+  const persistBit = async (record: BitEntry, method: "POST" | "PUT") => {
+    const response = await requestJson(
+      apiBaseUrl,
+      method === "POST" ? "/api/v1/business/bits" : `/api/v1/business/bits/${record.id}`,
+      {
+        method,
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(toBitApiPayload(record)),
+      }
+    );
+    return mapBitFromApi(response);
+  };
+
+  const [deleteConfirmation, setDeleteConfirmation] = useState<{ id: string; name: string; type: "bill" | "bit" | "hammer" | "labour" | "vehicle" | "fuel" | "service" | "material"; } | null>(null);
+
+  // Bit/Hammer sub-tab switcher inside the bit section
+  const [bitHammerSubTab, setBitHammerSubTab] = useState<"bit" | "hammer">("bit");
+
+  // Hammer form states
+  const [isHammerFormOpen, setIsHammerFormOpen] = useState(false);
+  const [editingHammerId, setEditingHammerId] = useState<string | null>(null);
+  const [hammerNo, setHammerNo] = useState("");
+  const [hammerBrand, setHammerBrand] = useState("");
+  const [hammerDateEntry, setHammerDateEntry] = useState(() => new Date().toISOString().split("T")[0]);
+  const [hammerRate, setHammerRate] = useState<number>(0);
+  const [hammerCapableFeet, setHammerCapableFeet] = useState<number>(500);
+  const [hammerIsPaid, setHammerIsPaid] = useState<boolean>(false);
+  const [selectedHammerForHistory, setSelectedHammerForHistory] = useState<string | null>(null);
+
+  // Bill form: bit/hammer selection (internal use only — NOT printed in PDF)
+  const [selectedBitId, setSelectedBitId] = useState<string>("");
+  const [selectedHammerId, setSelectedHammerId] = useState<string>("");
 
   const persistLabour = async (record: Labour, method: "POST" | "PUT") => {
     const response = await requestJson(
@@ -196,19 +233,6 @@ export default function MobileBusiness({
       }
     );
     return mapVehicleFromApi(response);
-  };
-
-  const persistBit = async (record: BitEntry, method: "POST" | "PUT") => {
-    const response = await requestJson(
-      apiBaseUrl,
-      method === "POST" ? "/api/v1/business/bits" : `/api/v1/business/bits/${record.id}`,
-      {
-        method,
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(toBitApiPayload(record)),
-      }
-    );
-    return mapBitFromApi(response);
   };
 
   const executeDelete = async (confirmation: NonNullable<typeof deleteConfirmation>) => {
@@ -275,6 +299,9 @@ export default function MobileBusiness({
     } else if (type === "material") {
       setMaterials(prev => prev.filter(m => m.id !== id));
       triggerOnlineSync(`DELETED MATERIAL BOUGHT: ${id}`);
+    } else if (type === "hammer") {
+      setHammerEntries(prev => prev.filter(h => h.id !== id));
+      triggerOnlineSync(`DELETED HAMMER: ${name}`);
     }
   };
 
@@ -774,8 +801,43 @@ export default function MobileBusiness({
       return;
     }
     
-    // reset form inputs
-    setBillClient("");
+    // === HAMMER FEET TRACKING (internal, not in PDF) ===
+    // Only for New Bore mode when a hammer is selected
+    if (billMode === "New" && selectedHammerId && !editingBillId) {
+      const c7 = casing7Feet || 0;
+      const c10 = casing10Feet || 0;
+      const usedFeet = Math.max(0, finalDepth - (c7 + c10));
+      const billId = payloadBill.id;
+
+      setHammerEntries(prev => prev.map(h => {
+        if (h.id !== selectedHammerId) return h;
+        const newRecord: HammerUsageRecord = {
+          id: `HU-${Date.now()}`,
+          date: billDate,
+          clientName: billClient,
+          location: customLocation || "",
+          calculatedFeet: usedFeet,
+          billId,
+        };
+        const updatedHistory = [...h.usageHistory, newRecord];
+        const totalFeet = updatedHistory.reduce((sum, r) => sum + r.calculatedFeet, 0);
+        // Check if hammer has reached its capable depth limit
+        if (totalFeet >= h.capableFeetDepth) {
+          const casingChoice = window.confirm(
+            `⚠️ Hammer ${h.hammerNo} has reached its capable feet limit!\n` +
+            `Total feet used: ${totalFeet} ft (limit: ${h.capableFeetDepth} ft)\n\n` +
+            `Click OK to mark as 7" Casing Hammer\n` +
+            `Click Cancel to mark as 10" Casing Hammer`
+          ) ? "7 inch" : "10 inch";
+          return { ...h, usageHistory: updatedHistory, casingType: casingChoice };
+        }
+        return { ...h, usageHistory: updatedHistory };
+      }));
+    }
+    // Reset bit/hammer selection
+    setSelectedBitId("");
+    setSelectedHammerId("");
+        setBillClient("");
     setBillDescription("");
     setBorewellType("Tight Formation");
     setBillMode("New");
@@ -2169,6 +2231,68 @@ export default function MobileBusiness({
       .sort((a, b) => a.brand.localeCompare(b.brand));
   }, [bitEntries]);
 
+  // --- HAMMER CRUD HANDLERS ---
+  const handleOpenAddHammer = () => {
+    setEditingHammerId(null);
+    setHammerNo("");
+    setHammerBrand("");
+    setHammerDateEntry(new Date().toISOString().split("T")[0]);
+    setHammerRate(0);
+    setHammerCapableFeet(500);
+    setHammerIsPaid(false);
+    setIsHammerFormOpen(true);
+  };
+
+  const handleOpenEditHammer = (hammer: HammerEntry) => {
+    setEditingHammerId(hammer.id);
+    setHammerNo(hammer.hammerNo);
+    setHammerBrand(hammer.brand);
+    setHammerDateEntry(hammer.dateEntry);
+    setHammerRate(hammer.rate);
+    setHammerCapableFeet(hammer.capableFeetDepth);
+    setHammerIsPaid(hammer.isPaid);
+    setIsHammerFormOpen(true);
+  };
+
+  const handleSaveHammer = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!hammerNo.trim() || !hammerBrand.trim()) return;
+    if (editingHammerId) {
+      setHammerEntries(prev => prev.map(h => {
+        if (h.id !== editingHammerId) return h;
+        return {
+          ...h,
+          hammerNo: hammerNo.trim(),
+          brand: hammerBrand.trim(),
+          dateEntry: hammerDateEntry,
+          rate: Number(hammerRate),
+          capableFeetDepth: Number(hammerCapableFeet),
+          isPaid: hammerIsPaid,
+        };
+      }));
+      triggerOnlineSync(`UPDATED HAMMER: ${hammerNo}`);
+    } else {
+      const newHammer: HammerEntry = {
+        id: `HMR-${Date.now()}`,
+        hammerNo: hammerNo.trim(),
+        brand: hammerBrand.trim(),
+        dateEntry: hammerDateEntry,
+        rate: Number(hammerRate),
+        capableFeetDepth: Number(hammerCapableFeet),
+        isPaid: hammerIsPaid,
+        usageHistory: [],
+      };
+      setHammerEntries(prev => [newHammer, ...prev]);
+      triggerOnlineSync(`ADDED HAMMER: ${hammerNo}`);
+    }
+    setIsHammerFormOpen(false);
+    setEditingHammerId(null);
+  };
+
+  const handleDeleteHammer = (id: string, no: string) => {
+    setDeleteConfirmation({ id, name: no, type: "hammer" });
+  };
+
   return (
     <div id="mobile-business-root" className="space-y-4">
       
@@ -3155,6 +3279,9 @@ export default function MobileBusiness({
               )}
 
               {/* Roster Cards Flow */}
+  )}
+
+              {/* Roster Cards Flow */}
               <div className="space-y-2">
                 {activeLaboursList.length === 0 ? (
                   <div className="text-center p-6 bg-slate-900/30 rounded-xl text-[10px] text-slate-500">
@@ -3211,215 +3338,504 @@ export default function MobileBusiness({
                   })
                 )}
               </div>
-
+              </div>
             </div>
           )}
-        </div>
-      )}
 
-      {/* ======================= B-1. BIT PURCHASE SUBSECTION ======================= */}
+                  {/* ======================= B-1. BIT & HAMMER PURCHASE SUBSECTION ======================= */}
       {activeMainSection === "management" && activeSubSection === "bit" && (
         <div className="space-y-4">
-          <div className="grid grid-cols-2 gap-2">
-            <div className="bg-slate-900 border border-slate-850 rounded-xl p-3">
-              <span className="text-[8px] uppercase tracking-wider text-slate-500 font-mono font-bold block">Total Bits Purchased</span>
-              <div className="text-2xl font-black text-indigo-400 mt-1">{bitEntries.length}</div>
-            </div>
-            <div className="bg-slate-900 border border-slate-850 rounded-xl p-3">
-              <span className="text-[8px] uppercase tracking-wider text-slate-500 font-mono font-bold block">Total Amount</span>
-              <div className="text-2xl font-black text-emerald-400 mt-1">₹{bitEntries.reduce((sum, bit) => sum + Number(bit.rate || 0), 0).toLocaleString()}</div>
-            </div>
+          
+          {/* Sub-tab Switcher Pill */}
+          <div className="flex bg-slate-950 p-1 rounded-xl border border-slate-850">
+            <button
+              type="button"
+              onClick={() => setBitHammerSubTab("bit")}
+              className={`flex-1 py-1.5 rounded-lg text-[10px] font-bold uppercase transition ${
+                bitHammerSubTab === "bit" ? "bg-indigo-650 text-white font-extrabold" : "text-slate-400 hover:text-slate-200"
+              }`}
+            >
+              🔩 Bit Details
+            </button>
+            <button
+              type="button"
+              onClick={() => setBitHammerSubTab("hammer")}
+              className={`flex-1 py-1.5 rounded-lg text-[10px] font-bold uppercase transition ${
+                bitHammerSubTab === "hammer" ? "bg-indigo-650 text-white font-extrabold" : "text-slate-400 hover:text-slate-200"
+              }`}
+            >
+              🔨 Hammer Details
+            </button>
           </div>
 
-          <div className="bg-slate-900 border border-slate-850 rounded-2xl p-3 space-y-3">
-            <div className="space-y-2">
-              <div className="flex items-center justify-between">
-                <span className="text-[9px] font-mono font-bold uppercase tracking-widest text-slate-400">Count by Size (mm)</span>
-              </div>
-              <div className="flex flex-wrap gap-2">
-                {bitSizeSummary.length === 0 ? (
-                  <span className="text-[9px] text-slate-500 italic">No bit sizes yet.</span>
-                ) : (
-                  bitSizeSummary.map((item) => (
-                    <span key={item.sizeMm} className="px-2.5 py-1 rounded-full border border-indigo-900/40 bg-indigo-950/30 text-[9px] font-bold text-indigo-300 font-mono">
-                      {item.sizeMm} mm • {item.count}
-                    </span>
-                  ))
-                )}
-              </div>
-            </div>
-
-            <div className="space-y-2">
-              <div className="flex items-center justify-between">
-                <span className="text-[9px] font-mono font-bold uppercase tracking-widest text-slate-400">Count by Brand</span>
-              </div>
-              <div className="flex flex-wrap gap-2">
-                {bitBrandSummary.length === 0 ? (
-                  <span className="text-[9px] text-slate-500 italic">No bit brands yet.</span>
-                ) : (
-                  bitBrandSummary.map((item) => (
-                    <span key={item.brand} className="px-2.5 py-1 rounded-full border border-emerald-900/40 bg-emerald-950/30 text-[9px] font-bold text-emerald-300 font-mono">
-                      {item.brand} • {item.count}
-                    </span>
-                  ))
-                )}
-              </div>
-            </div>
-          </div>
-
-          {(isBitFormOpen || editingBitId) && (
-          <form onSubmit={handleSaveBit} className="bg-slate-900 border border-slate-800 rounded-2xl p-3 space-y-3 text-xs">
-            <span className="text-[10px] font-mono font-bold text-amber-500 uppercase tracking-widest block">
-              {editingBitId ? "Edit Bit and Hammer Entry" : "Add New Bit and Hammer Entry"}
-            </span>
-
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-              <div>
-                <label className="text-[9px] text-slate-500 block font-mono">BIT NUMBER</label>
-                <input
-                  type="text"
-                  value={bitNo}
-                  onChange={(e) => setBitNo(e.target.value)}
-                  className="w-full bg-slate-950 p-1.5 rounded text-slate-100 border border-slate-850"
-                  placeholder="BT-001"
-                  required
-                />
-              </div>
-              <div>
-                <label className="text-[9px] text-slate-500 block font-mono">BIT BRAND</label>
-                <input
-                  type="text"
-                  value={bitBrand}
-                  onChange={(e) => setBitBrand(e.target.value)}
-                  className="w-full bg-slate-950 p-1.5 rounded text-slate-100 border border-slate-850"
-                  placeholder="Atlas Copco"
-                  required
-                />
-              </div>
-            </div>
-
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-              <div>
-                <label className="text-[9px] text-slate-500 block font-mono">BIT SIZE IN MM</label>
-                <input
-                  type="number"
-                  value={bitSizeMm}
-                  onChange={(e) => setBitSizeMm(Number(e.target.value))}
-                  className="w-full bg-slate-950 p-1.5 rounded text-slate-100 border border-slate-850 font-bold"
-                  min="1"
-                  required
-                />
-              </div>
-              <div>
-                <label className="text-[9px] text-slate-500 block font-mono">BUTTON SIZE IN MM</label>
-                <input
-                  type="number"
-                  value={bitButtonSizeMm}
-                  onChange={(e) => setBitButtonSizeMm(e.target.value === "" ? "" : Number(e.target.value))}
-                  className="w-full bg-slate-950 p-1.5 rounded text-slate-100 border border-slate-850 font-bold"
-                  min="1"
-                  required
-                />
-              </div>
-            </div>
-
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-              <div>
-                <label className="text-[9px] text-slate-500 block font-mono">DATE ENTRY</label>
-                <input
-                  type="date"
-                  value={bitDateEntry}
-                  onChange={(e) => setBitDateEntry(e.target.value)}
-                  className="w-full bg-slate-950 p-1.5 rounded text-slate-100 border border-slate-850 font-bold"
-                  required
-                />
-              </div>
-              <div>
-                <label className="text-[9px] text-slate-500 block font-mono">RATE OF BIT (₹)</label>
-                <input
-                  type="number"
-                  value={bitRate}
-                  onChange={(e) => setBitRate(Number(e.target.value))}
-                  className="w-full bg-slate-950 p-1.5 rounded text-slate-100 border border-slate-850 font-bold"
-                  min="0"
-                  required
-                />
-              </div>
-            </div>
-
-            <div className="flex gap-2 justify-end pt-1">
-              <button
-                type="button"
-                onClick={() => {
-                  setIsBitFormOpen(false);
-                  setEditingBitId(null);
-                }}
-                className="px-3 bg-slate-950 text-slate-400 py-1 rounded"
-              >
-                Cancel
-              </button>
-              <button type="submit" className="px-4 bg-indigo-650 text-white font-bold py-1 rounded">
-                {editingBitId ? "Update Bit" : "Save Bit"}
-              </button>
-            </div>
-          </form>
-          )}
-
-          <div className="space-y-2">
-            <div className="flex justify-between items-center">
-              <span className="text-xs font-mono font-bold text-slate-400 uppercase">Bit Purchase Ledger</span>
-              <button
-                type="button"
-                onClick={handleOpenAddBit}
-                className="bg-indigo-650 hover:bg-indigo-500 py-1 px-2.5 rounded-lg text-[9px] font-bold text-white uppercase tracking-wider flex items-center gap-0.5"
-              >
-                <Plus className="w-3.5 h-3.5" /> Add Bit and Hammer (+)
-              </button>
-            </div>
-
-            <div className="space-y-2">
-              {bitEntries.length === 0 ? (
-                <div className="text-center p-6 bg-slate-900/30 rounded-xl text-[10px] text-slate-500">
-                  No bit entries in database
+          {bitHammerSubTab === "bit" ? (
+            // ================== BIT SUB-SECTION ==================
+            <div className="space-y-4">
+              <div className="grid grid-cols-2 gap-2">
+                <div className="bg-slate-900 border border-slate-850 rounded-xl p-3">
+                  <span className="text-[8px] uppercase tracking-wider text-slate-500 font-mono font-bold block">Total Bits Purchased</span>
+                  <div className="text-2xl font-black text-indigo-400 mt-1">{bitEntries.length}</div>
                 </div>
-              ) : (
-                bitEntries.map((bit) => (
-                  <div key={bit.id} className="bg-slate-900 border border-slate-850 rounded-2xl p-3 flex items-center justify-between gap-3">
-                    <div className="min-w-0">
-                      <div className="flex flex-wrap items-center gap-1.5">
-                        <span className="text-[8px] uppercase tracking-wider font-bold text-indigo-400 font-mono">{bit.bitNo}</span>
-                        <span className="text-[8px] uppercase tracking-wider font-bold text-slate-500 font-mono">Size: {bit.sizeMm} mm</span>
-                        <span className="text-[8px] uppercase tracking-wider font-bold text-slate-500 font-mono">Button: {bit.buttonSizeMm ?? "-"} mm</span>
-                      </div>
-                      <h4 className="text-xs font-bold text-red-500 truncate mt-0.5">{bit.brand}</h4>
-                      <p className="text-[8.5px] text-slate-500 font-mono mt-1">Date: {bit.dateEntry || "-"}</p>
-                      <p className="text-[8.5px] text-slate-500 font-mono mt-1">Rate: ₹{Number(bit.rate || 0).toLocaleString()}</p>
+                <div className="bg-slate-900 border border-slate-850 rounded-xl p-3">
+                  <span className="text-[8px] uppercase tracking-wider text-slate-500 font-mono font-bold block">Total Amount</span>
+                  <div className="text-2xl font-black text-emerald-400 mt-1">₹{bitEntries.reduce((sum, bit) => sum + Number(bit.rate || 0), 0).toLocaleString()}</div>
+                </div>
+              </div>
+
+              <div className="bg-slate-900 border border-slate-850 rounded-2xl p-3 space-y-3">
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between">
+                    <span className="text-[9px] font-mono font-bold uppercase tracking-widest text-slate-400">Count by Size (mm)</span>
+                  </div>
+                  <div className="flex flex-wrap gap-2">
+                    {bitSizeSummary.length === 0 ? (
+                      <span className="text-[9px] text-slate-500 italic">No bit sizes yet.</span>
+                    ) : (
+                      bitSizeSummary.map((item) => (
+                        <span key={item.sizeMm} className="px-2.5 py-1 rounded-full border border-indigo-900/40 bg-indigo-950/30 text-[9px] font-bold text-indigo-300 font-mono">
+                          {item.sizeMm} mm • {item.count}
+                        </span>
+                      ))
+                    )}
+                  </div>
+                </div>
+
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between">
+                    <span className="text-[9px] font-mono font-bold uppercase tracking-widest text-slate-400">Count by Brand</span>
+                  </div>
+                  <div className="flex flex-wrap gap-2">
+                    {bitBrandSummary.length === 0 ? (
+                      <span className="text-[9px] text-slate-500 italic">No bit brands yet.</span>
+                    ) : (
+                      bitBrandSummary.map((item) => (
+                        <span key={item.brand} className="px-2.5 py-1 rounded-full border border-emerald-900/40 bg-emerald-950/30 text-[9px] font-bold text-emerald-300 font-mono">
+                          {item.brand} • {item.count}
+                        </span>
+                      ))
+                    )}
+                  </div>
+                </div>
+              </div>
+
+              {(isBitFormOpen || editingBitId) && (
+                <form onSubmit={handleSaveBit} className="bg-slate-900 border border-slate-800 rounded-2xl p-3 space-y-3 text-xs">
+                  <span className="text-[10px] font-mono font-bold text-amber-500 uppercase tracking-widest block">
+                    {editingBitId ? "Edit Bit Entry" : "Add New Bit Entry"}
+                  </span>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                    <div>
+                      <label className="text-[9px] text-slate-500 block font-mono">BIT NUMBER</label>
+                      <input
+                        type="text"
+                        value={bitNo}
+                        onChange={(e) => setBitNo(e.target.value)}
+                        className="w-full bg-slate-950 p-1.5 rounded text-slate-100 border border-slate-850"
+                        placeholder="BT-001"
+                        required
+                      />
                     </div>
-                    <div className="flex items-center gap-1.5 shrink-0">
-                      <button
-                        type="button"
-                        onClick={() => handleOpenEditBit(bit)}
-                        className="p-1 bg-slate-950 text-slate-400 hover:text-white border border-slate-800 rounded"
-                        title="Edit bit"
-                      >
-                        <Edit className="w-3 h-3" />
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => handleDeleteBit(bit.id, bit.bitNo)}
-                        className="p-1 bg-rose-950/40 text-rose-450 border border-rose-900/40 rounded"
-                        title="Delete bit"
-                      >
-                        <Trash2 className="w-3 h-3" />
-                      </button>
+                    <div>
+                      <label className="text-[9px] text-slate-500 block font-mono">BIT BRAND</label>
+                      <input
+                        type="text"
+                        value={bitBrand}
+                        onChange={(e) => setBitBrand(e.target.value)}
+                        className="w-full bg-slate-950 p-1.5 rounded text-slate-100 border border-slate-850"
+                        placeholder="Atlas Copco"
+                        required
+                      />
                     </div>
                   </div>
-                ))
+
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                    <div>
+                      <label className="text-[9px] text-slate-500 block font-mono">BIT SIZE IN MM</label>
+                      <input
+                        type="number"
+                        value={bitSizeMm}
+                        onChange={(e) => setBitSizeMm(Number(e.target.value))}
+                        className="w-full bg-slate-950 p-1.5 rounded text-slate-100 border border-slate-850 font-bold"
+                        min="1"
+                        required
+                      />
+                    </div>
+                    <div>
+                      <label className="text-[9px] text-slate-500 block font-mono">BUTTON SIZE IN MM</label>
+                      <input
+                        type="number"
+                        value={bitButtonSizeMm}
+                        onChange={(e) => setBitButtonSizeMm(e.target.value === "" ? "" : Number(e.target.value))}
+                        className="w-full bg-slate-950 p-1.5 rounded text-slate-100 border border-slate-850 font-bold"
+                        min="1"
+                        required
+                      />
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                    <div>
+                      <label className="text-[9px] text-slate-500 block font-mono">DATE ENTRY</label>
+                      <input
+                        type="date"
+                        value={bitDateEntry}
+                        onChange={(e) => setBitDateEntry(e.target.value)}
+                        className="w-full bg-slate-950 p-1.5 rounded text-slate-100 border border-slate-850 font-bold"
+                        required
+                      />
+                    </div>
+                    <div>
+                      <label className="text-[9px] text-slate-500 block font-mono">RATE OF BIT (₹)</label>
+                      <input
+                        type="number"
+                        value={bitRate}
+                        onChange={(e) => setBitRate(Number(e.target.value))}
+                        className="w-full bg-slate-950 p-1.5 rounded text-slate-100 border border-slate-850 font-bold"
+                        min="0"
+                        required
+                      />
+                    </div>
+                  </div>
+
+                  <div className="flex gap-2 justify-end pt-1">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setIsBitFormOpen(false);
+                        setEditingBitId(null);
+                      }}
+                      className="px-3 bg-slate-950 text-slate-400 py-1 rounded"
+                    >
+                      Cancel
+                    </button>
+                    <button type="submit" className="px-4 bg-indigo-650 text-white font-bold py-1 rounded">
+                      {editingBitId ? "Update Bit" : "Save Bit"}
+                    </button>
+                  </div>
+                </form>
               )}
+
+              <div className="space-y-2">
+                <div className="flex justify-between items-center">
+                  <span className="text-xs font-mono font-bold text-slate-400 uppercase">Bit Purchase Ledger</span>
+                  <button
+                    type="button"
+                    onClick={handleOpenAddBit}
+                    className="bg-indigo-650 hover:bg-indigo-500 py-1 px-2.5 rounded-lg text-[9px] font-bold text-white uppercase tracking-wider flex items-center gap-0.5"
+                  >
+                    <Plus className="w-3.5 h-3.5" /> Add Bit (+)
+                  </button>
+                </div>
+
+                <div className="space-y-2">
+                  {bitEntries.length === 0 ? (
+                    <div className="text-center p-6 bg-slate-900/30 rounded-xl text-[10px] text-slate-500">
+                      No bit entries in database
+                    </div>
+                  ) : (
+                    bitEntries.map((bit) => (
+                      <div key={bit.id} className="bg-slate-900 border border-slate-850 rounded-2xl p-3 flex items-center justify-between gap-3">
+                        <div className="min-w-0">
+                          <div className="flex flex-wrap items-center gap-1.5">
+                            <span className="text-[8px] uppercase tracking-wider font-bold text-indigo-400 font-mono">{bit.bitNo}</span>
+                            <span className="text-[8px] uppercase tracking-wider font-bold text-slate-500 font-mono">Size: {bit.sizeMm} mm</span>
+                            <span className="text-[8px] uppercase tracking-wider font-bold text-slate-500 font-mono">Button: {bit.buttonSizeMm ?? "-"} mm</span>
+                          </div>
+                          <h4 className="text-xs font-bold text-red-500 truncate mt-0.5">{bit.brand}</h4>
+                          <p className="text-[8.5px] text-slate-500 font-mono mt-1">Date: {bit.dateEntry || "-"}</p>
+                          <p className="text-[8.5px] text-slate-500 font-mono mt-1">Rate: ₹{Number(bit.rate || 0).toLocaleString()}</p>
+                        </div>
+                        <div className="flex items-center gap-1.5 shrink-0">
+                          <button
+                            type="button"
+                            onClick={() => handleOpenEditBit(bit)}
+                            className="p-1 bg-slate-950 text-slate-400 hover:text-white border border-slate-800 rounded"
+                            title="Edit bit"
+                          >
+                            <Edit className="w-3 h-3" />
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => handleDeleteBit(bit.id, bit.bitNo)}
+                            className="p-1 bg-rose-950/40 text-rose-450 border border-rose-900/40 rounded"
+                            title="Delete bit"
+                          >
+                            <Trash2 className="w-3 h-3" />
+                          </button>
+                        </div>
+                      </div>
+                    ))
+                  )}
+                </div>
+              </div>
             </div>
-          </div>
+          ) : (
+            // ================== HAMMER SUB-SECTION ==================
+            <div className="space-y-4">
+              <div className="grid grid-cols-2 gap-2">
+                <div className="bg-slate-900 border border-slate-850 rounded-xl p-3">
+                  <span className="text-[8px] uppercase tracking-wider text-slate-500 font-mono font-bold block">Total Hammers</span>
+                  <div className="text-2xl font-black text-indigo-400 mt-1">{hammerEntries.length}</div>
+                </div>
+                <div className="bg-slate-900 border border-slate-850 rounded-xl p-3">
+                  <span className="text-[8px] uppercase tracking-wider text-slate-500 font-mono font-bold block">Total Amount</span>
+                  <div className="text-2xl font-black text-emerald-400 mt-1">₹{hammerEntries.reduce((sum, h) => sum + Number(h.rate || 0), 0).toLocaleString()}</div>
+                </div>
+              </div>
+
+              {(isHammerFormOpen || editingHammerId) && (
+                <form onSubmit={handleSaveHammer} className="bg-slate-900 border border-slate-800 rounded-2xl p-3 space-y-3 text-xs">
+                  <span className="text-[10px] font-mono font-bold text-amber-500 uppercase tracking-widest block">
+                    {editingHammerId ? "Edit Hammer Profile" : "Register New Hammer"}
+                  </span>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                    <div>
+                      <label className="text-[9px] text-slate-500 block font-mono">HAMMER NUMBER</label>
+                      <input
+                        type="text"
+                        value={hammerNo}
+                        onChange={(e) => setHammerNo(e.target.value)}
+                        className="w-full bg-slate-950 p-1.5 rounded text-slate-100 border border-slate-850"
+                        placeholder="H-001"
+                        required
+                      />
+                    </div>
+                    <div>
+                      <label className="text-[9px] text-slate-500 block font-mono">BRAND</label>
+                      <input
+                        type="text"
+                        value={hammerBrand}
+                        onChange={(e) => setHammerBrand(e.target.value)}
+                        className="w-full bg-slate-950 p-1.5 rounded text-slate-100 border border-slate-850"
+                        placeholder="Atlas Copco"
+                        required
+                      />
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                    <div>
+                      <label className="text-[9px] text-slate-500 block font-mono">DATE ENTRY</label>
+                      <input
+                        type="date"
+                        value={hammerDateEntry}
+                        onChange={(e) => setHammerDateEntry(e.target.value)}
+                        className="w-full bg-slate-950 p-1.5 rounded text-slate-100 border border-slate-850 font-bold"
+                        required
+                      />
+                    </div>
+                    <div>
+                      <label className="text-[9px] text-slate-500 block font-mono">RATE (₹)</label>
+                      <input
+                        type="number"
+                        value={hammerRate}
+                        onChange={(e) => setHammerRate(Number(e.target.value))}
+                        className="w-full bg-slate-950 p-1.5 rounded text-slate-100 border border-slate-850 font-bold"
+                        min="0"
+                        required
+                      />
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                    <div>
+                      <label className="text-[9px] text-slate-500 block font-mono">CAPABLE FEET DEPTH</label>
+                      <input
+                        type="number"
+                        value={hammerCapableFeet}
+                        onChange={(e) => setHammerCapableFeet(Number(e.target.value))}
+                        className="w-full bg-slate-950 p-1.5 rounded text-slate-100 border border-slate-850 font-bold"
+                        min="1"
+                        required
+                      />
+                    </div>
+                    <div>
+                      <label className="text-[9px] text-slate-500 block font-mono">PAYMENT STATUS</label>
+                      <select
+                        value={hammerIsPaid ? "Paid" : "Not Paid"}
+                        onChange={(e) => setHammerIsPaid(e.target.value === "Paid")}
+                        className="w-full bg-slate-950 p-1.5 rounded text-slate-100 border border-slate-850 font-bold"
+                      >
+                        <option value="Not Paid">Not Paid / Due</option>
+                        <option value="Paid">Paid / Cleared</option>
+                      </select>
+                    </div>
+                  </div>
+
+                  <div className="flex gap-2 justify-end pt-1">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setIsHammerFormOpen(false);
+                        setEditingHammerId(null);
+                      }}
+                      className="px-3 bg-slate-950 text-slate-400 py-1 rounded"
+                    >
+                      Cancel
+                    </button>
+                    <button type="submit" className="px-4 bg-indigo-650 text-white font-bold py-1 rounded">
+                      {editingHammerId ? "Update Hammer" : "Save Hammer"}
+                    </button>
+                  </div>
+                </form>
+              )}
+
+              <div className="space-y-2">
+                <div className="flex justify-between items-center">
+                  <span className="text-xs font-mono font-bold text-slate-400 uppercase">Hammer Inventory</span>
+                  <button
+                    type="button"
+                    onClick={handleOpenAddHammer}
+                    className="bg-indigo-650 hover:bg-indigo-500 py-1 px-2.5 rounded-lg text-[9px] font-bold text-white uppercase tracking-wider flex items-center gap-0.5"
+                  >
+                    <Plus className="w-3.5 h-3.5" /> Add Hammer (+)
+                  </button>
+                </div>
+
+                <div className="space-y-2.5">
+                  {hammerEntries.length === 0 ? (
+                    <div className="text-center p-6 bg-slate-900/30 rounded-xl text-[10px] text-slate-500">
+                      No hammers registered in database.
+                    </div>
+                  ) : (
+                    hammerEntries.map((hammer) => {
+                      const totalFeetUsed = (hammer.usageHistory || []).reduce((sum, item) => sum + item.calculatedFeet, 0);
+                      const isLimitReached = totalFeetUsed >= hammer.capableFeetDepth;
+                      const hasCasingType = !!hammer.casingType;
+
+                      return (
+                        <div key={hammer.id} className="bg-slate-900 border border-slate-850 rounded-2xl p-3 space-y-2">
+                          <div className="flex items-center justify-between gap-3">
+                            <div className="min-w-0">
+                              <div className="flex flex-wrap items-center gap-1.5">
+                                <span className="text-[8px] uppercase tracking-wider font-bold text-indigo-400 font-mono">{hammer.hammerNo}</span>
+                                <span className="text-[8px] uppercase tracking-wider font-bold text-slate-550 font-mono">Cap: {hammer.capableFeetDepth} ft</span>
+                                <span className={`text-[8.5px] font-bold px-1.5 py-0.2 rounded ${
+                                  hammer.isPaid ? "bg-emerald-950 text-emerald-400" : "bg-rose-950 text-rose-450"
+                                }`}>
+                                  {hammer.isPaid ? "Paid" : "Due"}
+                                </span>
+                              </div>
+                              <h4 className="text-xs font-bold text-red-500 truncate mt-0.5">{hammer.brand}</h4>
+                              <p className="text-[8.5px] text-slate-500 font-mono">Purchased: {hammer.dateEntry || "-"}</p>
+                              <p className="text-[8.5px] text-slate-500 font-mono">Rate: ₹{Number(hammer.rate || 0).toLocaleString()}</p>
+                              <p className="text-[8.5px] text-indigo-400 font-mono font-bold mt-1">
+                                Usage: {totalFeetUsed} / {hammer.capableFeetDepth} ft used
+                              </p>
+                            </div>
+
+                            <div className="flex flex-col items-end gap-1.5 shrink-0">
+                              <div className="flex items-center gap-1">
+                                <button
+                                  type="button"
+                                  onClick={() => handleOpenEditHammer(hammer)}
+                                  className="p-1 bg-slate-950 text-slate-400 hover:text-white border border-slate-800 rounded"
+                                  title="Edit Hammer"
+                                >
+                                  <Edit className="w-3 h-3" />
+                                </button>
+                                <button
+                                  type="button"
+                                  onClick={() => handleDeleteHammer(hammer.id, hammer.hammerNo)}
+                                  className="p-1 bg-rose-950/40 text-rose-450 border border-rose-900/40 rounded"
+                                  title="Delete Hammer"
+                                >
+                                  <Trash2 className="w-3 h-3" />
+                                </button>
+                              </div>
+
+                              <button
+                                type="button"
+                                onClick={() => setSelectedHammerForHistory(selectedHammerForHistory === hammer.id ? null : hammer.id)}
+                                className="bg-slate-950 text-[8.5px] px-2 py-0.5 rounded border border-slate-800 text-indigo-400 hover:text-indigo-300 font-bold transition font-mono uppercase"
+                              >
+                                {selectedHammerForHistory === hammer.id ? "Hide History" : "Feet History"}
+                              </button>
+                            </div>
+                          </div>
+
+                          {/* Limit indicator & casing configuration options */}
+                          {isLimitReached && (
+                            <div className="bg-amber-955/20 border border-amber-900/30 rounded-xl p-2 text-[9px] text-amber-400 space-y-1">
+                              <span className="font-bold flex items-center gap-1 font-mono uppercase">
+                                ⚠️ Limit Reached ({totalFeetUsed} ft used)
+                              </span>
+                              {hasCasingType ? (
+                                <p className="font-mono">Configured as: <span className="font-bold text-indigo-400 uppercase">{hammer.casingType} Casing Hammer</span></p>
+                              ) : (
+                                <div className="space-y-1">
+                                  <p>Specify Casing Hammer designation:</p>
+                                  <div className="flex gap-2">
+                                    <button
+                                      type="button"
+                                      onClick={() => {
+                                        setHammerEntries(prev => prev.map(h => h.id === hammer.id ? { ...h, casingType: "7 inch" } : h));
+                                        triggerOnlineSync(`CONFIGURED HAMMER ${hammer.hammerNo} AS 7" CASING`);
+                                      }}
+                                      className="bg-indigo-650 hover:bg-indigo-600 text-white font-bold px-2 py-0.5 rounded font-mono text-[8px]"
+                                    >
+                                      7" Casing
+                                    </button>
+                                    <button
+                                      type="button"
+                                      onClick={() => {
+                                        setHammerEntries(prev => prev.map(h => h.id === hammer.id ? { ...h, casingType: "10 inch" } : h));
+                                        triggerOnlineSync(`CONFIGURED HAMMER ${hammer.hammerNo} AS 10" CASING`);
+                                      }}
+                                      className="bg-emerald-650 hover:bg-emerald-600 text-white font-bold px-2 py-0.5 rounded font-mono text-[8px]"
+                                    >
+                                      10" Casing
+                                    </button>
+                                  </div>
+                                </div>
+                              )}
+                            </div>
+                          )}
+
+                          {/* History Table Dropdown */}
+                          {selectedHammerForHistory === hammer.id && (
+                            <div className="bg-slate-950 p-2.5 rounded-xl border border-slate-850 space-y-1.5 text-[9px] font-mono">
+                              <span className="font-bold uppercase text-slate-500 tracking-wider">Usage Records</span>
+                              {(!hammer.usageHistory || hammer.usageHistory.length === 0) ? (
+                                <p className="text-slate-500 italic">No usage history recorded.</p>
+                              ) : (
+                                <div className="overflow-x-auto">
+                                  <table className="w-full text-left border-collapse">
+                                    <thead>
+                                      <tr className="border-b border-slate-850 text-slate-400">
+                                        <th className="py-1">Date</th>
+                                        <th className="py-1">Client</th>
+                                        <th className="py-1">Location</th>
+                                        <th className="py-1 text-right">Feet</th>
+                                      </tr>
+                                    </thead>
+                                    <tbody>
+                                      {hammer.usageHistory.map((rec) => (
+                                        <tr key={rec.id} className="border-b border-slate-900/60 text-slate-300">
+                                          <td className="py-1">{rec.date}</td>
+                                          <td className="py-1 font-bold">{rec.clientName}</td>
+                                          <td className="py-1">{rec.location || "-"}</td>
+                                          <td className="py-1 text-right text-indigo-400 font-bold">{rec.calculatedFeet} ft</td>
+                                        </tr>
+                                      ))}
+                                    </tbody>
+                                  </table>
+                                </div>
+                              )}
+                            </div>
+                          )}
+                        </div>
+                      );
+                    })
+                  )}
+                </div>
+              </div>
+            </div>
         </div>
       )}
+
 
       {/* ======================= B. ATTENDANCE SUBSECTION ======================= */}
       {activeMainSection === "management" && activeSubSection === "attendance" && (

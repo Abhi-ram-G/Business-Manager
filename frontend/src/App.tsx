@@ -56,6 +56,7 @@ import {
   SalaryPayment, 
   Vehicle, 
   BitEntry,
+  HammerEntry,
   BusinessBill,
   FuelEntry, 
   TripRecord, 
@@ -670,6 +671,10 @@ export default function App() {
     return loadStoredArray<BitEntry>("srs_bit_entries", []);
   });
 
+  const [hammerEntries, setHammerEntries] = useState<HammerEntry[]>(() => {
+    return loadStoredArray<HammerEntry>("srs_hammer_entries", []);
+  });
+
   const [businessBills, setBusinessBills] = useState<BusinessBill[]>(() => {
     const stored = loadStoredArray<BusinessBill>("srs_business_bills", []);
     if (stored.length > 0) {
@@ -797,6 +802,10 @@ export default function App() {
   useEffect(() => {
     localStorage.setItem("srs_bit_entries", JSON.stringify(bitEntries));
   }, [bitEntries]);
+
+  useEffect(() => {
+    localStorage.setItem("srs_hammer_entries", JSON.stringify(hammerEntries));
+  }, [hammerEntries]);
 
   useEffect(() => {
     localStorage.setItem("srs_business_bills", JSON.stringify(businessBills));
@@ -2360,6 +2369,8 @@ export default function App() {
                             setVehicles={setVehicles}
                             bitEntries={bitEntries}
                             setBitEntries={setBitEntries}
+                            hammerEntries={hammerEntries}
+                            setHammerEntries={setHammerEntries}
                             businessBills={businessBills}
                               setBusinessBills={setBusinessBills}
                               fuelEntries={fuelEntries}
@@ -2819,14 +2830,19 @@ export default function App() {
                             setVehicles={setVehicles}
                             bitEntries={bitEntries}
                             setBitEntries={setBitEntries}
+                            hammerEntries={hammerEntries}
+                            setHammerEntries={setHammerEntries}
                             fuelEntries={fuelEntries}
                             setFuelEntries={setFuelEntries}
                             salaryPayments={salaryPayments}
                             setSalaryPayments={setSalaryPayments}
                             attendance={attendance}
                             setAttendance={setAttendance}
+                            businessBills={businessBills}
+                            setBusinessBills={setBusinessBills}
                             isOnline={true}
                             triggerOnlineSync={(op) => triggerLocalAction(op, () => {})}
+                            onSharedDataChanged={announceSharedDataChange}
                             initialSubSection={selectedMobileModule === "vehicle" ? "vehicles" : "labour"}
                           />
                         )}
