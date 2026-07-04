@@ -4247,7 +4247,7 @@ export default function MobileBusiness({
                         <div className="min-w-0">
                           <span className="text-[8.5px] text-slate-500 block truncate flex items-center gap-1">
                             <span>{f.dateTime}</span>
-                            <Car className="w-3 h-3 text-slate-400 shrink-0" />
+                            <Car className="w-3 h-3 text-emerald-500 shrink-0" />
                             <span className="truncate">{f.vehicleName}</span>
                           </span>
                           <span className="font-bold text-slate-350 block truncate">{f.fuelType} ₹ {f.liters} Liters ({f.perLiterCost}/L)</span>
