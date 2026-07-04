@@ -108,6 +108,8 @@ export interface BitEntry {
   bitNo: string;
   brand: string;
   sizeMm: number;
+  buttonSizeMm?: number;
+  dateEntry?: string;
   rate: number;
 }
 

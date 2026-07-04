@@ -1244,6 +1244,14 @@ export default function MobileBusiness({
   const [bitNo, setBitNo] = useState("");
   const [bitBrand, setBitBrand] = useState("");
   const [bitSizeMm, setBitSizeMm] = useState(150);
+  const [bitButtonSizeMm, setBitButtonSizeMm] = useState<number | "">("");
+  const [bitDateEntry, setBitDateEntry] = useState(() => {
+    const now = new Date();
+    const yyyy = now.getFullYear();
+    const mm = String(now.getMonth() + 1).padStart(2, "0");
+    const dd = String(now.getDate()).padStart(2, "0");
+    return `${yyyy}-${mm}-${dd}`;
+  });
   const [bitRate, setBitRate] = useState(0);
 
   // Core state for active file preview modal
@@ -1708,6 +1716,12 @@ export default function MobileBusiness({
     setBitNo("");
     setBitBrand("");
     setBitSizeMm(150);
+    setBitButtonSizeMm("");
+    const now = new Date();
+    const yyyy = now.getFullYear();
+    const mm = String(now.getMonth() + 1).padStart(2, "0");
+    const dd = String(now.getDate()).padStart(2, "0");
+    setBitDateEntry(`${yyyy}-${mm}-${dd}`);
     setBitRate(0);
     setIsBitFormOpen(true);
   };
@@ -1717,19 +1731,29 @@ export default function MobileBusiness({
     setBitNo(bit.bitNo);
     setBitBrand(bit.brand);
     setBitSizeMm(bit.sizeMm);
+    setBitButtonSizeMm(bit.buttonSizeMm ?? "");
+    setBitDateEntry(bit.dateEntry || (() => {
+      const now = new Date();
+      const yyyy = now.getFullYear();
+      const mm = String(now.getMonth() + 1).padStart(2, "0");
+      const dd = String(now.getDate()).padStart(2, "0");
+      return `${yyyy}-${mm}-${dd}`;
+    })());
     setBitRate(bit.rate);
     setIsBitFormOpen(true);
   };
 
   const handleSaveBit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!bitNo.trim() || !bitBrand.trim()) return;
+    if (!bitNo.trim() || !bitBrand.trim() || bitButtonSizeMm === "" || !bitDateEntry) return;
 
     const next: BitEntry = {
       id: editingBitId || `bit-${Date.now()}`,
       bitNo: bitNo.trim(),
       brand: bitBrand.trim(),
       sizeMm: Number(bitSizeMm),
+      buttonSizeMm: Number(bitButtonSizeMm),
+      dateEntry: bitDateEntry,
       rate: Number(bitRate),
     };
 
@@ -1745,6 +1769,12 @@ export default function MobileBusiness({
       setBitNo("");
       setBitBrand("");
       setBitSizeMm(150);
+      setBitButtonSizeMm("");
+      const now = new Date();
+      const yyyy = now.getFullYear();
+      const mm = String(now.getMonth() + 1).padStart(2, "0");
+      const dd = String(now.getDate()).padStart(2, "0");
+      setBitDateEntry(`${yyyy}-${mm}-${dd}`);
       setBitRate(0);
     } catch (error) {
       console.error(error);
@@ -3281,6 +3311,30 @@ export default function MobileBusiness({
                 />
               </div>
               <div>
+                <label className="text-[9px] text-slate-500 block font-mono">BUTTON SIZE IN MM</label>
+                <input
+                  type="number"
+                  value={bitButtonSizeMm}
+                  onChange={(e) => setBitButtonSizeMm(e.target.value === "" ? "" : Number(e.target.value))}
+                  className="w-full bg-slate-950 p-1.5 rounded text-slate-100 border border-slate-850 font-bold"
+                  min="1"
+                  required
+                />
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+              <div>
+                <label className="text-[9px] text-slate-500 block font-mono">DATE ENTRY</label>
+                <input
+                  type="date"
+                  value={bitDateEntry}
+                  onChange={(e) => setBitDateEntry(e.target.value)}
+                  className="w-full bg-slate-950 p-1.5 rounded text-slate-100 border border-slate-850 font-bold"
+                  required
+                />
+              </div>
+              <div>
                 <label className="text-[9px] text-slate-500 block font-mono">RATE OF BIT (₹)</label>
                 <input
                   type="number"
@@ -3335,8 +3389,10 @@ export default function MobileBusiness({
                       <div className="flex flex-wrap items-center gap-1.5">
                         <span className="text-[8px] uppercase tracking-wider font-bold text-indigo-400 font-mono">{bit.bitNo}</span>
                         <span className="text-[8px] uppercase tracking-wider font-bold text-slate-500 font-mono">Size: {bit.sizeMm} mm</span>
+                        <span className="text-[8px] uppercase tracking-wider font-bold text-slate-500 font-mono">Button: {bit.buttonSizeMm ?? "-"} mm</span>
                       </div>
                       <h4 className="text-xs font-bold text-red-500 truncate mt-0.5">{bit.brand}</h4>
+                      <p className="text-[8.5px] text-slate-500 font-mono mt-1">Date: {bit.dateEntry || "-"}</p>
                       <p className="text-[8.5px] text-slate-500 font-mono mt-1">Rate: ₹{Number(bit.rate || 0).toLocaleString()}</p>
                     </div>
                     <div className="flex items-center gap-1.5 shrink-0">

@@ -119,6 +119,8 @@ class BitEntry(Base, TimestampMixin):
     bit_no: Mapped[str] = mapped_column(String(100), nullable=False)
     brand: Mapped[str] = mapped_column(String(100), nullable=False)
     size_mm: Mapped[int] = mapped_column(Integer, nullable=False)
+    button_size_mm: Mapped[int] = mapped_column(Integer, nullable=False)
+    date_entry: Mapped[date] = mapped_column(Date, nullable=False)
     rate: Mapped[float] = mapped_column(Numeric(12, 2), nullable=False)
 
 

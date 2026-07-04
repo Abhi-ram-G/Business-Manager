@@ -147,6 +147,8 @@ class BitEntryCreate(BaseModel):
     bit_no: str
     brand: str
     size_mm: int
+    button_size_mm: int
+    date_entry: dt_date
     rate: float
 
 
@@ -154,6 +156,8 @@ class BitEntryUpdate(BaseModel):
     bit_no: str | None = None
     brand: str | None = None
     size_mm: int | None = None
+    button_size_mm: int | None = None
+    date_entry: dt_date | None = None
     rate: float | None = None
 
 

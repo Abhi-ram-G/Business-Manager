@@ -3,6 +3,8 @@ create table if not exists bit_entries (
   bit_no varchar(100) not null,
   brand varchar(100) not null,
   size_mm int not null,
+  button_size_mm int not null,
+  date_entry date not null,
   rate numeric(12,2) not null,
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now()

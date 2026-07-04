@@ -90,6 +90,8 @@ export const mapBitFromApi = (item: ApiRecord): BitEntry => ({
   bitNo: String(item.bit_no ?? ""),
   brand: String(item.brand ?? ""),
   sizeMm: toNumber(item.size_mm ?? 0),
+  buttonSizeMm: item.button_size_mm != null ? toNumber(item.button_size_mm) : undefined,
+  dateEntry: item.date_entry ? String(item.date_entry) : undefined,
   rate: toNumber(item.rate ?? 0),
 });
 
@@ -328,6 +330,8 @@ export const toBitApiPayload = (bit: BitEntry) => ({
   bit_no: bit.bitNo,
   brand: bit.brand,
   size_mm: bit.sizeMm,
+  button_size_mm: bit.buttonSizeMm ?? null,
+  date_entry: bit.dateEntry ?? null,
   rate: bit.rate,
 });
 
