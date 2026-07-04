@@ -146,9 +146,8 @@ export default function MobileBusiness({
     return mapVehicleFromApi(response);
   };
 
-  const executeDelete = async () => {
-    if (!deleteConfirmation) return;
-    const { id, name, type } = deleteConfirmation;
+  const executeDelete = async (confirmation: NonNullable<typeof deleteConfirmation>) => {
+    const { id, name, type } = confirmation;
     if (type === "bill") {
       const billToDelete = businessBills.find((bill) => bill.id === id);
       if (!billToDelete || billToDelete.source !== "server") {
@@ -202,7 +201,13 @@ export default function MobileBusiness({
       setMaterials(prev => prev.filter(m => m.id !== id));
       triggerOnlineSync(`DELETED MATERIAL BOUGHT: ${id}`);
     }
+  };
+
+  const handleConfirmDelete = async () => {
+    if (!deleteConfirmation) return;
+    const confirmation = deleteConfirmation;
     setDeleteConfirmation(null);
+    await executeDelete(confirmation);
   };
 
   const [isBillFormOpen, setIsBillFormOpen] = useState(false);
@@ -5791,7 +5796,7 @@ export default function MobileBusiness({
               </button>
               <button
                 type="button"
-                onClick={executeDelete}
+                onClick={() => { void handleConfirmDelete(); }}
                 className="flex-1 py-2 bg-rose-600 hover:bg-rose-500 text-white text-xs font-semibold rounded-xl transition cursor-pointer"
               >
                 Delete
