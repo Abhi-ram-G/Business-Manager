@@ -157,6 +157,12 @@ export default function MobileBusiness({
         triggerOnlineSync(`DELETED BILL FOR ${name}`);
       } catch (error) {
         console.error(error);
+        const message = error instanceof Error ? error.message.toLowerCase() : "";
+        if (message.includes("not found") || message.includes("404")) {
+          setBusinessBills((prev) => prev.filter((bill) => bill.id !== id));
+          triggerOnlineSync(`DELETED BILL FOR ${name}`);
+          return;
+        }
         alert("Unable to delete the bill right now.");
       }
     } else if (type === "fuel") {
