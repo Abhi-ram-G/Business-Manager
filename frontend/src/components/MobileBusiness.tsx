@@ -74,6 +74,13 @@ export interface MaterialPurchase {
   remarks?: string;
 }
 
+const isLegacyDemoServiceEntry = (service: ServiceRecord) =>
+  service.id === "SVR-101" ||
+  service.id === "SVR-102" ||
+  service.id === "SVR-103" ||
+  service.vehicleId === "KA-51-MM-9999" ||
+  service.vehicleId === "MH-12-GP-5678";
+
 
 interface MobileBusinessProps {
   key?: string;
@@ -1188,13 +1195,14 @@ export default function MobileBusiness({
   const [services, setServices] = useState<ServiceRecord[]>(() => {
     const saved = localStorage.getItem("srs_vehicle_services");
     if (saved) {
-      try { return JSON.parse(saved); } catch (e) { console.error(e); }
+      try {
+        const parsed = JSON.parse(saved) as ServiceRecord[];
+        return Array.isArray(parsed) ? parsed.filter((service) => !isLegacyDemoServiceEntry(service)) : [];
+      } catch (e) {
+        console.error(e);
+      }
     }
-    return [
-      { id: "SVR-101", vehicleId: "KA-51-MM-9999", date: "2026-06-10", serviceType: "Engine Oil Change", cost: 4500, spareParts: "Castrol Oil 15W40, Oil Filter", remarks: "Scheduled 10K oil change. Smooth performance." },
-      { id: "SVR-102", vehicleId: "KA-51-MM-9999", date: "2026-06-15", serviceType: "Brake Lining & Pads", cost: 6800, spareParts: "Premium Brake Lining kit, Brake Fluid", remarks: "Rear brake shoes replaced for safety during heavy load." },
-      { id: "SVR-103", vehicleId: "MH-12-GP-5678", date: "2026-06-12", serviceType: "Hydraulic Hose Repair", cost: 3200, spareParts: "High Pressure Hydraulic Hose line", remarks: "Replaced leaking hose on rig arm hook." }
-    ];
+    return [];
   });
 
   // Materials State with local persistence fallback

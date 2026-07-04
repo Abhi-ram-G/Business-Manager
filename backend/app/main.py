@@ -3,7 +3,7 @@ from typing import Any, TypeVar
 
 from fastapi import Depends, FastAPI, HTTPException, status
 from fastapi.middleware.cors import CORSMiddleware
-from sqlalchemy import func, select, text
+from sqlalchemy import delete, func, select, text
 from sqlalchemy.exc import OperationalError
 from sqlalchemy.orm import Session
 
@@ -151,6 +151,10 @@ def initialize_database() -> None:
                 db.add(default_admin)
                 db.commit()
                 print("Default admin user created in database successfully.")
+
+            removed_bills = purge_legacy_demo_business_bills(db)
+            if removed_bills:
+                print(f"Removed {removed_bills} legacy demo business bills from the database.")
         except Exception as err:
             db.rollback()
             print(f"Warning: Failed to ensure default admin user: {err}")
@@ -209,6 +213,21 @@ def update_instance(db: Session, instance: Any, payload: dict[str, Any]):
 
 def generate_bill_invoice_no() -> str:
     return f"INV-SRS-{datetime.now(timezone.utc).strftime('%Y%m%d%H%M%S%f')[:-3]}"
+
+
+def purge_legacy_demo_business_bills(db: Session) -> int:
+    legacy_ids = {"bill-1", "bill-2"}
+    legacy_invoice_nos = {"INV-2026-001", "INV-2026-002"}
+    legacy_client_names = {"Senthil Kumar", "Praneeth Heavy Earthmovers"}
+    result = db.execute(
+        delete(BusinessBill).where(
+            (BusinessBill.id.in_(legacy_ids))
+            | (BusinessBill.invoice_no.in_(legacy_invoice_nos))
+            | (BusinessBill.client_name.in_(legacy_client_names))
+        )
+    )
+    db.commit()
+    return int(result.rowcount or 0)
 
 
 @app.post("/api/v1/auth/token", response_model=TokenResponse)
