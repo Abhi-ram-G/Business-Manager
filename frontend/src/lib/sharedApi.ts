@@ -562,25 +562,34 @@ export const toSalaryPaymentApiPayload = (payment: SalaryPayment) => ({
 });
 
 export const fetchSharedSnapshot = async (apiBaseUrl: string) => {
+  const fetchSafe = async (path: string) => {
+    try {
+      return await requestJson(apiBaseUrl, path);
+    } catch (e) {
+      console.warn(`Failed to fetch ${path}:`, e);
+      return [];
+    }
+  };
+
   const [labours, attendance, salaryPayments, vehicles, bitEntries, businessBills, fuelEntries, trips, loansGiven, loansReceived, familyMembers, incomeEntries, familyExpenses, categoryBudgets, documents, notifications, hammers, pipes] = await Promise.all([
-    requestJson(apiBaseUrl, "/api/v1/labours"),
-    requestJson(apiBaseUrl, "/api/v1/labours/attendance"),
-    requestJson(apiBaseUrl, "/api/v1/labours/salary-payments"),
-    requestJson(apiBaseUrl, "/api/v1/vehicles"),
-    requestJson(apiBaseUrl, "/api/v1/business/bits"),
-    requestJson(apiBaseUrl, "/api/v1/business/bills"),
-    requestJson(apiBaseUrl, "/api/v1/vehicles/fuel"),
-    requestJson(apiBaseUrl, "/api/v1/vehicles/trips"),
-    requestJson(apiBaseUrl, "/api/v1/loans/given"),
-    requestJson(apiBaseUrl, "/api/v1/loans/received"),
-    requestJson(apiBaseUrl, "/api/v1/family-members"),
-    requestJson(apiBaseUrl, "/api/v1/income"),
-    requestJson(apiBaseUrl, "/api/v1/expenses"),
-    requestJson(apiBaseUrl, "/api/v1/category-budgets"),
-    requestJson(apiBaseUrl, "/api/v1/documents"),
-    requestJson(apiBaseUrl, "/api/v1/notifications"),
-    requestJson(apiBaseUrl, "/api/v1/business/hammers"),
-    requestJson(apiBaseUrl, "/api/v1/business/pipes"),
+    fetchSafe("/api/v1/labours"),
+    fetchSafe("/api/v1/labours/attendance"),
+    fetchSafe("/api/v1/labours/salary-payments"),
+    fetchSafe("/api/v1/vehicles"),
+    fetchSafe("/api/v1/business/bits"),
+    fetchSafe("/api/v1/business/bills"),
+    fetchSafe("/api/v1/vehicles/fuel"),
+    fetchSafe("/api/v1/vehicles/trips"),
+    fetchSafe("/api/v1/loans/given"),
+    fetchSafe("/api/v1/loans/received"),
+    fetchSafe("/api/v1/family-members"),
+    fetchSafe("/api/v1/income"),
+    fetchSafe("/api/v1/expenses"),
+    fetchSafe("/api/v1/category-budgets"),
+    fetchSafe("/api/v1/documents"),
+    fetchSafe("/api/v1/notifications"),
+    fetchSafe("/api/v1/business/hammers"),
+    fetchSafe("/api/v1/business/pipes"),
   ]);
 
   return {
