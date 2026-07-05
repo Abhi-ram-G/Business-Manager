@@ -19,6 +19,7 @@ from .models import (
     FamilyExpense,
     FamilyMember,
     Hammer,
+    PipeEntry,
     FuelEntry,
     IncomeEntry,
     Labour,
@@ -38,6 +39,8 @@ from .schemas import (
     BusinessBillUpdate,
     HammerCreate,
     HammerUpdate,
+    PipeEntryCreate,
+    PipeEntryUpdate,
     CategoryBudgetCreate,
     CategoryBudgetUpdate,
     ChangePasswordRequest,
@@ -504,6 +507,34 @@ def delete_hammer_entry(hammer_id: str, db: Session = Depends(get_db)):
     if not hammer:
         raise HTTPException(status_code=404, detail="Hammer entry not found")
     db.delete(hammer)
+    db.commit()
+
+
+@app.get("/api/v1/business/pipes")
+def list_pipe_entries(db: Session = Depends(get_db)):
+    return [serialize_model(item) for item in db.execute(select(PipeEntry).order_by(PipeEntry.created_at.desc())).scalars()]
+
+
+@app.post("/api/v1/business/pipes", status_code=status.HTTP_201_CREATED)
+def create_pipe_entry(payload: PipeEntryCreate, db: Session = Depends(get_db)):
+    pipe = PipeEntry(**payload.model_dump())
+    return serialize_model(create_or_400(db, PipeEntry, pipe, "Unable to create pipe entry"))
+
+
+@app.put("/api/v1/business/pipes/{pipe_id}")
+def update_pipe_entry(pipe_id: str, payload: PipeEntryUpdate, db: Session = Depends(get_db)):
+    pipe = db.get(PipeEntry, pipe_id)
+    if not pipe:
+        raise HTTPException(status_code=404, detail="Pipe entry not found")
+    return serialize_model(update_instance(db, pipe, payload.model_dump(exclude_unset=True)))
+
+
+@app.delete("/api/v1/business/pipes/{pipe_id}", status_code=status.HTTP_204_NO_CONTENT)
+def delete_pipe_entry(pipe_id: str, db: Session = Depends(get_db)):
+    pipe = db.get(PipeEntry, pipe_id)
+    if not pipe:
+        raise HTTPException(status_code=404, detail="Pipe entry not found")
+    db.delete(pipe)
     db.commit()
 
 

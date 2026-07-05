@@ -39,7 +39,7 @@ import {
   Mars,
   Venus
 } from "lucide-react";
-import { Labour, Vehicle, BitEntry, HammerEntry, HammerUsageRecord, BusinessBill, FuelEntry, SalaryPayment, AdvanceEntry, AttendanceRecord } from "../types";
+import { Labour, Vehicle, BitEntry, HammerEntry, HammerUsageRecord, BusinessBill, FuelEntry, SalaryPayment, AdvanceEntry, AttendanceRecord, PipeEntry } from "../types";
 import { downloadSalarySlipPDF, downloadAttendanceReportPDF, downloadSingleLabourAttendancePDF } from "../utils/pdfGenerator";
 import {
   mapFuelFromApi,
@@ -48,12 +48,14 @@ import {
   mapLabourFromApi,
   mapVehicleFromApi,
   mapHammerFromApi,
+  mapPipeFromApi,
   requestJson,
   toBusinessBillApiPayload,
   toBitApiPayload,
   toLabourApiPayload,
   toVehicleApiPayload,
   toHammerApiPayload,
+  toPipeApiPayload,
 } from "../lib/sharedApi";
 import borewellLogo from "../assets/images/borewell_machine_logo_1782797350175.jpg";
 
@@ -136,6 +138,8 @@ interface MobileBusinessProps {
   setBitEntries: React.Dispatch<React.SetStateAction<BitEntry[]>>;
   hammerEntries: HammerEntry[];
   setHammerEntries: React.Dispatch<React.SetStateAction<HammerEntry[]>>;
+  pipeEntries: PipeEntry[];
+  setPipeEntries: React.Dispatch<React.SetStateAction<PipeEntry[]>>;
   businessBills: BusinessBill[];
   setBusinessBills: React.Dispatch<React.SetStateAction<BusinessBill[]>>;
   fuelEntries: FuelEntry[];
@@ -160,6 +164,8 @@ export default function MobileBusiness({
   setBitEntries,
   hammerEntries,
   setHammerEntries,
+  pipeEntries,
+  setPipeEntries,
   businessBills,
   setBusinessBills,
   fuelEntries,
@@ -191,10 +197,23 @@ export default function MobileBusiness({
     return mapBitFromApi(response);
   };
 
-  const [deleteConfirmation, setDeleteConfirmation] = useState<{ id: string; name: string; type: "bill" | "bit" | "hammer" | "labour" | "vehicle" | "fuel" | "service" | "material"; } | null>(null);
+  const persistPipe = async (record: PipeEntry, method: "POST" | "PUT") => {
+    const response = await requestJson(
+      apiBaseUrl,
+      method === "POST" ? "/api/v1/business/pipes" : `/api/v1/business/pipes/${record.id}`,
+      {
+        method,
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(toPipeApiPayload(record)),
+      }
+    );
+    return mapPipeFromApi(response);
+  };
+
+  const [deleteConfirmation, setDeleteConfirmation] = useState<{ id: string; name: string; type: "bill" | "bit" | "hammer" | "pipe" | "labour" | "vehicle" | "fuel" | "service" | "material"; } | null>(null);
 
   // Bit/Hammer sub-tab switcher inside the bit section
-  const [bitHammerSubTab, setBitHammerSubTab] = useState<"bit" | "hammer">("bit");
+  const [bitHammerSubTab, setBitHammerSubTab] = useState<"bit" | "hammer" | "pipe">("bit");
 
   // Hammer form states
   const [isHammerFormOpen, setIsHammerFormOpen] = useState(false);
@@ -206,6 +225,23 @@ export default function MobileBusiness({
   const [hammerCapableFeet, setHammerCapableFeet] = useState<number>(500);
   const [hammerIsPaid, setHammerIsPaid] = useState<boolean>(false);
   const [selectedHammerForHistory, setSelectedHammerForHistory] = useState<string | null>(null);
+
+  // Pipe form states
+  const [isPipeFormOpen, setIsPipeFormOpen] = useState(false);
+  const [editingPipeId, setEditingPipeId] = useState<string | null>(null);
+  const [pipeCompanyName, setPipeCompanyName] = useState("");
+  const [pipeLocation, setPipeLocation] = useState("");
+  const [pipeDateEntry, setPipeDateEntry] = useState(() => new Date().toISOString().split("T")[0]);
+  const [pipe7HighCount, setPipe7HighCount] = useState<number>(0);
+  const [pipe7HighRate, setPipe7HighRate] = useState<number>(0);
+  const [pipe7MediumCount, setPipe7MediumCount] = useState<number>(0);
+  const [pipe7MediumRate, setPipe7MediumRate] = useState<number>(0);
+  const [pipe10HighCount, setPipe10HighCount] = useState<number>(0);
+  const [pipe10HighRate, setPipe10HighRate] = useState<number>(0);
+  const [pipe10MediumCount, setPipe10MediumCount] = useState<number>(0);
+  const [pipe10MediumRate, setPipe10MediumRate] = useState<number>(0);
+  const [pipeDiscountAmount, setPipeDiscountAmount] = useState<number>(0);
+  const [selectedPipeForHistory, setSelectedPipeForHistory] = useState<string | null>(null);
 
   // Bill form: bit/hammer selection (internal use only — NOT printed in PDF)
   const [selectedBitId, setSelectedBitId] = useState<string>("");
@@ -312,7 +348,18 @@ export default function MobileBusiness({
       } catch (error) {
         console.error(error);
         setHammerEntries(prev => prev.filter(h => h.id !== id));
-        triggerOnlineSync(`DELETED HAMMER: ${name} (local only)`);
+        triggerOnlineSync(`DELETED HAMMER: ${name} (local fallback)`);
+      }
+    } else if (type === "pipe") {
+      try {
+        await requestJson(apiBaseUrl, `/api/v1/business/pipes/${id}`, { method: "DELETE" });
+        setPipeEntries(prev => prev.filter(p => p.id !== id));
+        await onSharedDataChanged?.();
+        triggerOnlineSync(`DELETED PIPE SUPPLIER: ${name}`);
+      } catch (error) {
+        console.error(error);
+        setPipeEntries(prev => prev.filter(p => p.id !== id));
+        triggerOnlineSync(`DELETED PIPE SUPPLIER: ${name} (local fallback)`);
       }
     }
   };
@@ -363,6 +410,13 @@ export default function MobileBusiness({
   const [casing7Rate, setCasing7Rate] = useState<number>(350);
   const [customSlabRates, setCustomSlabRates] = useState<Record<string, number>>({});
   const [discountAmount, setDiscountAmount] = useState<number>(0);
+
+  // New Casing Pipe inputs for bill
+  const [billPipeSupplierId, setBillPipeSupplierId] = useState<string>("");
+  const [billCasing7HighFeet, setBillCasing7HighFeet] = useState<number>(0);
+  const [billCasing7MediumFeet, setBillCasing7MediumFeet] = useState<number>(0);
+  const [billCasing10HighFeet, setBillCasing10HighFeet] = useState<number>(0);
+  const [billCasing10MediumFeet, setBillCasing10MediumFeet] = useState<number>(0);
 
   // Slab rate helper
   const getSlabRate = (
@@ -686,6 +740,11 @@ export default function MobileBusiness({
       usedHammerId: selectedHammerId || undefined,
       usedCasing10HammerId: selectedCasing10HammerId || undefined,
       usedCasing7HammerId: selectedCasing7HammerId || undefined,
+      pipeSupplierId: billPipeSupplierId || undefined,
+      casing7HighFeet: Number(billCasing7HighFeet) || 0,
+      casing7MediumFeet: Number(billCasing7MediumFeet) || 0,
+      casing10HighFeet: Number(billCasing10HighFeet) || 0,
+      casing10MediumFeet: Number(billCasing10MediumFeet) || 0,
     };
 
     const finalBillTotal = Math.max(0, calc.grand - discountAmount);
@@ -947,6 +1006,11 @@ export default function MobileBusiness({
     setCasing7Feet(20);
     setCasing7Rate(350);
     setCustomSlabRates({});
+    setBillPipeSupplierId("");
+    setBillCasing7HighFeet(0);
+    setBillCasing7MediumFeet(0);
+    setBillCasing10HighFeet(0);
+    setBillCasing10MediumFeet(0);
 
     setIsBillFormOpen(false);
   };
@@ -991,6 +1055,11 @@ export default function MobileBusiness({
     setSelectedHammerId(bill.usedHammerId || "");
     setSelectedCasing10HammerId(bill.usedCasing10HammerId || "");
     setSelectedCasing7HammerId(bill.usedCasing7HammerId || "");
+    setBillPipeSupplierId(bill.pipeSupplierId || "");
+    setBillCasing7HighFeet(bill.casing7HighFeet || 0);
+    setBillCasing7MediumFeet(bill.casing7MediumFeet || 0);
+    setBillCasing10HighFeet(bill.casing10HighFeet || 0);
+    setBillCasing10MediumFeet(bill.casing10MediumFeet || 0);
 
     setIsBillFormOpen(true);
   };
@@ -2409,6 +2478,116 @@ export default function MobileBusiness({
     setDeleteConfirmation({ id, name: no, type: "hammer" });
   };
 
+  const handleOpenAddPipe = () => {
+    setEditingPipeId(null);
+    setPipeCompanyName("");
+    setPipeLocation("");
+    setPipeDateEntry(new Date().toISOString().split("T")[0]);
+    setPipe7HighCount(0);
+    setPipe7HighRate(0);
+    setPipe7MediumCount(0);
+    setPipe7MediumRate(0);
+    setPipe10HighCount(0);
+    setPipe10HighRate(0);
+    setPipe10MediumCount(0);
+    setPipe10MediumRate(0);
+    setPipeDiscountAmount(0);
+    setIsPipeFormOpen(true);
+  };
+
+  const handleEditPipe = (pipe: PipeEntry) => {
+    setEditingPipeId(pipe.id);
+    setPipeCompanyName(pipe.companyName);
+    setPipeLocation(pipe.location);
+    setPipeDateEntry(pipe.dateEntry || new Date().toISOString().split("T")[0]);
+    setPipe7HighCount(pipe.pipe7HighCount);
+    setPipe7HighRate(pipe.pipe7HighRate);
+    setPipe7MediumCount(pipe.pipe7MediumCount);
+    setPipe7MediumRate(pipe.pipe7MediumRate);
+    setPipe10HighCount(pipe.pipe10HighCount);
+    setPipe10HighRate(pipe.pipe10HighRate);
+    setPipe10MediumCount(pipe.pipe10MediumCount);
+    setPipe10MediumRate(pipe.pipe10MediumRate);
+    setPipeDiscountAmount(pipe.discountAmount);
+    setIsPipeFormOpen(true);
+  };
+
+  const handleSavePipe = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!pipeCompanyName.trim() || !pipeLocation.trim()) return;
+
+    void (async () => {
+      const targetId = editingPipeId || `PIPE-${Date.now()}`;
+      
+      const t7h = Number(pipe7HighCount) * Number(pipe7HighRate);
+      const t7m = Number(pipe7MediumCount) * Number(pipe7MediumRate);
+      const t10h = Number(pipe10HighCount) * Number(pipe10HighRate);
+      const t10m = Number(pipe10MediumCount) * Number(pipe10MediumRate);
+      const gt = t7h + t7m + t10h + t10m;
+      const gp = gt - Number(pipeDiscountAmount);
+
+      const payloadPipe: PipeEntry = {
+        id: targetId,
+        companyName: pipeCompanyName.trim(),
+        location: pipeLocation.trim(),
+        dateEntry: pipeDateEntry,
+        pipe7HighCount: Number(pipe7HighCount),
+        pipe7HighRate: Number(pipe7HighRate),
+        pipe7HighTotal: t7h,
+        pipe7MediumCount: Number(pipe7MediumCount),
+        pipe7MediumRate: Number(pipe7MediumRate),
+        pipe7MediumTotal: t7m,
+        pipe10HighCount: Number(pipe10HighCount),
+        pipe10HighRate: Number(pipe10HighRate),
+        pipe10HighTotal: t10h,
+        pipe10MediumCount: Number(pipe10MediumCount),
+        pipe10MediumRate: Number(pipe10MediumRate),
+        pipe10MediumTotal: t10m,
+        grandTotal: gt,
+        discountAmount: Number(pipeDiscountAmount),
+        grandPrice: gp,
+      };
+
+      try {
+        const response = await requestJson(
+          apiBaseUrl,
+          editingPipeId ? `/api/v1/business/pipes/${editingPipeId}` : "/api/v1/business/pipes",
+          {
+            method: editingPipeId ? "PUT" : "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(toPipeApiPayload(payloadPipe)),
+          }
+        );
+        const savedPipe = mapPipeFromApi(response);
+        
+        if (editingPipeId) {
+          setPipeEntries(prev => prev.map(p => p.id === editingPipeId ? savedPipe : p));
+          triggerOnlineSync(`UPDATED PIPE ENTRY: ${pipeCompanyName}`);
+        } else {
+          setPipeEntries(prev => [savedPipe, ...prev]);
+          triggerOnlineSync(`ADDED PIPE ENTRY: ${pipeCompanyName}`);
+        }
+      } catch (error) {
+        console.error(error);
+        // Offline Fallback
+        if (editingPipeId) {
+          setPipeEntries(prev => prev.map(p => p.id === editingPipeId ? payloadPipe : p));
+          triggerOnlineSync(`UPDATED PIPE ENTRY: ${pipeCompanyName} (local fallback)`);
+        } else {
+          setPipeEntries(prev => [payloadPipe, ...prev]);
+          triggerOnlineSync(`ADDED PIPE ENTRY: ${pipeCompanyName} (local fallback)`);
+        }
+      }
+      setIsPipeFormOpen(false);
+      setEditingPipeId(null);
+      await onSharedDataChanged?.();
+    })();
+  };
+
+  const handleDeletePipe = (id: string, name: string) => {
+    setDeleteConfirmation({ id, name, type: "pipe" });
+  };
+
   return (
     <div id="mobile-business-root" className="space-y-4">
       
@@ -2471,7 +2650,7 @@ export default function MobileBusiness({
               }`}
             >
               <Package className="w-3.5 h-3.5" />
-              <span>Bit and Hammer</span>
+              <span>Bit Hammer Pipe</span>
             </button>
             <button
               onClick={() => {
@@ -3480,9 +3659,18 @@ export default function MobileBusiness({
             >
               🔨 Hammer Details
             </button>
+            <button
+              type="button"
+              onClick={() => setBitHammerSubTab("pipe")}
+              className={`flex-1 py-1.5 rounded-lg text-[10px] font-bold uppercase transition ${
+                bitHammerSubTab === "pipe" ? "bg-indigo-650 text-white font-extrabold" : "text-slate-400 hover:text-slate-200"
+              }`}
+            >
+              🔗 Pipe Details
+            </button>
           </div>
 
-          {bitHammerSubTab === "bit" ? (
+          {bitHammerSubTab === "bit" && (
             // ================== BIT SUB-SECTION ==================
             <div className="space-y-4">
               <div className="grid grid-cols-2 gap-2">
@@ -3684,7 +3872,9 @@ export default function MobileBusiness({
                 </div>
               </div>
             </div>
-          ) : (
+          )}
+
+          {bitHammerSubTab === "hammer" && (
             // ================== HAMMER SUB-SECTION ==================
             <div className="space-y-4">
               <div className="grid grid-cols-2 gap-2">
@@ -3940,6 +4130,413 @@ export default function MobileBusiness({
                               )}
                             </div>
                           )}
+                        </div>
+                      );
+                    })
+                  )}
+                </div>
+              </div>
+            </div>
+          )}
+
+          {bitHammerSubTab === "pipe" && (
+            // ================== PIPE SUB-SECTION ==================
+            <div className="space-y-4">
+              <div className="grid grid-cols-2 gap-2">
+                <div className="bg-slate-900 border border-slate-850 rounded-xl p-3">
+                  <span className="text-[8px] uppercase tracking-wider text-slate-500 font-mono font-bold block">Total suppliers</span>
+                  <div className="text-2xl font-black text-indigo-400 mt-1">{pipeEntries.length}</div>
+                </div>
+                <div className="bg-slate-900 border border-slate-850 rounded-xl p-3">
+                  <span className="text-[8px] uppercase tracking-wider text-slate-500 font-mono font-bold block">Total pipe value</span>
+                  <div className="text-2xl font-black text-emerald-400 mt-1">₹{pipeEntries.reduce((sum, p) => sum + Number(p.grandPrice || 0), 0).toLocaleString()}</div>
+                </div>
+              </div>
+
+              {(isPipeFormOpen || editingPipeId) && (
+                <form onSubmit={handleSavePipe} className="bg-slate-900 border border-slate-800 rounded-2xl p-3 space-y-3 text-xs">
+                  <span className="text-[10px] font-mono font-bold text-amber-500 uppercase tracking-widest block">
+                    {editingPipeId ? "Edit Pipe Entry / Supplier" : "Register Pipe Purchase Entry"}
+                  </span>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                    <div>
+                      <label className="text-[9px] text-slate-500 block font-mono">COMPANY NAME</label>
+                      <input
+                        type="text"
+                        value={pipeCompanyName}
+                        onChange={(e) => setPipeCompanyName(e.target.value)}
+                        className="w-full bg-slate-950 p-1.5 rounded text-slate-100 border border-slate-850"
+                        placeholder="e.g. Supreme Pipes"
+                        required
+                      />
+                    </div>
+                    <div>
+                      <label className="text-[9px] text-slate-500 block font-mono">LOCATION</label>
+                      <input
+                        type="text"
+                        value={pipeLocation}
+                        onChange={(e) => setPipeLocation(e.target.value)}
+                        className="w-full bg-slate-950 p-1.5 rounded text-slate-100 border border-slate-850"
+                        placeholder="e.g. Mumbai Warehouse"
+                        required
+                      />
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                    <div>
+                      <label className="text-[9px] text-slate-500 block font-mono">DATE ENTRY</label>
+                      <input
+                        type="date"
+                        value={pipeDateEntry}
+                        onChange={(e) => setPipeDateEntry(e.target.value)}
+                        className="w-full bg-slate-950 p-1.5 rounded text-slate-100 border border-slate-850 font-bold"
+                        required
+                      />
+                    </div>
+                    <div>
+                      <label className="text-[9px] text-slate-500 block font-mono">DISCOUNT AMOUNT (₹)</label>
+                      <input
+                        type="number"
+                        value={pipeDiscountAmount}
+                        onChange={(e) => setPipeDiscountAmount(Number(e.target.value))}
+                        className="w-full bg-slate-950 p-1.5 rounded text-slate-100 border border-slate-850 font-bold"
+                        min="0"
+                      />
+                    </div>
+                  </div>
+
+                  <div className="bg-slate-950/60 p-2.5 rounded-xl border border-slate-850 space-y-2">
+                    <span className="text-[9px] font-mono font-bold text-indigo-400 block uppercase tracking-wider">Casing Pipe Stock Details (Quantities & Rates)</span>
+                    
+                    {/* 7 Inch Pipes */}
+                    <div className="grid grid-cols-2 gap-2 border-b border-slate-900 pb-2">
+                      <div className="space-y-1">
+                        <label className="text-[8px] text-slate-500 block font-mono">7" HIGH QUALITY QTY</label>
+                        <input
+                          type="number"
+                          value={pipe7HighCount}
+                          onChange={(e) => setPipe7HighCount(Number(e.target.value))}
+                          className="w-full bg-slate-950 p-1 rounded text-slate-100 border border-slate-850 text-center font-bold"
+                          min="0"
+                        />
+                      </div>
+                      <div className="space-y-1">
+                        <label className="text-[8px] text-slate-500 block font-mono">7" HIGH QUALITY RATE (₹)</label>
+                        <input
+                          type="number"
+                          value={pipe7HighRate}
+                          onChange={(e) => setPipe7HighRate(Number(e.target.value))}
+                          className="w-full bg-slate-950 p-1 rounded text-slate-100 border border-slate-850 text-center font-bold"
+                          min="0"
+                        />
+                      </div>
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-2 border-b border-slate-900 pb-2">
+                      <div className="space-y-1">
+                        <label className="text-[8px] text-slate-500 block font-mono">7" MEDIUM QUALITY QTY</label>
+                        <input
+                          type="number"
+                          value={pipe7MediumCount}
+                          onChange={(e) => setPipe7MediumCount(Number(e.target.value))}
+                          className="w-full bg-slate-950 p-1 rounded text-slate-100 border border-slate-850 text-center font-bold"
+                          min="0"
+                        />
+                      </div>
+                      <div className="space-y-1">
+                        <label className="text-[8px] text-slate-500 block font-mono">7" MEDIUM QUALITY RATE (₹)</label>
+                        <input
+                          type="number"
+                          value={pipe7MediumRate}
+                          onChange={(e) => setPipe7MediumRate(Number(e.target.value))}
+                          className="w-full bg-slate-950 p-1 rounded text-slate-100 border border-slate-850 text-center font-bold"
+                          min="0"
+                        />
+                      </div>
+                    </div>
+
+                    {/* 10 Inch Pipes */}
+                    <div className="grid grid-cols-2 gap-2 border-b border-slate-900 pb-2">
+                      <div className="space-y-1">
+                        <label className="text-[8px] text-slate-500 block font-mono">10" HIGH QUALITY QTY</label>
+                        <input
+                          type="number"
+                          value={pipe10HighCount}
+                          onChange={(e) => setPipe10HighCount(Number(e.target.value))}
+                          className="w-full bg-slate-950 p-1 rounded text-slate-100 border border-slate-850 text-center font-bold"
+                          min="0"
+                        />
+                      </div>
+                      <div className="space-y-1">
+                        <label className="text-[8px] text-slate-500 block font-mono">10" HIGH QUALITY RATE (₹)</label>
+                        <input
+                          type="number"
+                          value={pipe10HighRate}
+                          onChange={(e) => setPipe10HighRate(Number(e.target.value))}
+                          className="w-full bg-slate-950 p-1 rounded text-slate-100 border border-slate-850 text-center font-bold"
+                          min="0"
+                        />
+                      </div>
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-2">
+                      <div className="space-y-1">
+                        <label className="text-[8px] text-slate-500 block font-mono">10" MEDIUM QUALITY QTY</label>
+                        <input
+                          type="number"
+                          value={pipe10MediumCount}
+                          onChange={(e) => setPipe10MediumCount(Number(e.target.value))}
+                          className="w-full bg-slate-950 p-1 rounded text-slate-100 border border-slate-850 text-center font-bold"
+                          min="0"
+                        />
+                      </div>
+                      <div className="space-y-1">
+                        <label className="text-[8px] text-slate-500 block font-mono">10" MEDIUM QUALITY RATE (₹)</label>
+                        <input
+                          type="number"
+                          value={pipe10MediumRate}
+                          onChange={(e) => setPipe10MediumRate(Number(e.target.value))}
+                          className="w-full bg-slate-950 p-1 rounded text-slate-100 border border-slate-850 text-center font-bold"
+                          min="0"
+                        />
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Calculations Preview */}
+                  <div className="bg-slate-950/40 p-2 rounded-xl border border-slate-850/50 grid grid-cols-3 gap-2 text-center text-[10px] font-mono">
+                    <div>
+                      <span className="text-slate-500 text-[8px] block">GRAND TOTAL</span>
+                      <span className="font-bold text-slate-350">
+                        ₹{(
+                          (pipe7HighCount * pipe7HighRate) + 
+                          (pipe7MediumCount * pipe7MediumRate) + 
+                          (pipe10HighCount * pipe10HighRate) + 
+                          (pipe10MediumCount * pipe10MediumRate)
+                        ).toLocaleString()}
+                      </span>
+                    </div>
+                    <div>
+                      <span className="text-slate-500 text-[8px] block">DISCOUNT</span>
+                      <span className="font-bold text-rose-450">₹{Number(pipeDiscountAmount).toLocaleString()}</span>
+                    </div>
+                    <div>
+                      <span className="text-slate-500 text-[8px] block">GRAND PRICE</span>
+                      <span className="font-bold text-emerald-450">
+                        ₹{(
+                          (pipe7HighCount * pipe7HighRate) + 
+                          (pipe7MediumCount * pipe7MediumRate) + 
+                          (pipe10HighCount * pipe10HighRate) + 
+                          (pipe10MediumCount * pipe10MediumRate) - 
+                          pipeDiscountAmount
+                        ).toLocaleString()}
+                      </span>
+                    </div>
+                  </div>
+
+                  <div className="flex gap-2 justify-end pt-1">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setIsPipeFormOpen(false);
+                        setEditingPipeId(null);
+                      }}
+                      className="px-3 bg-slate-950 text-slate-400 py-1 rounded"
+                    >
+                      Cancel
+                    </button>
+                    <button type="submit" className="px-4 bg-indigo-650 text-white font-bold py-1 rounded">
+                      {editingPipeId ? "Update Entry" : "Save Entry"}
+                    </button>
+                  </div>
+                </form>
+              )}
+
+              <div className="space-y-2">
+                <div className="flex justify-between items-center">
+                  <span className="text-xs font-mono font-bold text-slate-400 uppercase">Pipe Suppliers & Stock</span>
+                  <button
+                    type="button"
+                    onClick={handleOpenAddPipe}
+                    className="bg-indigo-650 hover:bg-indigo-500 py-1 px-2.5 rounded-lg text-[9px] font-bold text-white uppercase tracking-wider flex items-center gap-0.5"
+                  >
+                    <Plus className="w-3.5 h-3.5" /> Add Casing Pipes (+)
+                  </button>
+                </div>
+
+                <div className="space-y-2">
+                  {pipeEntries.length === 0 ? (
+                    <div className="text-center p-6 bg-slate-900/30 rounded-xl text-[10px] text-slate-500">
+                      No casing pipe purchase entries registered yet.
+                    </div>
+                  ) : (
+                    pipeEntries.map((supplier) => {
+                      // Calculate stock counts
+                      // Total feet used from business bills
+                      const billsForSupplier = businessBills.filter(b => b.pipeSupplierId === supplier.id);
+                      
+                      const used7HighFeet = billsForSupplier.reduce((sum, b) => sum + Number(b.casing7HighFeet || 0), 0);
+                      const used7MediumFeet = billsForSupplier.reduce((sum, b) => sum + Number(b.casing7MediumFeet || 0), 0);
+                      const used10HighFeet = billsForSupplier.reduce((sum, b) => sum + Number(b.casing10HighFeet || 0), 0);
+                      const used10MediumFeet = billsForSupplier.reduce((sum, b) => sum + Number(b.casing10MediumFeet || 0), 0);
+
+                      // Convert to pipe counts (1 pipe = 20 feet)
+                      const used7HighCount = used7HighFeet / 20;
+                      const used7MediumCount = used7MediumFeet / 20;
+                      const used10HighCount = used10HighFeet / 20;
+                      const used10MediumCount = used10MediumFeet / 20;
+
+                      // Pending stocks
+                      const pending7High = Math.max(0, supplier.pipe7HighCount - used7HighCount);
+                      const pending7Medium = Math.max(0, supplier.pipe7MediumCount - used7MediumCount);
+                      const pending10High = Math.max(0, supplier.pipe10HighCount - used10HighCount);
+                      const pending10Medium = Math.max(0, supplier.pipe10MediumCount - used10MediumCount);
+
+                      const totalRegistered = supplier.pipe7HighCount + supplier.pipe7MediumCount + supplier.pipe10HighCount + supplier.pipe10MediumCount;
+                      const totalUsed = used7HighCount + used7MediumCount + used10HighCount + used10MediumCount;
+                      const totalPending = pending7High + pending7Medium + pending10High + pending10Medium;
+
+                      return (
+                        <div key={supplier.id} className="bg-slate-900 border border-slate-850 rounded-2xl p-3.5 space-y-3">
+                          {/* Supplier Header */}
+                          <div className="flex justify-between items-start">
+                            <div>
+                              <h4 className="text-sm font-black text-white">{supplier.companyName}</h4>
+                              <p className="text-[9px] text-indigo-400 font-mono mt-0.5">Location: {supplier.location}</p>
+                              {supplier.dateEntry && (
+                                <p className="text-[8px] text-slate-500 font-mono">Date Purchased: {supplier.dateEntry}</p>
+                              )}
+                            </div>
+                            <div className="flex items-center gap-1.5">
+                              <button
+                                type="button"
+                                onClick={() => handleEditPipe(supplier)}
+                                className="p-1 bg-slate-950 text-slate-400 hover:text-white border border-slate-850 rounded"
+                                title="Edit Supplier"
+                              >
+                                <Edit className="w-3 h-3" />
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() => handleDeletePipe(supplier.id, supplier.companyName)}
+                                className="p-1 bg-rose-950/40 text-rose-450 border border-rose-900/40 rounded"
+                                title="Delete Supplier"
+                              >
+                                <Trash2 className="w-3 h-3" />
+                              </button>
+                            </div>
+                          </div>
+
+                          {/* Horizontal Supplier Profile counts in a single row */}
+                          <div className="grid grid-cols-5 gap-1.5 text-[9px] font-mono bg-slate-950 p-2 rounded-xl text-center">
+                            <div>
+                              <span className="text-[7.5px] text-slate-500 block">7" H Qty</span>
+                              <span className="font-extrabold text-slate-350">{supplier.pipe7HighCount}</span>
+                            </div>
+                            <div>
+                              <span className="text-[7.5px] text-slate-500 block">7" M Qty</span>
+                              <span className="font-extrabold text-slate-350">{supplier.pipe7MediumCount}</span>
+                            </div>
+                            <div>
+                              <span className="text-[7.5px] text-slate-500 block">10" H Qty</span>
+                              <span className="font-extrabold text-slate-350">{supplier.pipe10HighCount}</span>
+                            </div>
+                            <div>
+                              <span className="text-[7.5px] text-slate-500 block">10" M Qty</span>
+                              <span className="font-extrabold text-slate-350">{supplier.pipe10MediumCount}</span>
+                            </div>
+                            <div className="border-l border-slate-850">
+                              <span className="text-[7.5px] text-indigo-400 block font-bold">Total Pipes</span>
+                              <span className="font-black text-indigo-350">{totalRegistered}</span>
+                            </div>
+                          </div>
+
+                          {/* Stocks and Pending Casing Grid */}
+                          <div className="bg-slate-950/40 p-2.5 rounded-xl border border-slate-850/60 space-y-2 text-[9px] font-mono">
+                            <span className="text-[8px] font-bold text-slate-400 uppercase tracking-wider block">Casing Stock Allocation</span>
+                            
+                            <div className="grid grid-cols-2 gap-2 text-slate-300">
+                              <div className="bg-slate-900/60 p-1.5 rounded border border-slate-850/40">
+                                <span className="text-[7.5px] text-slate-500 block">7" HIGH STOCK</span>
+                                <span className="font-bold">Pending: </span>
+                                <span className={pending7High > 0 ? "text-emerald-450 font-extrabold" : "text-slate-450"}>{pending7High.toFixed(1)}</span>
+                                <span className="text-[7.5px] text-slate-500"> ({supplier.pipe7HighCount} reg / {used7HighCount.toFixed(1)} used)</span>
+                              </div>
+                              
+                              <div className="bg-slate-900/60 p-1.5 rounded border border-slate-850/40">
+                                <span className="text-[7.5px] text-slate-500 block">7" MEDIUM STOCK</span>
+                                <span className="font-bold">Pending: </span>
+                                <span className={pending7Medium > 0 ? "text-emerald-450 font-extrabold" : "text-slate-450"}>{pending7Medium.toFixed(1)}</span>
+                                <span className="text-[7.5px] text-slate-500"> ({supplier.pipe7MediumCount} reg / {used7MediumCount.toFixed(1)} used)</span>
+                              </div>
+
+                              <div className="bg-slate-900/60 p-1.5 rounded border border-slate-850/40">
+                                <span className="text-[7.5px] text-slate-500 block">10" HIGH STOCK</span>
+                                <span className="font-bold">Pending: </span>
+                                <span className={pending10High > 0 ? "text-emerald-450 font-extrabold" : "text-slate-450"}>{pending10High.toFixed(1)}</span>
+                                <span className="text-[7.5px] text-slate-500"> ({supplier.pipe10HighCount} reg / {used10HighCount.toFixed(1)} used)</span>
+                              </div>
+
+                              <div className="bg-slate-900/60 p-1.5 rounded border border-slate-850/40">
+                                <span className="text-[7.5px] text-slate-500 block">10" MEDIUM STOCK</span>
+                                <span className="font-bold">Pending: </span>
+                                <span className={pending10Medium > 0 ? "text-emerald-450 font-extrabold" : "text-slate-450"}>{pending10Medium.toFixed(1)}</span>
+                                <span className="text-[7.5px] text-slate-500"> ({supplier.pipe10MediumCount} reg / {used10MediumCount.toFixed(1)} used)</span>
+                              </div>
+                            </div>
+
+                            {/* Summary Bar */}
+                            <div className="flex justify-between items-center text-[8.5px] border-t border-slate-850/80 pt-1.5 mt-1 font-bold">
+                              <span className="text-slate-500">TOTAL STOCK PENDING:</span>
+                              <span className="text-indigo-400 font-extrabold">{totalPending.toFixed(1)} Pipes</span>
+                            </div>
+                          </div>
+
+                          {/* View Usage History Log */}
+                          <div className="pt-0.5">
+                            <button
+                              type="button"
+                              onClick={() => setSelectedPipeForHistory(selectedPipeForHistory === supplier.id ? null : supplier.id)}
+                              className="w-full bg-slate-950 hover:bg-slate-900 border border-slate-850/80 text-slate-400 hover:text-white py-1 rounded-xl text-[9px] font-mono font-bold uppercase tracking-wider flex items-center justify-center gap-1"
+                            >
+                              <History className="w-3.5 h-3.5 text-indigo-450" />
+                              {selectedPipeForHistory === supplier.id ? "Close History Log" : "View Usage History Log"}
+                            </button>
+
+                            {selectedPipeForHistory === supplier.id && (
+                              <div className="bg-slate-950 p-2.5 rounded-xl border border-slate-850 mt-2 space-y-2 text-[9px] font-mono animate-fade-in">
+                                <span className="font-bold uppercase text-slate-500 tracking-wider block">Supplier Pipe Usage History</span>
+                                {billsForSupplier.length === 0 ? (
+                                  <p className="text-slate-500 italic">No usage history recorded. This stock is fully unused.</p>
+                                ) : (
+                                  <div className="space-y-2">
+                                    {billsForSupplier
+                                      .slice()
+                                      .sort((a, b) => new Date(b.billDate).getTime() - new Date(a.billDate).getTime())
+                                      .map((bill) => (
+                                        <div key={bill.id} className="bg-slate-900/60 p-2 rounded border border-slate-850/50 space-y-1">
+                                          <div className="flex justify-between font-bold text-slate-350">
+                                            <span>{bill.billDate}</span>
+                                            <span className="text-indigo-400">{bill.clientName}</span>
+                                          </div>
+                                          <p className="text-[8px] text-slate-500">Location: {bill.location || "-"}</p>
+                                          
+                                          {/* Feet breakdown */}
+                                          <div className="grid grid-cols-2 gap-1 text-[7.5px] text-slate-400 border-t border-slate-850/50 pt-1 mt-1">
+                                            {Number(bill.casing7HighFeet) > 0 && <span>7" High: {bill.casing7HighFeet} ft</span>}
+                                            {Number(bill.casing7MediumFeet) > 0 && <span>7" Med: {bill.casing7MediumFeet} ft</span>}
+                                            {Number(bill.casing10HighFeet) > 0 && <span>10" High: {bill.casing10HighFeet} ft</span>}
+                                            {Number(bill.casing10MediumFeet) > 0 && <span>10" Med: {bill.casing10MediumFeet} ft</span>}
+                                          </div>
+                                        </div>
+                                      ))}
+                                  </div>
+                                )}
+                              </div>
+                            )}
+                          </div>
                         </div>
                       );
                     })
@@ -6265,6 +6862,74 @@ export default function MobileBusiness({
                     </div>
                   </div>
 
+                  {/* CASING STOCK STOCK LEVEL INTEGRATION */}
+                  <div className="bg-slate-950/60 p-3 rounded-2xl border border-slate-850 space-y-2.5">
+                    <div className="flex items-center gap-1">
+                      <span className="text-[10px] font-mono font-bold text-indigo-400 uppercase tracking-wider block">Casing Pipe Stock Allocation</span>
+                    </div>
+
+                    <div>
+                      <label className="text-[8.5px] text-slate-400 font-bold uppercase block mb-1">Casing Pipe Supplier</label>
+                      <select
+                        value={billPipeSupplierId}
+                        onChange={(e) => setBillPipeSupplierId(e.target.value)}
+                        className="w-full bg-slate-950 p-2 rounded text-slate-200 border border-slate-850 font-mono text-[10px] focus:outline-none focus:border-indigo-500"
+                      >
+                        <option value="">No Casing Pipe Supplier Selected</option>
+                        {pipeEntries.map((p) => (
+                          <option key={p.id} value={p.id}>
+                            {p.companyName} ({p.location})
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+
+                    {billPipeSupplierId && (
+                      <div className="grid grid-cols-2 gap-2 text-[9px] font-mono animate-fade-in">
+                        <div className="space-y-1">
+                          <label className="text-[8px] text-slate-500 block">7" HIGH QUALITY FEET USED</label>
+                          <input
+                            type="number"
+                            min={0}
+                            value={billCasing7HighFeet}
+                            onChange={(e) => setBillCasing7HighFeet(Math.max(0, Number(e.target.value)))}
+                            className="w-full bg-slate-950 p-1.5 rounded text-slate-200 border border-slate-850 text-center font-bold"
+                          />
+                        </div>
+                        <div className="space-y-1">
+                          <label className="text-[8px] text-slate-500 block">7" MEDIUM QUALITY FEET USED</label>
+                          <input
+                            type="number"
+                            min={0}
+                            value={billCasing7MediumFeet}
+                            onChange={(e) => setBillCasing7MediumFeet(Math.max(0, Number(e.target.value)))}
+                            className="w-full bg-slate-950 p-1.5 rounded text-slate-200 border border-slate-850 text-center font-bold"
+                          />
+                        </div>
+                        <div className="space-y-1">
+                          <label className="text-[8px] text-slate-500 block">10" HIGH QUALITY FEET USED</label>
+                          <input
+                            type="number"
+                            min={0}
+                            value={billCasing10HighFeet}
+                            onChange={(e) => setBillCasing10HighFeet(Math.max(0, Number(e.target.value)))}
+                            className="w-full bg-slate-950 p-1.5 rounded text-slate-200 border border-slate-850 text-center font-bold"
+                          />
+                        </div>
+                        <div className="space-y-1">
+                          <label className="text-[8px] text-slate-500 block">10" MEDIUM QUALITY FEET USED</label>
+                          <input
+                            type="number"
+                            min={0}
+                            value={billCasing10MediumFeet}
+                            onChange={(e) => setBillCasing10MediumFeet(Math.max(0, Number(e.target.value)))}
+                            className="w-full bg-slate-950 p-1.5 rounded text-slate-200 border border-slate-850 text-center font-bold"
+                          />
+                        </div>
+                      </div>
+                    )}
+                  </div>
+
                   <div className="grid grid-cols-2 gap-2 text-[10px]">
                     <div>
                       <label className="text-[9px] text-slate-400 block uppercase font-mono font-bold">BATTA FEE (Rs.)</label>
@@ -6994,6 +7659,7 @@ export default function MobileBusiness({
                 deleteConfirmation.type === "fuel" ? "fuel log" :
                 deleteConfirmation.type === "service" ? "service log" :
                 deleteConfirmation.type === "bit" ? "bit entry" :
+                deleteConfirmation.type === "pipe" ? "pipe/supplier entry" :
                 "materials purchase entry"
               } <strong className="text-white">'{deleteConfirmation.name}'</strong>?
             </p>

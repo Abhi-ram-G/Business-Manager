@@ -184,6 +184,49 @@ class HammerUpdate(BaseModel):
     usage_history: list[dict[str, Any]] | None = None
 
 
+class PipeEntryCreate(BaseModel):
+    id: str
+    company_name: str
+    location: str
+    date_entry: dt_date | None = None
+    pipe_7_high_count: int = 0
+    pipe_7_high_rate: float = 0.0
+    pipe_7_high_total: float = 0.0
+    pipe_7_medium_count: int = 0
+    pipe_7_medium_rate: float = 0.0
+    pipe_7_medium_total: float = 0.0
+    pipe_10_high_count: int = 0
+    pipe_10_high_rate: float = 0.0
+    pipe_10_high_total: float = 0.0
+    pipe_10_medium_count: int = 0
+    pipe_10_medium_rate: float = 0.0
+    pipe_10_medium_total: float = 0.0
+    grand_total: float = 0.0
+    discount_amount: float = 0.0
+    grand_price: float = 0.0
+
+
+class PipeEntryUpdate(BaseModel):
+    company_name: str | None = None
+    location: str | None = None
+    date_entry: dt_date | None = None
+    pipe_7_high_count: int | None = None
+    pipe_7_high_rate: float | None = None
+    pipe_7_high_total: float | None = None
+    pipe_7_medium_count: int | None = None
+    pipe_7_medium_rate: float | None = None
+    pipe_7_medium_total: float | None = None
+    pipe_10_high_count: int | None = None
+    pipe_10_high_rate: float | None = None
+    pipe_10_high_total: float | None = None
+    pipe_10_medium_count: int | None = None
+    pipe_10_medium_rate: float | None = None
+    pipe_10_medium_total: float | None = None
+    grand_total: float | None = None
+    discount_amount: float | None = None
+    grand_price: float | None = None
+
+
 class BusinessBillCreate(BaseModel):
     id: str
     invoice_no: str | None = None
@@ -226,6 +269,11 @@ class BusinessBillCreate(BaseModel):
     customer_paid: float | None = 0.0
     payment_date: dt_date | None = None
     payments: list[dict[str, Any]] | None = None
+    pipe_supplier_id: str | None = None
+    casing_7_high_feet: float | None = 0.0
+    casing_7_medium_feet: float | None = 0.0
+    casing_10_high_feet: float | None = 0.0
+    casing_10_medium_feet: float | None = 0.0
 
 
 
@@ -271,6 +319,11 @@ class BusinessBillUpdate(BaseModel):
     customer_paid: float | None = None
     payment_date: dt_date | None = None
     payments: list[dict[str, Any]] | None = None
+    pipe_supplier_id: str | None = None
+    casing_7_high_feet: float | None = None
+    casing_7_medium_feet: float | None = None
+    casing_10_high_feet: float | None = None
+    casing_10_medium_feet: float | None = None
 
 
 

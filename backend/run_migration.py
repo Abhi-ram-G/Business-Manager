@@ -41,6 +41,13 @@ SQL_STATEMENTS = [
     "ALTER TABLE business_bills ADD COLUMN IF NOT EXISTS payments json DEFAULT '[]';",
     "CREATE TABLE IF NOT EXISTS hammer_entries (id VARCHAR(50) PRIMARY KEY, hammer_no VARCHAR(50) NOT NULL, brand VARCHAR(100) NOT NULL, date_entry DATE, rate NUMERIC(10, 2) DEFAULT 0.00, capable_feet_depth INTEGER DEFAULT 950, is_paid BOOLEAN DEFAULT FALSE, casing_type VARCHAR(50), usage_history JSON DEFAULT '[]', created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP, updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP);",
     "ALTER TABLE hammer_entries ADD COLUMN IF NOT EXISTS updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP;",
+    "CREATE TABLE IF NOT EXISTS pipe_entries (id VARCHAR(50) PRIMARY KEY, company_name VARCHAR(150) NOT NULL, location VARCHAR(200) NOT NULL, date_entry DATE, pipe_7_high_count INT DEFAULT 0, pipe_7_high_rate NUMERIC(10, 2) DEFAULT 0.00, pipe_7_high_total NUMERIC(12, 2) DEFAULT 0.00, pipe_7_medium_count INT DEFAULT 0, pipe_7_medium_rate NUMERIC(10, 2) DEFAULT 0.00, pipe_7_medium_total NUMERIC(12, 2) DEFAULT 0.00, pipe_10_high_count INT DEFAULT 0, pipe_10_high_rate NUMERIC(10, 2) DEFAULT 0.00, pipe_10_high_total NUMERIC(12, 2) DEFAULT 0.00, pipe_10_medium_count INT DEFAULT 0, pipe_10_medium_rate NUMERIC(10, 2) DEFAULT 0.00, pipe_10_medium_total NUMERIC(12, 2) DEFAULT 0.00, grand_total NUMERIC(12, 2) DEFAULT 0.00, discount_amount NUMERIC(10, 2) DEFAULT 0.00, grand_price NUMERIC(12, 2) DEFAULT 0.00, created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP, updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP);",
+    "ALTER TABLE pipe_entries ADD COLUMN IF NOT EXISTS updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP;",
+    "ALTER TABLE business_bills ADD COLUMN IF NOT EXISTS pipe_supplier_id VARCHAR(50);",
+    "ALTER TABLE business_bills ADD COLUMN IF NOT EXISTS casing_7_high_feet NUMERIC(10, 2) DEFAULT 0.00;",
+    "ALTER TABLE business_bills ADD COLUMN IF NOT EXISTS casing_7_medium_feet NUMERIC(10, 2) DEFAULT 0.00;",
+    "ALTER TABLE business_bills ADD COLUMN IF NOT EXISTS casing_10_high_feet NUMERIC(10, 2) DEFAULT 0.00;",
+    "ALTER TABLE business_bills ADD COLUMN IF NOT EXISTS casing_10_medium_feet NUMERIC(10, 2) DEFAULT 0.00;",
 ]
 
 print(f"Connecting to database...")

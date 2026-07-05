@@ -138,6 +138,39 @@ class Hammer(Base, TimestampMixin):
     usage_history: Mapped[list[dict[str, Any]] | None] = mapped_column(JSON)
 
 
+class PipeEntry(Base, TimestampMixin):
+    __tablename__ = "pipe_entries"
+
+    id: Mapped[str] = mapped_column(String(50), primary_key=True)
+    company_name: Mapped[str] = mapped_column(String(150), nullable=False)
+    location: Mapped[str] = mapped_column(String(200), nullable=False)
+    date_entry: Mapped[date | None] = mapped_column(Date)
+    
+    # 7 inch High Quality
+    pipe_7_high_count: Mapped[int] = mapped_column(Integer, default=0)
+    pipe_7_high_rate: Mapped[float] = mapped_column(Numeric(10, 2), default=0.00)
+    pipe_7_high_total: Mapped[float] = mapped_column(Numeric(12, 2), default=0.00)
+
+    # 7 inch Medium Quality
+    pipe_7_medium_count: Mapped[int] = mapped_column(Integer, default=0)
+    pipe_7_medium_rate: Mapped[float] = mapped_column(Numeric(10, 2), default=0.00)
+    pipe_7_medium_total: Mapped[float] = mapped_column(Numeric(12, 2), default=0.00)
+
+    # 10 inch High Quality
+    pipe_10_high_count: Mapped[int] = mapped_column(Integer, default=0)
+    pipe_10_high_rate: Mapped[float] = mapped_column(Numeric(10, 2), default=0.00)
+    pipe_10_high_total: Mapped[float] = mapped_column(Numeric(12, 2), default=0.00)
+
+    # 10 inch Medium Quality
+    pipe_10_medium_count: Mapped[int] = mapped_column(Integer, default=0)
+    pipe_10_medium_rate: Mapped[float] = mapped_column(Numeric(10, 2), default=0.00)
+    pipe_10_medium_total: Mapped[float] = mapped_column(Numeric(12, 2), default=0.00)
+
+    grand_total: Mapped[float] = mapped_column(Numeric(12, 2), default=0.00)
+    discount_amount: Mapped[float] = mapped_column(Numeric(10, 2), default=0.00)
+    grand_price: Mapped[float] = mapped_column(Numeric(12, 2), default=0.00)
+
+
 class BusinessBill(Base, TimestampMixin):
     __tablename__ = "business_bills"
 
@@ -182,6 +215,11 @@ class BusinessBill(Base, TimestampMixin):
     customer_paid: Mapped[float | None] = mapped_column(Numeric(10, 2), default=0.00)
     payment_date: Mapped[date | None] = mapped_column(Date)
     payments: Mapped[list[dict[str, Any]] | None] = mapped_column(JSON)
+    pipe_supplier_id: Mapped[str | None] = mapped_column(String(50))
+    casing_7_high_feet: Mapped[float | None] = mapped_column(Numeric(10, 2), default=0.00)
+    casing_7_medium_feet: Mapped[float | None] = mapped_column(Numeric(10, 2), default=0.00)
+    casing_10_high_feet: Mapped[float | None] = mapped_column(Numeric(10, 2), default=0.00)
+    casing_10_medium_feet: Mapped[float | None] = mapped_column(Numeric(10, 2), default=0.00)
 
 
 

@@ -57,6 +57,7 @@ import {
   Vehicle, 
   BitEntry,
   HammerEntry,
+  PipeEntry,
   BusinessBill,
   FuelEntry, 
   TripRecord, 
@@ -680,6 +681,7 @@ export default function App() {
   });
 
   const [hammerEntries, setHammerEntries] = useState<HammerEntry[]>([]);
+  const [pipeEntries, setPipeEntries] = useState<PipeEntry[]>([]);
 
   const [businessBills, setBusinessBills] = useState<BusinessBill[]>(() => {
     const stored = loadStoredArray<BusinessBill>("srs_business_bills", []);
@@ -772,6 +774,7 @@ export default function App() {
       setIncomeEntries(snapshot.incomeEntries);
       setFamilyExpenses(snapshot.familyExpenses);
       setHammerEntries(snapshot.hammerEntries || []);
+      setPipeEntries(snapshot.pipeEntries || []);
       setCategoryBudgets((prev) => (snapshot.categoryBudgets.length > 0 ? snapshot.categoryBudgets : prev));
       setDocuments((prev) => (snapshot.documents.length > 0 ? snapshot.documents : prev));
       setNotifications((prev) => (snapshot.notifications.length > 0 ? snapshot.notifications : prev));
@@ -2378,6 +2381,8 @@ export default function App() {
                             setBitEntries={setBitEntries}
                             hammerEntries={hammerEntries}
                             setHammerEntries={setHammerEntries}
+                            pipeEntries={pipeEntries}
+                            setPipeEntries={setPipeEntries}
                             businessBills={businessBills}
                               setBusinessBills={setBusinessBills}
                               fuelEntries={fuelEntries}
@@ -2842,6 +2847,8 @@ export default function App() {
                             setBitEntries={setBitEntries}
                             hammerEntries={hammerEntries}
                             setHammerEntries={setHammerEntries}
+                            pipeEntries={pipeEntries}
+                            setPipeEntries={setPipeEntries}
                             fuelEntries={fuelEntries}
                             setFuelEntries={setFuelEntries}
                             salaryPayments={salaryPayments}

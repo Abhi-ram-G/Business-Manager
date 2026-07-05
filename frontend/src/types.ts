@@ -134,6 +134,38 @@ export interface HammerEntry {
   usageHistory: HammerUsageRecord[];
 }
 
+export interface PipeEntry {
+  id: string;
+  companyName: string;
+  location: string;
+  dateEntry?: string;
+  
+  // 7 inch High Quality
+  pipe7HighCount: number;
+  pipe7HighRate: number;
+  pipe7HighTotal: number;
+
+  // 7 inch Medium Quality
+  pipe7MediumCount: number;
+  pipe7MediumRate: number;
+  pipe7MediumTotal: number;
+
+  // 10 inch High Quality
+  pipe10HighCount: number;
+  pipe10HighRate: number;
+  pipe10HighTotal: number;
+
+  // 10 inch Medium Quality
+  pipe10MediumCount: number;
+  pipe10MediumRate: number;
+  pipe10MediumTotal: number;
+
+  grandTotal: number;
+  discountAmount: number;
+  grandPrice: number;
+}
+
+
 export interface BusinessBill {
   id: string;
   invoiceNo: string;
@@ -179,6 +211,11 @@ export interface BusinessBill {
   usedCasing10HammerId?: string;
   usedCasing7HammerId?: string;
   hammerFeetUsed?: number;
+  pipeSupplierId?: string;
+  casing7HighFeet?: number;
+  casing7MediumFeet?: number;
+  casing10HighFeet?: number;
+  casing10MediumFeet?: number;
 }
 
 export interface FuelEntry {

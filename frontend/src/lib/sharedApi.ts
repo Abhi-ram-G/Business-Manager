@@ -16,6 +16,7 @@ import {
   TripRecord,
   Vehicle,
   HammerEntry,
+  PipeEntry,
 } from "../types";
 
 type ApiRecord = Record<string, unknown>;
@@ -108,6 +109,28 @@ export const mapHammerFromApi = (item: ApiRecord): HammerEntry => ({
   usageHistory: Array.isArray(item.usage_history) ? (item.usage_history as any) : [],
 });
 
+export const mapPipeFromApi = (item: ApiRecord): PipeEntry => ({
+  id: String(item.id ?? ""),
+  companyName: String(item.company_name ?? ""),
+  location: String(item.location ?? ""),
+  dateEntry: item.date_entry ? String(item.date_entry) : undefined,
+  pipe7HighCount: toNumber(item.pipe_7_high_count ?? 0),
+  pipe7HighRate: toNumber(item.pipe_7_high_rate ?? 0),
+  pipe7HighTotal: toNumber(item.pipe_7_high_total ?? 0),
+  pipe7MediumCount: toNumber(item.pipe_7_medium_count ?? 0),
+  pipe7MediumRate: toNumber(item.pipe_7_medium_rate ?? 0),
+  pipe7MediumTotal: toNumber(item.pipe_7_medium_total ?? 0),
+  pipe10HighCount: toNumber(item.pipe_10_high_count ?? 0),
+  pipe10HighRate: toNumber(item.pipe_10_high_rate ?? 0),
+  pipe10HighTotal: toNumber(item.pipe_10_high_total ?? 0),
+  pipe10MediumCount: toNumber(item.pipe_10_medium_count ?? 0),
+  pipe10MediumRate: toNumber(item.pipe_10_medium_rate ?? 0),
+  pipe10MediumTotal: toNumber(item.pipe_10_medium_total ?? 0),
+  grandTotal: toNumber(item.grand_total ?? 0),
+  discountAmount: toNumber(item.discount_amount ?? 0),
+  grandPrice: toNumber(item.grand_price ?? 0),
+});
+
 export const mapBusinessBillFromApi = (item: ApiRecord): BusinessBill => ({
   id: String(item.id ?? ""),
   invoiceNo: String(item.invoice_no ?? ""),
@@ -150,6 +173,11 @@ export const mapBusinessBillFromApi = (item: ApiRecord): BusinessBill => ({
   customerPaid: item.customer_paid != null ? toNumber(item.customer_paid) : 0,
   paymentDate: item.payment_date ? String(item.payment_date) : undefined,
   payments: Array.isArray(item.payments) ? (item.payments as BusinessBill["payments"]) : [],
+  pipeSupplierId: item.pipe_supplier_id ? String(item.pipe_supplier_id) : undefined,
+  casing7HighFeet: item.casing_7_high_feet != null ? toNumber(item.casing_7_high_feet) : 0,
+  casing7MediumFeet: item.casing_7_medium_feet != null ? toNumber(item.casing_7_medium_feet) : 0,
+  casing10HighFeet: item.casing_10_high_feet != null ? toNumber(item.casing_10_high_feet) : 0,
+  casing10MediumFeet: item.casing_10_medium_feet != null ? toNumber(item.casing_10_medium_feet) : 0,
   source: "server",
 });
 
@@ -367,6 +395,28 @@ export const toHammerApiPayload = (hammer: HammerEntry) => ({
   usage_history: hammer.usageHistory ?? [],
 });
 
+export const toPipeApiPayload = (pipe: PipeEntry) => ({
+  id: pipe.id,
+  company_name: pipe.companyName,
+  location: pipe.location,
+  date_entry: pipe.dateEntry ?? null,
+  pipe_7_high_count: pipe.pipe7HighCount,
+  pipe_7_high_rate: pipe.pipe7HighRate,
+  pipe_7_high_total: pipe.pipe7HighTotal,
+  pipe_7_medium_count: pipe.pipe7MediumCount,
+  pipe_7_medium_rate: pipe.pipe7MediumRate,
+  pipe_7_medium_total: pipe.pipe7MediumTotal,
+  pipe_10_high_count: pipe.pipe10HighCount,
+  pipe_10_high_rate: pipe.pipe10HighRate,
+  pipe_10_high_total: pipe.pipe10HighTotal,
+  pipe_10_medium_count: pipe.pipe10MediumCount,
+  pipe_10_medium_rate: pipe.pipe10MediumRate,
+  pipe_10_medium_total: pipe.pipe10MediumTotal,
+  grand_total: pipe.grandTotal,
+  discount_amount: pipe.discountAmount,
+  grand_price: pipe.grandPrice,
+});
+
 export const toBusinessBillApiPayload = (bill: BusinessBill) => ({
   id: bill.id,
   invoice_no: bill.invoiceNo,
@@ -409,6 +459,11 @@ export const toBusinessBillApiPayload = (bill: BusinessBill) => ({
   customer_paid: bill.customerPaid ?? 0,
   payment_date: bill.paymentDate ?? null,
   payments: bill.payments ?? [],
+  pipe_supplier_id: bill.pipeSupplierId ?? null,
+  casing_7_high_feet: bill.casing7HighFeet ?? 0,
+  casing_7_medium_feet: bill.casing7MediumFeet ?? 0,
+  casing_10_high_feet: bill.casing10HighFeet ?? 0,
+  casing_10_medium_feet: bill.casing10MediumFeet ?? 0,
 });
 
 export const toLoanGivenApiPayload = (loan: LoanGiven) => ({
@@ -507,7 +562,7 @@ export const toSalaryPaymentApiPayload = (payment: SalaryPayment) => ({
 });
 
 export const fetchSharedSnapshot = async (apiBaseUrl: string) => {
-  const [labours, attendance, salaryPayments, vehicles, bitEntries, businessBills, fuelEntries, trips, loansGiven, loansReceived, familyMembers, incomeEntries, familyExpenses, categoryBudgets, documents, notifications, hammers] = await Promise.all([
+  const [labours, attendance, salaryPayments, vehicles, bitEntries, businessBills, fuelEntries, trips, loansGiven, loansReceived, familyMembers, incomeEntries, familyExpenses, categoryBudgets, documents, notifications, hammers, pipes] = await Promise.all([
     requestJson(apiBaseUrl, "/api/v1/labours"),
     requestJson(apiBaseUrl, "/api/v1/labours/attendance"),
     requestJson(apiBaseUrl, "/api/v1/labours/salary-payments"),
@@ -525,6 +580,7 @@ export const fetchSharedSnapshot = async (apiBaseUrl: string) => {
     requestJson(apiBaseUrl, "/api/v1/documents"),
     requestJson(apiBaseUrl, "/api/v1/notifications"),
     requestJson(apiBaseUrl, "/api/v1/business/hammers"),
+    requestJson(apiBaseUrl, "/api/v1/business/pipes"),
   ]);
 
   return {
@@ -545,6 +601,7 @@ export const fetchSharedSnapshot = async (apiBaseUrl: string) => {
     documents: Array.isArray(documents) ? documents.map(mapDocumentFromApi) : [],
     notifications: Array.isArray(notifications) ? notifications.map(mapNotificationFromApi) : [],
     hammerEntries: Array.isArray(hammers) ? hammers.map(mapHammerFromApi) : [],
+    pipeEntries: Array.isArray(pipes) ? pipes.map(mapPipeFromApi) : [],
   };
 };
 
