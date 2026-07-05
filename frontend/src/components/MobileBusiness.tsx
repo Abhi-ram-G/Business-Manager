@@ -6682,33 +6682,57 @@ export default function MobileBusiness({
     onClick={() => {
                             void (async () => {
                               const nextStatus = b.status === "Paid" ? "Pending" : "Paid";
+                              let updatedFields: Partial<BusinessBill> = { status: nextStatus };
+                              
+                              if (nextStatus === "Paid") {
+                                const remaining = Math.max(0, b.amount - (b.customerPaid || 0));
+                                if (remaining > 0) {
+                                  const todayStr = new Date().toISOString().split("T")[0];
+                                  const newPayment = {
+                                    id: `pay-mark-paid-${Date.now()}`,
+                                    date: todayStr,
+                                    amount: remaining
+                                  };
+                                  updatedFields = {
+                                    status: "Paid",
+                                    customerPaid: b.amount,
+                                    paymentDate: todayStr,
+                                    payments: [...(b.payments || []), newPayment]
+                                  };
+                                }
+                              }
+
                               if (b.source !== "server") {
                                 setBusinessBills((prev) =>
-                                  prev.map((item) => (item.id === b.id ? { ...item, status: nextStatus } : item))
+                                  prev.map((item) => (item.id === b.id ? { ...item, ...updatedFields } : item))
                                 );
-                                triggerOnlineSync(`Toggled status of Invoice ${b.invoiceNo} (local only)`);
+                                triggerOnlineSync(`Marked Invoice ${b.invoiceNo} as ${nextStatus} (local only)`);
                                 return;
                               }
                               try {
+                                const payload = toBusinessBillApiPayload({
+                                  ...b,
+                                  ...updatedFields
+                                });
                                 const response = await requestJson(apiBaseUrl, `/api/v1/business/bills/${b.id}`, {
                                   method: "PUT",
                                   headers: { "Content-Type": "application/json" },
-                                  body: JSON.stringify({ status: nextStatus }),
+                                  body: JSON.stringify(payload),
                                 });
                                 const savedBill = mapBusinessBillFromApi(response);
                                 setBusinessBills((prev) => prev.map((item) => (item.id === b.id ? savedBill : item)));
                                 await onSharedDataChanged?.();
-                                triggerOnlineSync(`Toggled status of Invoice ${savedBill.invoiceNo}`);
+                                triggerOnlineSync(`Marked Invoice ${savedBill.invoiceNo} as ${nextStatus}`);
                               } catch (error) {
                                 console.error(error);
                                 const message = error instanceof Error ? error.message.toLowerCase() : "";
                                 if (message.includes("not found") || message.includes("404")) {
                                   setBusinessBills((prev) =>
                                     prev.map((item) =>
-                                      item.id === b.id ? { ...item, status: nextStatus } : item
+                                      item.id === b.id ? { ...item, ...updatedFields } : item
                                     )
                                   );
-                                  triggerOnlineSync(`Toggled status of Invoice ${b.invoiceNo} (local sync)`);
+                                  triggerOnlineSync(`Marked Invoice ${b.invoiceNo} as ${nextStatus} (local sync)`);
                                   return;
                                 }
                                 alert("Unable to update bill status right now.");
