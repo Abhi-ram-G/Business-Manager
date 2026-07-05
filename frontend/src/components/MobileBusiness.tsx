@@ -243,6 +243,7 @@ export default function MobileBusiness({
   const [pipe10MediumRate, setPipe10MediumRate] = useState<number>(0);
   const [pipeDiscountAmount, setPipeDiscountAmount] = useState<number>(0);
   const [selectedPipeForHistory, setSelectedPipeForHistory] = useState<string | null>(null);
+  const [showGlobalPipeHistory, setShowGlobalPipeHistory] = useState(false);
 
   // Bill form: bit/hammer selection (internal use only — NOT printed in PDF)
   const [selectedBitId, setSelectedBitId] = useState<string>("");
@@ -4153,6 +4154,129 @@ export default function MobileBusiness({
                   <div className="text-2xl font-black text-emerald-400 mt-1">₹{pipeEntries.reduce((sum, p) => sum + Number(p.grandPrice || 0), 0).toLocaleString()}</div>
                 </div>
               </div>
+
+              {/* GLOBAL CASING STOCK ALLOCATION & HISTORY */}
+              {(() => {
+                // Calculate stock counts across all suppliers
+                const globalReg7High = pipeEntries.reduce((sum, p) => sum + Number(p.pipe7HighCount || 0), 0);
+                const globalReg7Medium = pipeEntries.reduce((sum, p) => sum + Number(p.pipe7MediumCount || 0), 0);
+                const globalReg10High = pipeEntries.reduce((sum, p) => sum + Number(p.pipe10HighCount || 0), 0);
+                const globalReg10Medium = pipeEntries.reduce((sum, p) => sum + Number(p.pipe10MediumCount || 0), 0);
+
+                const globalUsed7HighFeet = businessBills.reduce((sum, b) => sum + Number(b.casing7HighFeet || 0), 0);
+                const globalUsed7MediumFeet = businessBills.reduce((sum, b) => sum + Number(b.casing7MediumFeet || 0), 0);
+                const globalUsed10HighFeet = businessBills.reduce((sum, b) => sum + Number(b.casing10HighFeet || 0), 0);
+                const globalUsed10MediumFeet = businessBills.reduce((sum, b) => sum + Number(b.casing10MediumFeet || 0), 0);
+
+                const globalUsed7HighCount = globalUsed7HighFeet / 20;
+                const globalUsed7MediumCount = globalUsed7MediumFeet / 20;
+                const globalUsed10HighCount = globalUsed10HighFeet / 20;
+                const globalUsed10MediumCount = globalUsed10MediumFeet / 20;
+
+                const globalPending7High = Math.max(0, globalReg7High - globalUsed7HighCount);
+                const globalPending7Medium = Math.max(0, globalReg7Medium - globalUsed7MediumCount);
+                const globalPending10High = Math.max(0, globalReg10High - globalUsed10HighCount);
+                const globalPending10Medium = Math.max(0, globalReg10Medium - globalUsed10MediumCount);
+
+                const globalTotalPending = globalPending7High + globalPending7Medium + globalPending10High + globalPending10Medium;
+
+                // Find all bills using any casing
+                const billsWithUsage = businessBills.filter(
+                  (b) =>
+                    Number(b.casing7HighFeet || 0) > 0 ||
+                    Number(b.casing7MediumFeet || 0) > 0 ||
+                    Number(b.casing10HighFeet || 0) > 0 ||
+                    Number(b.casing10MediumFeet || 0) > 0
+                );
+
+                return (
+                  <div className="bg-slate-900 border border-slate-850 rounded-2xl p-3.5 space-y-3">
+                    <div className="bg-slate-950/40 p-2.5 rounded-xl border border-slate-850/60 space-y-2 text-[9px] font-mono">
+                      <span className="text-[8px] font-bold text-slate-400 uppercase tracking-wider block">Casing Stock Allocation</span>
+                      
+                      <div className="grid grid-cols-2 gap-2 text-slate-300">
+                        <div className="bg-slate-900/60 p-1.5 rounded border border-slate-850/40">
+                          <span className="text-[7.5px] text-slate-500 block">7" HIGH STOCK</span>
+                          <span className="font-bold">Pending: </span>
+                          <span className={globalPending7High > 0 ? "text-emerald-450 font-extrabold" : "text-slate-450"}>{globalPending7High.toFixed(1)}</span>
+                          <span className="text-[7.5px] text-slate-500"> ({globalReg7High} reg / {globalUsed7HighCount.toFixed(1)} used)</span>
+                        </div>
+                        
+                        <div className="bg-slate-900/60 p-1.5 rounded border border-slate-850/40">
+                          <span className="text-[7.5px] text-slate-500 block">7" MEDIUM STOCK</span>
+                          <span className="font-bold">Pending: </span>
+                          <span className={globalPending7Medium > 0 ? "text-emerald-450 font-extrabold" : "text-slate-450"}>{globalPending7Medium.toFixed(1)}</span>
+                          <span className="text-[7.5px] text-slate-500"> ({globalReg7Medium} reg / {globalUsed7MediumCount.toFixed(1)} used)</span>
+                        </div>
+
+                        <div className="bg-slate-900/60 p-1.5 rounded border border-slate-850/40">
+                          <span className="text-[7.5px] text-slate-500 block">10" HIGH STOCK</span>
+                          <span className="font-bold">Pending: </span>
+                          <span className={globalPending10High > 0 ? "text-emerald-450 font-extrabold" : "text-slate-450"}>{globalPending10High.toFixed(1)}</span>
+                          <span className="text-[7.5px] text-slate-500"> ({globalReg10High} reg / {globalUsed10HighCount.toFixed(1)} used)</span>
+                        </div>
+
+                        <div className="bg-slate-900/60 p-1.5 rounded border border-slate-850/40">
+                          <span className="text-[7.5px] text-slate-500 block">10" MEDIUM STOCK</span>
+                          <span className="font-bold">Pending: </span>
+                          <span className={globalPending10Medium > 0 ? "text-emerald-450 font-extrabold" : "text-slate-450"}>{globalPending10Medium.toFixed(1)}</span>
+                          <span className="text-[7.5px] text-slate-500"> ({globalReg10Medium} reg / {globalUsed10MediumCount.toFixed(1)} used)</span>
+                        </div>
+                      </div>
+
+                      {/* Summary Bar */}
+                      <div className="flex justify-between items-center text-[8.5px] border-t border-slate-850/80 pt-1.5 mt-1 font-bold">
+                        <span className="text-slate-500">TOTAL STOCK PENDING:</span>
+                        <span className="text-indigo-400 font-extrabold">{globalTotalPending.toFixed(1)} Pipes</span>
+                      </div>
+                    </div>
+
+                    {/* View Usage History Log */}
+                    <div className="pt-0.5">
+                      <button
+                        type="button"
+                        onClick={() => setShowGlobalPipeHistory(!showGlobalPipeHistory)}
+                        className="w-full bg-slate-950 hover:bg-slate-900 border border-slate-850/80 text-slate-400 hover:text-white py-1 rounded-xl text-[9px] font-mono font-bold uppercase tracking-wider flex items-center justify-center gap-1"
+                      >
+                        <History className="w-3.5 h-3.5 text-indigo-455" />
+                        {showGlobalPipeHistory ? "Close History Log" : "View Usage History Log"}
+                      </button>
+
+                      {showGlobalPipeHistory && (
+                        <div className="bg-slate-950 p-2.5 rounded-xl border border-slate-850 mt-2 space-y-2 text-[9px] font-mono animate-fade-in">
+                          <span className="font-bold uppercase text-slate-500 tracking-wider block">Global Pipe Usage History</span>
+                          {billsWithUsage.length === 0 ? (
+                            <p className="text-slate-500 italic">No usage history recorded.</p>
+                          ) : (
+                            <div className="space-y-2">
+                              {billsWithUsage
+                                .slice()
+                                .sort((a, b) => new Date(b.billDate).getTime() - new Date(a.billDate).getTime())
+                                .map((bill) => (
+                                  <div key={bill.id} className="bg-slate-900/60 p-2 rounded border border-slate-850/50 space-y-1">
+                                    <div className="flex justify-between font-bold text-slate-350">
+                                      <span>{bill.billDate}</span>
+                                      <span className="text-indigo-400">{bill.clientName}</span>
+                                    </div>
+                                    <p className="text-[8px] text-slate-500">Location: {bill.location || "-"}</p>
+                                    
+                                    {/* Feet breakdown */}
+                                    <div className="grid grid-cols-2 gap-1 text-[7.5px] text-slate-400 border-t border-slate-850/50 pt-1 mt-1">
+                                      {Number(bill.casing7HighFeet) > 0 && <span>7" High: {bill.casing7HighFeet} ft</span>}
+                                      {Number(bill.casing7MediumFeet) > 0 && <span>7" Med: {bill.casing7MediumFeet} ft</span>}
+                                      {Number(bill.casing10HighFeet) > 0 && <span>10" High: {bill.casing10HighFeet} ft</span>}
+                                      {Number(bill.casing10MediumFeet) > 0 && <span>10" Med: {bill.casing10MediumFeet} ft</span>}
+                                    </div>
+                                  </div>
+                                ))}
+                            </div>
+                          )}
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                );
+              })()}
 
               {(isPipeFormOpen || editingPipeId) && (
                 <form onSubmit={handleSavePipe} className="bg-slate-900 border border-slate-800 rounded-2xl p-3 space-y-3 text-xs">
