@@ -244,6 +244,7 @@ export default function MobileBusiness({
   const [pipeDiscountAmount, setPipeDiscountAmount] = useState<number>(0);
   const [selectedPipeForHistory, setSelectedPipeForHistory] = useState<string | null>(null);
   const [showGlobalPipeHistory, setShowGlobalPipeHistory] = useState(false);
+  const [selectedBitForHistory, setSelectedBitForHistory] = useState<string | null>(null);
 
   // Bill form: bit/hammer selection (internal use only — NOT printed in PDF)
   const [selectedBitId, setSelectedBitId] = useState<string>("");
@@ -281,6 +282,15 @@ export default function MobileBusiness({
     const { id, name, type } = confirmation;
     if (type === "bill") {
       const billToDelete = businessBills.find((bill) => bill.id === id);
+      
+      // Clean up hammer entries local state
+      setHammerEntries((prev) => 
+        prev.map((h) => ({
+          ...h,
+          usageHistory: (h.usageHistory || []).filter((rec) => rec.billId !== id)
+        }))
+      );
+
       if (!billToDelete || billToDelete.source !== "server") {
         setBusinessBills((prev) => prev.filter((bill) => bill.id !== id));
         triggerOnlineSync(`DELETED BILL FOR ${name}`);
@@ -3838,38 +3848,102 @@ export default function MobileBusiness({
                       No bit entries in database
                     </div>
                   ) : (
-                    bitEntries.map((bit) => (
-                      <div key={bit.id} className="bg-slate-900 border border-slate-850 rounded-2xl p-3 flex items-center justify-between gap-3">
-                        <div className="min-w-0">
-                          <div className="flex flex-wrap items-center gap-1.5">
-                            <span className="text-[8px] uppercase tracking-wider font-bold text-indigo-400 font-mono">{bit.bitNo}</span>
-                            <span className="text-[8px] uppercase tracking-wider font-bold text-slate-500 font-mono">Size: {bit.sizeMm} mm</span>
-                            <span className="text-[8px] uppercase tracking-wider font-bold text-slate-500 font-mono">Button: {bit.buttonSizeMm ?? "-"} mm</span>
+                    bitEntries.map((bit) => {
+                      const billsForBit = businessBills.filter(b => b.usedBitId === bit.id);
+                      const usageRecords = billsForBit.map(b => {
+                        const isCustom = b.isCustomBill;
+                        const endFeet = isCustom ? (b.customEndingFeet || 950) : (b.finalDepth || 0);
+                        const c7 = b.casing7Feet || 0;
+                        const c10 = b.casing10Feet || 0;
+                        
+                        let feet = 0;
+                        if (b.billMode === "New") {
+                          feet = Math.max(0, endFeet - (c7 + c10));
+                        }
+                        return {
+                          id: b.id,
+                          date: b.billDate,
+                          clientName: b.clientName,
+                          location: b.location || "-",
+                          calculatedFeet: feet
+                        };
+                      }).filter(rec => rec.calculatedFeet > 0);
+
+                      const totalFeetUsed = usageRecords.reduce((sum, r) => sum + r.calculatedFeet, 0);
+
+                      return (
+                        <div key={bit.id} className="bg-slate-900 border border-slate-850 rounded-2xl p-3.5 space-y-3">
+                          <div className="flex items-center justify-between gap-3">
+                            <div className="min-w-0">
+                              <div className="flex flex-wrap items-center gap-1.5">
+                                <span className="text-[8px] uppercase tracking-wider font-bold text-indigo-400 font-mono">{bit.bitNo}</span>
+                                <span className="text-[8px] uppercase tracking-wider font-bold text-slate-500 font-mono">Size: {bit.sizeMm} mm</span>
+                                <span className="text-[8px] uppercase tracking-wider font-bold text-slate-500 font-mono">Button: {bit.buttonSizeMm ?? "-"} mm</span>
+                              </div>
+                              <h4 className="text-xs font-bold text-red-500 truncate mt-0.5">{bit.brand}</h4>
+                              <p className="text-[8.5px] text-slate-500 font-mono mt-1">Date: {bit.dateEntry || "-"}</p>
+                              <p className="text-[8.5px] text-slate-500 font-mono mt-0.5">Rate: ₹{Number(bit.rate || 0).toLocaleString()}</p>
+                              <p className="text-[8.5px] text-indigo-400 font-mono mt-0.5 font-bold">Usage: {totalFeetUsed} ft used</p>
+                            </div>
+                            <div className="flex items-center gap-1.5 shrink-0">
+                              <button
+                                type="button"
+                                onClick={() => handleOpenEditBit(bit)}
+                                className="p-1 bg-slate-950 text-slate-400 hover:text-white border border-slate-800 rounded"
+                                title="Edit bit"
+                              >
+                                <Edit className="w-3 h-3" />
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() => handleDeleteBit(bit.id, bit.bitNo)}
+                                className="p-1 bg-rose-950/40 text-rose-450 border border-rose-900/40 rounded"
+                                title="Delete bit"
+                              >
+                                <Trash2 className="w-3 h-3" />
+                              </button>
+                            </div>
                           </div>
-                          <h4 className="text-xs font-bold text-red-500 truncate mt-0.5">{bit.brand}</h4>
-                          <p className="text-[8.5px] text-slate-500 font-mono mt-1">Date: {bit.dateEntry || "-"}</p>
-                          <p className="text-[8.5px] text-slate-500 font-mono mt-1">Rate: ₹{Number(bit.rate || 0).toLocaleString()}</p>
+
+                          {/* View Usage History Log */}
+                          <div className="pt-0.5">
+                            <button
+                              type="button"
+                              onClick={() => setSelectedBitForHistory(selectedBitForHistory === bit.id ? null : bit.id)}
+                              className="w-full bg-slate-950 hover:bg-slate-900 border border-slate-850/80 text-slate-400 hover:text-white py-1 rounded-xl text-[9px] font-mono font-bold uppercase tracking-wider flex items-center justify-center gap-1"
+                            >
+                              <History className="w-3.5 h-3.5 text-indigo-450" />
+                              {selectedBitForHistory === bit.id ? "Hide History" : "View History"}
+                            </button>
+
+                            {selectedBitForHistory === bit.id && (
+                              <div className="bg-slate-950 p-2.5 rounded-xl border border-slate-850 mt-2 space-y-2 text-[9px] font-mono animate-fade-in">
+                                <span className="font-bold uppercase text-slate-500 tracking-wider block text-[8px]">Bit Usage History</span>
+                                {usageRecords.length === 0 ? (
+                                  <p className="text-slate-500 italic">No usage history recorded. This bit is fully unused.</p>
+                                ) : (
+                                  <div className="space-y-2">
+                                    {usageRecords
+                                      .slice()
+                                      .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
+                                      .map((rec) => (
+                                        <div key={rec.id} className="bg-slate-900/60 p-2 rounded border border-slate-850/50 space-y-1">
+                                          <div className="flex flex-wrap items-center gap-x-2 text-[8px] text-slate-350">
+                                            <span className="font-bold">{rec.date}</span>
+                                            <span className="text-indigo-400 font-extrabold">{rec.clientName}</span>
+                                            <span className="text-slate-500 font-medium">({rec.location})</span>
+                                            <span className="text-indigo-400 font-bold ml-auto">{rec.calculatedFeet} ft</span>
+                                          </div>
+                                        </div>
+                                      ))}
+                                  </div>
+                                )}
+                              </div>
+                            )}
+                          </div>
                         </div>
-                        <div className="flex items-center gap-1.5 shrink-0">
-                          <button
-                            type="button"
-                            onClick={() => handleOpenEditBit(bit)}
-                            className="p-1 bg-slate-950 text-slate-400 hover:text-white border border-slate-800 rounded"
-                            title="Edit bit"
-                          >
-                            <Edit className="w-3 h-3" />
-                          </button>
-                          <button
-                            type="button"
-                            onClick={() => handleDeleteBit(bit.id, bit.bitNo)}
-                            className="p-1 bg-rose-950/40 text-rose-450 border border-rose-900/40 rounded"
-                            title="Delete bit"
-                          >
-                            <Trash2 className="w-3 h-3" />
-                          </button>
-                        </div>
-                      </div>
-                    ))
+                      );
+                    })
                   )}
                 </div>
               </div>

@@ -632,6 +632,21 @@ def delete_business_bill(bill_id: str, db: Session = Depends(get_db)):
     bill = db.get(BusinessBill, bill_id)
     if not bill:
         raise HTTPException(status_code=404, detail="Business bill not found")
+    
+    # Clean up hammer usage history records that refer to this bill_id
+    hammers = db.execute(select(Hammer)).scalars().all()
+    for hammer in hammers:
+        if hammer.usage_history:
+            filtered_history = [
+                record for record in hammer.usage_history
+                if record.get("billId") != bill_id and record.get("bill_id") != bill_id
+            ]
+            if len(filtered_history) != len(hammer.usage_history):
+                hammer.usage_history = filtered_history
+                from sqlalchemy.orm.attributes import flag_modified
+                flag_modified(hammer, "usage_history")
+                db.add(hammer)
+
     db.delete(bill)
     db.commit()
 
