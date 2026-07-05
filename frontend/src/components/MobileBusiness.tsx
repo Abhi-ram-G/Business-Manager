@@ -6852,7 +6852,7 @@ export default function MobileBusiness({
                   <div className="grid grid-cols-1 gap-2 text-[10px] bg-slate-950/40 p-2.5 rounded-xl border border-slate-850 font-mono">
                     <div className="grid grid-cols-3 gap-2">
                       <div>
-                        <div className="text-[6px] text-red-500 font-bold uppercase block mb-1 whitespace-nowrap">10" HIGH DEPTH (FT)</div>
+                        <div className="text-[6px] text-red-500 font-bold uppercase block mb-1 whitespace-nowrap">10" H QLT(FT)</div>
                         <input
                           type="number"
                           min={0}
@@ -6866,7 +6866,7 @@ export default function MobileBusiness({
                         />
                       </div>
                       <div>
-                        <div className="text-[6px] text-red-500 font-bold uppercase block mb-1 whitespace-nowrap">10" MED DEPTH (FT)</div>
+                        <div className="text-[6px] text-red-500 font-bold uppercase block mb-1 whitespace-nowrap">10" M QLT(FT)</div>
                         <input
                           type="number"
                           min={0}
@@ -6915,7 +6915,7 @@ export default function MobileBusiness({
                   <div className="grid grid-cols-1 gap-2 text-[10px] bg-slate-950/40 p-2.5 rounded-xl border border-slate-850 font-mono">
                     <div className="grid grid-cols-3 gap-2">
                       <div>
-                        <div className="text-[6px] text-emerald-500 font-bold uppercase block mb-1 whitespace-nowrap">7" HIGH DEPTH (FT)</div>
+                        <div className="text-[6px] text-emerald-500 font-bold uppercase block mb-1 whitespace-nowrap">7" H QLT(FT)</div>
                         <input
                           type="number"
                           min={0}
@@ -6929,7 +6929,7 @@ export default function MobileBusiness({
                         />
                       </div>
                       <div>
-                        <div className="text-[6px] text-emerald-500 font-bold uppercase block mb-1 whitespace-nowrap">7" MED DEPTH (FT)</div>
+                        <div className="text-[6px] text-emerald-500 font-bold uppercase block mb-1 whitespace-nowrap">7" M QLT(FT)</div>
                         <input
                           type="number"
                           min={0}
