@@ -4199,28 +4199,24 @@ export default function MobileBusiness({
                           <span className="text-[7.5px] text-slate-500 block">7" HIGH STOCK</span>
                           <span className="font-bold">Pending: </span>
                           <span className={globalPending7High > 0 ? "text-emerald-450 font-extrabold" : "text-slate-450"}>{globalPending7High.toFixed(1)}</span>
-                          <span className="text-[7.5px] text-slate-500"> ({globalReg7High} reg / {globalUsed7HighCount.toFixed(1)} used)</span>
                         </div>
                         
                         <div className="bg-slate-900/60 p-1.5 rounded border border-slate-850/40">
                           <span className="text-[7.5px] text-slate-500 block">7" MEDIUM STOCK</span>
                           <span className="font-bold">Pending: </span>
                           <span className={globalPending7Medium > 0 ? "text-emerald-450 font-extrabold" : "text-slate-450"}>{globalPending7Medium.toFixed(1)}</span>
-                          <span className="text-[7.5px] text-slate-500"> ({globalReg7Medium} reg / {globalUsed7MediumCount.toFixed(1)} used)</span>
                         </div>
 
                         <div className="bg-slate-900/60 p-1.5 rounded border border-slate-850/40">
                           <span className="text-[7.5px] text-slate-500 block">10" HIGH STOCK</span>
                           <span className="font-bold">Pending: </span>
                           <span className={globalPending10High > 0 ? "text-emerald-450 font-extrabold" : "text-slate-450"}>{globalPending10High.toFixed(1)}</span>
-                          <span className="text-[7.5px] text-slate-500"> ({globalReg10High} reg / {globalUsed10HighCount.toFixed(1)} used)</span>
                         </div>
 
                         <div className="bg-slate-900/60 p-1.5 rounded border border-slate-850/40">
                           <span className="text-[7.5px] text-slate-500 block">10" MEDIUM STOCK</span>
                           <span className="font-bold">Pending: </span>
                           <span className={globalPending10Medium > 0 ? "text-emerald-450 font-extrabold" : "text-slate-450"}>{globalPending10Medium.toFixed(1)}</span>
-                          <span className="text-[7.5px] text-slate-500"> ({globalReg10Medium} reg / {globalUsed10MediumCount.toFixed(1)} used)</span>
                         </div>
                       </div>
 
@@ -4623,28 +4619,24 @@ export default function MobileBusiness({
                                 <span className="text-[7.5px] text-slate-500 block">7" HIGH STOCK</span>
                                 <span className="font-bold">Pending: </span>
                                 <span className={pending7High > 0 ? "text-emerald-450 font-extrabold" : "text-slate-450"}>{pending7High.toFixed(1)}</span>
-                                <span className="text-[7.5px] text-slate-500"> ({supplier.pipe7HighCount} reg / {used7HighCount.toFixed(1)} used)</span>
                               </div>
                               
                               <div className="bg-slate-900/60 p-1.5 rounded border border-slate-850/40">
                                 <span className="text-[7.5px] text-slate-500 block">7" MEDIUM STOCK</span>
                                 <span className="font-bold">Pending: </span>
                                 <span className={pending7Medium > 0 ? "text-emerald-450 font-extrabold" : "text-slate-450"}>{pending7Medium.toFixed(1)}</span>
-                                <span className="text-[7.5px] text-slate-500"> ({supplier.pipe7MediumCount} reg / {used7MediumCount.toFixed(1)} used)</span>
                               </div>
 
                               <div className="bg-slate-900/60 p-1.5 rounded border border-slate-850/40">
                                 <span className="text-[7.5px] text-slate-500 block">10" HIGH STOCK</span>
                                 <span className="font-bold">Pending: </span>
                                 <span className={pending10High > 0 ? "text-emerald-450 font-extrabold" : "text-slate-450"}>{pending10High.toFixed(1)}</span>
-                                <span className="text-[7.5px] text-slate-500"> ({supplier.pipe10HighCount} reg / {used10HighCount.toFixed(1)} used)</span>
                               </div>
 
                               <div className="bg-slate-900/60 p-1.5 rounded border border-slate-850/40">
                                 <span className="text-[7.5px] text-slate-500 block">10" MEDIUM STOCK</span>
                                 <span className="font-bold">Pending: </span>
                                 <span className={pending10Medium > 0 ? "text-emerald-450 font-extrabold" : "text-slate-450"}>{pending10Medium.toFixed(1)}</span>
-                                <span className="text-[7.5px] text-slate-500"> ({supplier.pipe10MediumCount} reg / {used10MediumCount.toFixed(1)} used)</span>
                               </div>
                             </div>
 
