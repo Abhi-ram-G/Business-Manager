@@ -763,7 +763,7 @@ export default function MobileBusiness({
       invoiceNo: businessBills.find((bill) => bill.id === editingBillId)?.invoiceNo || "",
       clientName: billClient,
       billDate,
-      dueDate: billDueDate,
+      dueDate: billDate,
       description: fullDesc,
       amount: finalBillTotal,
       discountAmount,
@@ -935,7 +935,7 @@ export default function MobileBusiness({
                   ...bill,
                   clientName: billClient,
                   billDate,
-                  dueDate: billDueDate,
+                  dueDate: billDate,
                   description: fullDesc,
                   amount: finalBillTotal,
                   discountAmount,
@@ -6541,14 +6541,10 @@ export default function MobileBusiness({
                   </div>
                 </div>
 
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-[10px]">
+                <div className="text-[10px]">
                   <div>
                     <label className="text-[9px] text-slate-500 block uppercase font-mono">BILL DATE</label>
                     <input type="date" value={billDate} onChange={(e) => setBillDate(e.target.value)} className="w-full bg-slate-950 p-1.5 rounded text-slate-300 font-mono border border-slate-850" />
-                  </div>
-                  <div>
-                    <label className="text-[9px] text-slate-500 block uppercase font-mono">DUE DATE</label>
-                    <input type="date" value={billDueDate} onChange={(e) => setBillDueDate(e.target.value)} className="w-full bg-slate-950 p-1.5 rounded text-slate-300 font-mono border border-slate-850" />
                   </div>
                 </div>
 
@@ -6817,28 +6813,67 @@ export default function MobileBusiness({
                     </div>
                   </div>
                   
-                  <div className="grid grid-cols-2 gap-2 text-[10px] bg-slate-950/40 p-2 rounded-xl border border-slate-850">
-                    <div>
-                      <div className="text-[8.5px] text-orange-400 font-bold uppercase block mb-1">10" CASING DEPTH (FT)</div>
-                      <input
-                        type="number"
-                        min={0}
-                        value={casing10Feet}
-                        onChange={(e) => setCasing10Feet(Math.max(0, Number(e.target.value)))}
-                        className="w-full bg-slate-950 p-1.5 rounded text-slate-200 font-mono border border-slate-850 focus:border-pink-500 focus:ring-1 focus:ring-pink-500/25"
-                      />
+                  {/* CASING PIPE SUPPLIER SELECTION */}
+                  <div className="bg-slate-950/60 p-2.5 rounded-xl border border-slate-850 space-y-1">
+                    <label className="text-[8.5px] text-indigo-400 font-bold uppercase block">Casing Pipe Supplier</label>
+                    <select
+                      value={billPipeSupplierId}
+                      onChange={(e) => setBillPipeSupplierId(e.target.value)}
+                      className="w-full bg-slate-950 p-1.5 rounded text-slate-200 border border-slate-850 font-mono text-[9px] focus:outline-none focus:border-indigo-500"
+                    >
+                      <option value="">No Casing Pipe Supplier Selected</option>
+                      {pipeEntries.map((p) => (
+                        <option key={p.id} value={p.id}>
+                          {p.companyName} ({p.location})
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+
+                  {/* 10" CASING SECTION */}
+                  <div className="grid grid-cols-1 gap-2 text-[10px] bg-slate-950/40 p-2.5 rounded-xl border border-slate-850 font-mono">
+                    <div className="grid grid-cols-3 gap-2">
+                      <div>
+                        <div className="text-[7.5px] text-orange-400 font-bold uppercase block mb-1">10" HIGH QTY CASING DEPTH (FT)</div>
+                        <input
+                          type="number"
+                          min={0}
+                          value={billCasing10HighFeet}
+                          onChange={(e) => {
+                            const val = Math.max(0, Number(e.target.value));
+                            setBillCasing10HighFeet(val);
+                            setCasing10Feet(val + Number(billCasing10MediumFeet));
+                          }}
+                          className="w-full bg-slate-950 p-1.5 rounded text-slate-200 font-mono border border-slate-850 focus:border-pink-500"
+                        />
+                      </div>
+                      <div>
+                        <div className="text-[7.5px] text-orange-400 font-bold uppercase block mb-1">10" MED QTY CASING DEPTH (FT)</div>
+                        <input
+                          type="number"
+                          min={0}
+                          value={billCasing10MediumFeet}
+                          onChange={(e) => {
+                            const val = Math.max(0, Number(e.target.value));
+                            setBillCasing10MediumFeet(val);
+                            setCasing10Feet(Number(billCasing10HighFeet) + val);
+                          }}
+                          className="w-full bg-slate-950 p-1.5 rounded text-slate-200 font-mono border border-slate-850 focus:border-pink-500"
+                        />
+                      </div>
+                      <div>
+                        <div className="text-[7.5px] text-orange-400 font-bold uppercase block mb-1">RATE PER FEET (₹)</div>
+                        <input
+                          type="number"
+                          min={0}
+                          value={casing10Rate}
+                          onChange={(e) => setCasing10Rate(Math.max(0, Number(e.target.value)))}
+                          className="w-full bg-slate-950 p-1.5 rounded text-pink-400 font-mono border border-slate-850 focus:border-pink-500"
+                        />
+                      </div>
                     </div>
-                    <div>
-                      <div className="text-[8.5px] text-orange-400 font-bold uppercase block mb-1">10" CASING PRICE / FT</div>
-                      <input
-                        type="number"
-                        min={0}
-                        value={casing10Rate}
-                        onChange={(e) => setCasing10Rate(Math.max(0, Number(e.target.value)))}
-                        className="w-full bg-slate-950 p-1.5 rounded text-pink-400 font-mono border border-slate-850 focus:border-pink-500 focus:ring-1 focus:ring-pink-500/25"
-                      />
-                    </div>
-                    <div className="col-span-2 pt-1.5 border-t border-slate-900/60 mt-1">
+                    
+                    <div className="pt-1.5 border-t border-slate-900/60 mt-1">
                       <div className="text-[8px] text-slate-400 font-mono font-bold uppercase block mb-1">10" Casing Hammer Used</div>
                       <select
                         value={selectedCasing10HammerId}
@@ -6858,28 +6893,50 @@ export default function MobileBusiness({
                     </div>
                   </div>
 
-                  <div className="grid grid-cols-2 gap-2 text-[10px] bg-slate-950/40 p-2 rounded-xl border border-slate-850">
-                    <div>
-                      <div className="text-[8.5px] text-orange-400 font-bold uppercase block mb-1">7" CASING DEPTH (FT)</div>
-                      <input
-                        type="number"
-                        min={0}
-                        value={casing7Feet}
-                        onChange={(e) => setCasing7Feet(Math.max(0, Number(e.target.value)))}
-                        className="w-full bg-slate-950 p-1.5 rounded text-slate-200 font-mono border border-slate-850 focus:border-violet-500 focus:ring-1 focus:ring-violet-500/25"
-                      />
+                  {/* 7" CASING SECTION */}
+                  <div className="grid grid-cols-1 gap-2 text-[10px] bg-slate-950/40 p-2.5 rounded-xl border border-slate-850 font-mono">
+                    <div className="grid grid-cols-3 gap-2">
+                      <div>
+                        <div className="text-[7.5px] text-orange-400 font-bold uppercase block mb-1">7" HIGH QTY CASING DEPTH (FT)</div>
+                        <input
+                          type="number"
+                          min={0}
+                          value={billCasing7HighFeet}
+                          onChange={(e) => {
+                            const val = Math.max(0, Number(e.target.value));
+                            setBillCasing7HighFeet(val);
+                            setCasing7Feet(val + Number(billCasing7MediumFeet));
+                          }}
+                          className="w-full bg-slate-950 p-1.5 rounded text-slate-200 font-mono border border-slate-850 focus:border-violet-500"
+                        />
+                      </div>
+                      <div>
+                        <div className="text-[7.5px] text-orange-400 font-bold uppercase block mb-1">7" MED QTY CASING DEPTH (FT)</div>
+                        <input
+                          type="number"
+                          min={0}
+                          value={billCasing7MediumFeet}
+                          onChange={(e) => {
+                            const val = Math.max(0, Number(e.target.value));
+                            setBillCasing7MediumFeet(val);
+                            setCasing7Feet(Number(billCasing7HighFeet) + val);
+                          }}
+                          className="w-full bg-slate-950 p-1.5 rounded text-slate-200 font-mono border border-slate-850 focus:border-violet-500"
+                        />
+                      </div>
+                      <div>
+                        <div className="text-[7.5px] text-orange-400 font-bold uppercase block mb-1">RATE PER FEET (₹)</div>
+                        <input
+                          type="number"
+                          min={0}
+                          value={casing7Rate}
+                          onChange={(e) => setCasing7Rate(Math.max(0, Number(e.target.value)))}
+                          className="w-full bg-slate-950 p-1.5 rounded text-violet-400 font-mono border border-slate-850 focus:border-violet-500"
+                        />
+                      </div>
                     </div>
-                    <div>
-                      <div className="text-[8.5px] text-orange-400 font-bold uppercase block mb-1">7" CASING PRICE / FT</div>
-                      <input
-                        type="number"
-                        min={0}
-                        value={casing7Rate}
-                        onChange={(e) => setCasing7Rate(Math.max(0, Number(e.target.value)))}
-                        className="w-full bg-slate-950 p-1.5 rounded text-violet-400 font-mono border border-slate-850 focus:border-violet-500 focus:ring-1 focus:ring-violet-500/25"
-                      />
-                    </div>
-                    <div className="col-span-2 pt-1.5 border-t border-slate-900/60 mt-1">
+
+                    <div className="pt-1.5 border-t border-slate-900/60 mt-1">
                       <div className="text-[8px] text-slate-400 font-mono font-bold uppercase block mb-1">7" Casing Hammer Used</div>
                       <select
                         value={selectedCasing7HammerId}
@@ -6897,74 +6954,6 @@ export default function MobileBusiness({
                         })}
                       </select>
                     </div>
-                  </div>
-
-                  {/* CASING STOCK STOCK LEVEL INTEGRATION */}
-                  <div className="bg-slate-950/60 p-3 rounded-2xl border border-slate-850 space-y-2.5">
-                    <div className="flex items-center gap-1">
-                      <span className="text-[10px] font-mono font-bold text-indigo-400 uppercase tracking-wider block">Casing Pipe Stock Allocation</span>
-                    </div>
-
-                    <div>
-                      <label className="text-[8.5px] text-slate-400 font-bold uppercase block mb-1">Casing Pipe Supplier</label>
-                      <select
-                        value={billPipeSupplierId}
-                        onChange={(e) => setBillPipeSupplierId(e.target.value)}
-                        className="w-full bg-slate-950 p-2 rounded text-slate-200 border border-slate-850 font-mono text-[10px] focus:outline-none focus:border-indigo-500"
-                      >
-                        <option value="">No Casing Pipe Supplier Selected</option>
-                        {pipeEntries.map((p) => (
-                          <option key={p.id} value={p.id}>
-                            {p.companyName} ({p.location})
-                          </option>
-                        ))}
-                      </select>
-                    </div>
-
-                    {billPipeSupplierId && (
-                      <div className="grid grid-cols-2 gap-2 text-[9px] font-mono animate-fade-in">
-                        <div className="space-y-1">
-                          <label className="text-[8px] text-slate-500 block">7" HIGH QUALITY FEET USED</label>
-                          <input
-                            type="number"
-                            min={0}
-                            value={billCasing7HighFeet}
-                            onChange={(e) => setBillCasing7HighFeet(Math.max(0, Number(e.target.value)))}
-                            className="w-full bg-slate-950 p-1.5 rounded text-slate-200 border border-slate-850 text-center font-bold"
-                          />
-                        </div>
-                        <div className="space-y-1">
-                          <label className="text-[8px] text-slate-500 block">7" MEDIUM QUALITY FEET USED</label>
-                          <input
-                            type="number"
-                            min={0}
-                            value={billCasing7MediumFeet}
-                            onChange={(e) => setBillCasing7MediumFeet(Math.max(0, Number(e.target.value)))}
-                            className="w-full bg-slate-950 p-1.5 rounded text-slate-200 border border-slate-850 text-center font-bold"
-                          />
-                        </div>
-                        <div className="space-y-1">
-                          <label className="text-[8px] text-slate-500 block">10" HIGH QUALITY FEET USED</label>
-                          <input
-                            type="number"
-                            min={0}
-                            value={billCasing10HighFeet}
-                            onChange={(e) => setBillCasing10HighFeet(Math.max(0, Number(e.target.value)))}
-                            className="w-full bg-slate-950 p-1.5 rounded text-slate-200 border border-slate-850 text-center font-bold"
-                          />
-                        </div>
-                        <div className="space-y-1">
-                          <label className="text-[8px] text-slate-500 block">10" MEDIUM QUALITY FEET USED</label>
-                          <input
-                            type="number"
-                            min={0}
-                            value={billCasing10MediumFeet}
-                            onChange={(e) => setBillCasing10MediumFeet(Math.max(0, Number(e.target.value)))}
-                            className="w-full bg-slate-950 p-1.5 rounded text-slate-200 border border-slate-850 text-center font-bold"
-                          />
-                        </div>
-                      </div>
-                    )}
                   </div>
 
                   <div className="grid grid-cols-2 gap-2 text-[10px]">
