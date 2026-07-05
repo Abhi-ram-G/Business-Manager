@@ -6812,23 +6812,6 @@ export default function MobileBusiness({
                       </select>
                     </div>
                   </div>
-                  
-                  {/* CASING PIPE SUPPLIER SELECTION */}
-                  <div className="bg-slate-950/60 p-2.5 rounded-xl border border-slate-850 space-y-1">
-                    <label className="text-[8.5px] text-indigo-400 font-bold uppercase block">Casing Pipe Supplier</label>
-                    <select
-                      value={billPipeSupplierId}
-                      onChange={(e) => setBillPipeSupplierId(e.target.value)}
-                      className="w-full bg-slate-950 p-1.5 rounded text-slate-200 border border-slate-850 font-mono text-[9px] focus:outline-none focus:border-indigo-500"
-                    >
-                      <option value="">No Casing Pipe Supplier Selected</option>
-                      {pipeEntries.map((p) => (
-                        <option key={p.id} value={p.id}>
-                          {p.companyName} ({p.location})
-                        </option>
-                      ))}
-                    </select>
-                  </div>
 
                   {/* 10" CASING SECTION */}
                   <div className="grid grid-cols-1 gap-2 text-[10px] bg-slate-950/40 p-2.5 rounded-xl border border-slate-850 font-mono">
