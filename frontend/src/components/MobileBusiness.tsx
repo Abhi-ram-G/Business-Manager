@@ -4212,7 +4212,7 @@ export default function MobileBusiness({
                     <span className="text-[9px] font-mono font-bold text-indigo-400 block uppercase tracking-wider">Casing Pipe Stock Details (Quantities & Rates)</span>
                     
                     {/* 7 Inch Pipes */}
-                    <div className="grid grid-cols-2 gap-2 border-b border-slate-900 pb-2">
+                    <div className="grid grid-cols-3 gap-2 border-b border-slate-900 pb-2">
                       <div className="space-y-1">
                         <label className="text-[8px] text-slate-500 block font-mono">7" HIGH QUALITY QTY</label>
                         <input
@@ -4224,7 +4224,7 @@ export default function MobileBusiness({
                         />
                       </div>
                       <div className="space-y-1">
-                        <label className="text-[8px] text-slate-500 block font-mono">7" HIGH QUALITY RATE (₹)</label>
+                        <label className="text-[8px] text-slate-500 block font-mono">7" HIGH QUALITY RATE / PIPE (₹)</label>
                         <input
                           type="number"
                           value={pipe7HighRate}
@@ -4233,9 +4233,18 @@ export default function MobileBusiness({
                           min="0"
                         />
                       </div>
+                      <div className="space-y-1">
+                        <label className="text-[8px] text-slate-500 block font-mono">PRICE (₹)</label>
+                        <input
+                          type="text"
+                          value={`₹${(pipe7HighCount * pipe7HighRate).toLocaleString()}`}
+                          className="w-full bg-slate-950/40 p-1 rounded text-emerald-450 border border-slate-900 text-center font-bold font-mono"
+                          disabled
+                        />
+                      </div>
                     </div>
 
-                    <div className="grid grid-cols-2 gap-2 border-b border-slate-900 pb-2">
+                    <div className="grid grid-cols-3 gap-2 border-b border-slate-900 pb-2">
                       <div className="space-y-1">
                         <label className="text-[8px] text-slate-500 block font-mono">7" MEDIUM QUALITY QTY</label>
                         <input
@@ -4247,7 +4256,7 @@ export default function MobileBusiness({
                         />
                       </div>
                       <div className="space-y-1">
-                        <label className="text-[8px] text-slate-500 block font-mono">7" MEDIUM QUALITY RATE (₹)</label>
+                        <label className="text-[8px] text-slate-500 block font-mono">7" MEDIUM QUALITY RATE / PIPE (₹)</label>
                         <input
                           type="number"
                           value={pipe7MediumRate}
@@ -4256,10 +4265,19 @@ export default function MobileBusiness({
                           min="0"
                         />
                       </div>
+                      <div className="space-y-1">
+                        <label className="text-[8px] text-slate-500 block font-mono">PRICE (₹)</label>
+                        <input
+                          type="text"
+                          value={`₹${(pipe7MediumCount * pipe7MediumRate).toLocaleString()}`}
+                          className="w-full bg-slate-950/40 p-1 rounded text-emerald-450 border border-slate-900 text-center font-bold font-mono"
+                          disabled
+                        />
+                      </div>
                     </div>
 
                     {/* 10 Inch Pipes */}
-                    <div className="grid grid-cols-2 gap-2 border-b border-slate-900 pb-2">
+                    <div className="grid grid-cols-3 gap-2 border-b border-slate-900 pb-2">
                       <div className="space-y-1">
                         <label className="text-[8px] text-slate-500 block font-mono">10" HIGH QUALITY QTY</label>
                         <input
@@ -4271,7 +4289,7 @@ export default function MobileBusiness({
                         />
                       </div>
                       <div className="space-y-1">
-                        <label className="text-[8px] text-slate-500 block font-mono">10" HIGH QUALITY RATE (₹)</label>
+                        <label className="text-[8px] text-slate-500 block font-mono">10" HIGH QUALITY RATE / PIPE (₹)</label>
                         <input
                           type="number"
                           value={pipe10HighRate}
@@ -4280,9 +4298,18 @@ export default function MobileBusiness({
                           min="0"
                         />
                       </div>
+                      <div className="space-y-1">
+                        <label className="text-[8px] text-slate-500 block font-mono">PRICE (₹)</label>
+                        <input
+                          type="text"
+                          value={`₹${(pipe10HighCount * pipe10HighRate).toLocaleString()}`}
+                          className="w-full bg-slate-950/40 p-1 rounded text-emerald-450 border border-slate-900 text-center font-bold font-mono"
+                          disabled
+                        />
+                      </div>
                     </div>
 
-                    <div className="grid grid-cols-2 gap-2">
+                    <div className="grid grid-cols-3 gap-2">
                       <div className="space-y-1">
                         <label className="text-[8px] text-slate-500 block font-mono">10" MEDIUM QUALITY QTY</label>
                         <input
@@ -4294,13 +4321,22 @@ export default function MobileBusiness({
                         />
                       </div>
                       <div className="space-y-1">
-                        <label className="text-[8px] text-slate-500 block font-mono">10" MEDIUM QUALITY RATE (₹)</label>
+                        <label className="text-[8px] text-slate-500 block font-mono">10" MEDIUM QUALITY RATE / PIPE (₹)</label>
                         <input
                           type="number"
                           value={pipe10MediumRate}
                           onChange={(e) => setPipe10MediumRate(Number(e.target.value))}
                           className="w-full bg-slate-950 p-1 rounded text-slate-100 border border-slate-850 text-center font-bold"
                           min="0"
+                        />
+                      </div>
+                      <div className="space-y-1">
+                        <label className="text-[8px] text-slate-500 block font-mono">PRICE (₹)</label>
+                        <input
+                          type="text"
+                          value={`₹${(pipe10MediumCount * pipe10MediumRate).toLocaleString()}`}
+                          className="w-full bg-slate-950/40 p-1 rounded text-emerald-450 border border-slate-900 text-center font-bold font-mono"
+                          disabled
                         />
                       </div>
                     </div>
