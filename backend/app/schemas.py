@@ -161,6 +161,29 @@ class BitEntryUpdate(BaseModel):
     rate: float | None = None
 
 
+class HammerCreate(BaseModel):
+    id: str
+    hammer_no: str
+    brand: str
+    date_entry: dt_date | None = None
+    rate: float = 0.0
+    capable_feet_depth: int = 950
+    is_paid: bool = False
+    casing_type: str | None = None
+    usage_history: list[dict[str, Any]] | None = None
+
+
+class HammerUpdate(BaseModel):
+    hammer_no: str | None = None
+    brand: str | None = None
+    date_entry: dt_date | None = None
+    rate: float | None = None
+    capable_feet_depth: int | None = None
+    is_paid: bool | None = None
+    casing_type: str | None = None
+    usage_history: list[dict[str, Any]] | None = None
+
+
 class BusinessBillCreate(BaseModel):
     id: str
     invoice_no: str | None = None

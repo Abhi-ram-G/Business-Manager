@@ -124,6 +124,20 @@ class BitEntry(Base, TimestampMixin):
     rate: Mapped[float] = mapped_column(Numeric(12, 2), nullable=False)
 
 
+class Hammer(Base, TimestampMixin):
+    __tablename__ = "hammer_entries"
+
+    id: Mapped[str] = mapped_column(String(50), primary_key=True)
+    hammer_no: Mapped[str] = mapped_column(String(50), nullable=False)
+    brand: Mapped[str] = mapped_column(String(100), nullable=False)
+    date_entry: Mapped[date | None] = mapped_column(Date)
+    rate: Mapped[float] = mapped_column(Numeric(10, 2), default=0.00)
+    capable_feet_depth: Mapped[int] = mapped_column(Integer, default=950)
+    is_paid: Mapped[bool] = mapped_column(Boolean, default=False)
+    casing_type: Mapped[str | None] = mapped_column(String(50))
+    usage_history: Mapped[list[dict[str, Any]] | None] = mapped_column(JSON)
+
+
 class BusinessBill(Base, TimestampMixin):
     __tablename__ = "business_bills"
 

@@ -47,11 +47,13 @@ import {
   mapBitFromApi,
   mapLabourFromApi,
   mapVehicleFromApi,
+  mapHammerFromApi,
   requestJson,
   toBusinessBillApiPayload,
   toBitApiPayload,
   toLabourApiPayload,
   toVehicleApiPayload,
+  toHammerApiPayload,
 } from "../lib/sharedApi";
 import borewellLogo from "../assets/images/borewell_machine_logo_1782797350175.jpg";
 
@@ -302,8 +304,16 @@ export default function MobileBusiness({
       setMaterials(prev => prev.filter(m => m.id !== id));
       triggerOnlineSync(`DELETED MATERIAL BOUGHT: ${id}`);
     } else if (type === "hammer") {
-      setHammerEntries(prev => prev.filter(h => h.id !== id));
-      triggerOnlineSync(`DELETED HAMMER: ${name}`);
+      try {
+        await requestJson(apiBaseUrl, `/api/v1/business/hammers/${id}`, { method: "DELETE" });
+        setHammerEntries(prev => prev.filter(h => h.id !== id));
+        await onSharedDataChanged?.();
+        triggerOnlineSync(`DELETED HAMMER: ${name}`);
+      } catch (error) {
+        console.error(error);
+        setHammerEntries(prev => prev.filter(h => h.id !== id));
+        triggerOnlineSync(`DELETED HAMMER: ${name} (local only)`);
+      }
     }
   };
 
@@ -723,50 +733,50 @@ export default function MobileBusiness({
       ? Math.max(0, (isCustom ? customEndingFeet : finalDepth) - ((casing7Feet || 0) + (casing10Feet || 0)))
       : 0;
 
-    setHammerEntries((prev) =>
-      prev.map((h) => {
-        let history = (h.usageHistory || []).filter((rec) => rec.billId !== payloadBill.id && rec.id !== payloadBill.id);
+    const updatedHammers = hammerEntries.map((h) => {
+      let history = (h.usageHistory || []).filter((rec) => rec.billId !== payloadBill.id && rec.id !== payloadBill.id);
 
-        let addedFeet = 0;
-        if (h.id === selectedHammerId && drillingFeet > 0) {
-          addedFeet = drillingFeet;
-        } else if (h.id === selectedCasing10HammerId && (casing10Feet || 0) > 0) {
-          addedFeet = casing10Feet || 0;
-        } else if (h.id === selectedCasing7HammerId && (casing7Feet || 0) > 0) {
-          addedFeet = casing7Feet || 0;
-        }
+      let addedFeet = 0;
+      if (h.id === selectedHammerId && drillingFeet > 0) {
+        addedFeet = drillingFeet;
+      } else if (h.id === selectedCasing10HammerId && (casing10Feet || 0) > 0) {
+        addedFeet = casing10Feet || 0;
+      } else if (h.id === selectedCasing7HammerId && (casing7Feet || 0) > 0) {
+        addedFeet = casing7Feet || 0;
+      }
 
-        if (addedFeet > 0) {
-          const newRecord: HammerUsageRecord = {
-            id: `rec-${Date.now()}-${h.id}`,
-            billId: payloadBill.id,
-            date: billDate,
-            clientName: billClient,
-            location: customLocation || "",
-            calculatedFeet: addedFeet
-          };
-          history = [...history, newRecord];
-        }
-
-        const totalFeet = history.reduce((sum, r) => sum + r.calculatedFeet, 0);
-        let casingType = h.casingType;
-        if (totalFeet >= h.capableFeetDepth && !casingType) {
-          const casingChoice = window.confirm(
-            `⚠️ Hammer ${h.hammerNo} has reached its capable feet limit!\n` +
-            `Total feet used: ${totalFeet} ft (limit: ${h.capableFeetDepth} ft)\n\n` +
-            `Click OK to mark as 7" Casing Hammer\n` +
-            `Click Cancel to mark as 10" Casing Hammer`
-          ) ? "7 inch" : "10 inch";
-          casingType = casingChoice;
-        }
-
-        return {
-          ...h,
-          usageHistory: history,
-          casingType
+      if (addedFeet > 0) {
+        const newRecord: HammerUsageRecord = {
+          id: `rec-${Date.now()}-${h.id}`,
+          billId: payloadBill.id,
+          date: billDate,
+          clientName: billClient,
+          location: customLocation || "",
+          calculatedFeet: addedFeet
         };
-      })
-    );
+        history = [...history, newRecord];
+      }
+
+      const totalFeet = history.reduce((sum, r) => sum + r.calculatedFeet, 0);
+      let casingType = h.casingType;
+      if (totalFeet >= h.capableFeetDepth && !casingType) {
+        const casingChoice = window.confirm(
+          `⚠️ Hammer ${h.hammerNo} has reached its capable feet limit!\n` +
+          `Total feet used: ${totalFeet} ft (limit: ${h.capableFeetDepth} ft)\n\n` +
+          `Click OK to mark as 7" Casing Hammer\n` +
+          `Click Cancel to mark as 10" Casing Hammer`
+        ) ? "7 inch" : "10 inch";
+        casingType = casingChoice;
+      }
+
+      return {
+        ...h,
+        usageHistory: history,
+        casingType
+      };
+    });
+
+    setHammerEntries(updatedHammers);
 
     if (!shouldPersistToServer) {
         setBusinessBills((prev) => {
@@ -833,6 +843,27 @@ export default function MobileBusiness({
       }
 
       await onSharedDataChanged?.();
+
+      // Persist modified hammers to server
+      const hammersToUpdate = updatedHammers.filter(h => 
+        (h.id === selectedHammerId && drillingFeet > 0) || 
+        (h.id === selectedCasing10HammerId && (casing10Feet || 0) > 0) || 
+        (h.id === selectedCasing7HammerId && (casing7Feet || 0) > 0)
+      );
+      
+      await Promise.all(
+        hammersToUpdate.map(async (h) => {
+          try {
+            await requestJson(apiBaseUrl, `/api/v1/business/hammers/${h.id}`, {
+              method: "PUT",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify(toHammerApiPayload(h)),
+            });
+          } catch (err) {
+            console.error(`Failed to update hammer ${h.id} on server`, err);
+          }
+        })
+      );
     } catch (error) {
       console.error(error);
       const message = error instanceof Error ? error.message.toLowerCase() : "";
@@ -2321,36 +2352,57 @@ export default function MobileBusiness({
   const handleSaveHammer = (e: React.FormEvent) => {
     e.preventDefault();
     if (!hammerNo.trim() || !hammerBrand.trim()) return;
-    if (editingHammerId) {
-      setHammerEntries(prev => prev.map(h => {
-        if (h.id !== editingHammerId) return h;
-        return {
-          ...h,
-          hammerNo: hammerNo.trim(),
-          brand: hammerBrand.trim(),
-          dateEntry: hammerDateEntry,
-          rate: Number(hammerRate),
-          capableFeetDepth: Number(hammerCapableFeet),
-          isPaid: hammerIsPaid,
-        };
-      }));
-      triggerOnlineSync(`UPDATED HAMMER: ${hammerNo}`);
-    } else {
-      const newHammer: HammerEntry = {
-        id: `HMR-${Date.now()}`,
+
+    void (async () => {
+      const existing = editingHammerId ? hammerEntries.find(h => h.id === editingHammerId) : undefined;
+      const targetId = editingHammerId || `HMR-${Date.now()}`;
+      
+      const payloadHammer: HammerEntry = {
+        id: targetId,
         hammerNo: hammerNo.trim(),
         brand: hammerBrand.trim(),
         dateEntry: hammerDateEntry,
         rate: Number(hammerRate),
         capableFeetDepth: Number(hammerCapableFeet),
         isPaid: hammerIsPaid,
-        usageHistory: [],
+        casingType: existing?.casingType,
+        usageHistory: existing?.usageHistory || [],
       };
-      setHammerEntries(prev => [newHammer, ...prev]);
-      triggerOnlineSync(`ADDED HAMMER: ${hammerNo}`);
-    }
-    setIsHammerFormOpen(false);
-    setEditingHammerId(null);
+
+      try {
+        const response = await requestJson(
+          apiBaseUrl,
+          editingHammerId ? `/api/v1/business/hammers/${editingHammerId}` : "/api/v1/business/hammers",
+          {
+            method: editingHammerId ? "PUT" : "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(toHammerApiPayload(payloadHammer)),
+          }
+        );
+        const savedHammer = mapHammerFromApi(response);
+        
+        if (editingHammerId) {
+          setHammerEntries(prev => prev.map(h => h.id === editingHammerId ? savedHammer : h));
+          triggerOnlineSync(`UPDATED HAMMER: ${hammerNo}`);
+        } else {
+          setHammerEntries(prev => [savedHammer, ...prev]);
+          triggerOnlineSync(`ADDED HAMMER: ${hammerNo}`);
+        }
+      } catch (error) {
+        console.error(error);
+        // Offline Fallback
+        if (editingHammerId) {
+          setHammerEntries(prev => prev.map(h => h.id === editingHammerId ? payloadHammer : h));
+          triggerOnlineSync(`UPDATED HAMMER: ${hammerNo} (local fallback)`);
+        } else {
+          setHammerEntries(prev => [payloadHammer, ...prev]);
+          triggerOnlineSync(`ADDED HAMMER: ${hammerNo} (local fallback)`);
+        }
+      }
+      setIsHammerFormOpen(false);
+      setEditingHammerId(null);
+      await onSharedDataChanged?.();
+    })();
   };
 
   const handleDeleteHammer = (id: string, no: string) => {

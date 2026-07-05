@@ -679,9 +679,7 @@ export default function App() {
     return loadStoredArray<BitEntry>("srs_bit_entries", []);
   });
 
-  const [hammerEntries, setHammerEntries] = useState<HammerEntry[]>(() => {
-    return loadStoredArray<HammerEntry>("srs_hammer_entries", []);
-  });
+  const [hammerEntries, setHammerEntries] = useState<HammerEntry[]>([]);
 
   const [businessBills, setBusinessBills] = useState<BusinessBill[]>(() => {
     const stored = loadStoredArray<BusinessBill>("srs_business_bills", []);
@@ -773,6 +771,7 @@ export default function App() {
       setFamilyMembers(snapshot.familyMembers.length > 0 ? snapshot.familyMembers : DEFAULT_FAMILY_MEMBERS);
       setIncomeEntries(snapshot.incomeEntries);
       setFamilyExpenses(snapshot.familyExpenses);
+      setHammerEntries(snapshot.hammerEntries || []);
       setCategoryBudgets((prev) => (snapshot.categoryBudgets.length > 0 ? snapshot.categoryBudgets : prev));
       setDocuments((prev) => (snapshot.documents.length > 0 ? snapshot.documents : prev));
       setNotifications((prev) => (snapshot.notifications.length > 0 ? snapshot.notifications : prev));
@@ -810,10 +809,6 @@ export default function App() {
   useEffect(() => {
     localStorage.setItem("srs_bit_entries", JSON.stringify(bitEntries));
   }, [bitEntries]);
-
-  useEffect(() => {
-    localStorage.setItem("srs_hammer_entries", JSON.stringify(hammerEntries));
-  }, [hammerEntries]);
 
   useEffect(() => {
     localStorage.setItem("srs_business_bills", JSON.stringify(businessBills));

@@ -15,6 +15,7 @@ import {
   BitEntry,
   TripRecord,
   Vehicle,
+  HammerEntry,
 } from "../types";
 
 type ApiRecord = Record<string, unknown>;
@@ -93,6 +94,18 @@ export const mapBitFromApi = (item: ApiRecord): BitEntry => ({
   buttonSizeMm: item.button_size_mm != null ? toNumber(item.button_size_mm) : undefined,
   dateEntry: item.date_entry ? String(item.date_entry) : undefined,
   rate: toNumber(item.rate ?? 0),
+});
+
+export const mapHammerFromApi = (item: ApiRecord): HammerEntry => ({
+  id: String(item.id ?? ""),
+  hammerNo: String(item.hammer_no ?? ""),
+  brand: String(item.brand ?? ""),
+  dateEntry: item.date_entry ? String(item.date_entry) : "",
+  rate: toNumber(item.rate ?? 0),
+  capableFeetDepth: toNumber(item.capable_feet_depth ?? 950),
+  isPaid: !!item.is_paid,
+  casingType: item.casing_type ? (item.casing_type as any) : undefined,
+  usageHistory: Array.isArray(item.usage_history) ? (item.usage_history as any) : [],
 });
 
 export const mapBusinessBillFromApi = (item: ApiRecord): BusinessBill => ({
@@ -342,6 +355,18 @@ export const toBitApiPayload = (bit: BitEntry) => ({
   rate: bit.rate,
 });
 
+export const toHammerApiPayload = (hammer: HammerEntry) => ({
+  id: hammer.id,
+  hammer_no: hammer.hammerNo,
+  brand: hammer.brand,
+  date_entry: hammer.dateEntry ?? null,
+  rate: hammer.rate,
+  capable_feet_depth: hammer.capableFeetDepth,
+  is_paid: hammer.isPaid,
+  casing_type: hammer.casingType ?? null,
+  usage_history: hammer.usageHistory ?? [],
+});
+
 export const toBusinessBillApiPayload = (bill: BusinessBill) => ({
   id: bill.id,
   invoice_no: bill.invoiceNo,
@@ -482,7 +507,7 @@ export const toSalaryPaymentApiPayload = (payment: SalaryPayment) => ({
 });
 
 export const fetchSharedSnapshot = async (apiBaseUrl: string) => {
-  const [labours, attendance, salaryPayments, vehicles, bitEntries, businessBills, fuelEntries, trips, loansGiven, loansReceived, familyMembers, incomeEntries, familyExpenses, categoryBudgets, documents, notifications] = await Promise.all([
+  const [labours, attendance, salaryPayments, vehicles, bitEntries, businessBills, fuelEntries, trips, loansGiven, loansReceived, familyMembers, incomeEntries, familyExpenses, categoryBudgets, documents, notifications, hammers] = await Promise.all([
     requestJson(apiBaseUrl, "/api/v1/labours"),
     requestJson(apiBaseUrl, "/api/v1/labours/attendance"),
     requestJson(apiBaseUrl, "/api/v1/labours/salary-payments"),
@@ -499,6 +524,7 @@ export const fetchSharedSnapshot = async (apiBaseUrl: string) => {
     requestJson(apiBaseUrl, "/api/v1/category-budgets"),
     requestJson(apiBaseUrl, "/api/v1/documents"),
     requestJson(apiBaseUrl, "/api/v1/notifications"),
+    requestJson(apiBaseUrl, "/api/v1/business/hammers"),
   ]);
 
   return {
@@ -518,6 +544,7 @@ export const fetchSharedSnapshot = async (apiBaseUrl: string) => {
     categoryBudgets: Array.isArray(categoryBudgets) ? categoryBudgets.map(mapCategoryBudgetFromApi) : [],
     documents: Array.isArray(documents) ? documents.map(mapDocumentFromApi) : [],
     notifications: Array.isArray(notifications) ? notifications.map(mapNotificationFromApi) : [],
+    hammerEntries: Array.isArray(hammers) ? hammers.map(mapHammerFromApi) : [],
   };
 };
 
