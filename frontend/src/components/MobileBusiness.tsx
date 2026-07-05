@@ -323,6 +323,8 @@ export default function MobileBusiness({
   const [billDueDate, setBillDueDate] = useState("2026-07-03");
   const [billDescription, setBillDescription] = useState("");
   const [billStatus, setBillStatus] = useState<"Paid" | "Pending">("Pending");
+  const [customerPaid, setCustomerPaid] = useState<number>(0);
+  const [paymentDate, setPaymentDate] = useState<string>("");
 
   const [borewellType, setBorewellType] = useState<"Tight Formation" | "Loose Formation">("Tight Formation");
   const [billMode, setBillMode] = useState<"New" | "Re-Borewell" | "Customize">("New");
@@ -602,7 +604,8 @@ export default function MobileBusiness({
   React.useEffect(() => {
     if (billMode === "Customize" && customBillDateType === "automatic") {
       const today = new Date().toISOString().split("T")[0];
-      setBillDate(today);      const fut = new Date();
+      setBillDate(today);
+      const fut = new Date();
       fut.setDate(fut.getDate() + 15);
       setBillDueDate(fut.toISOString().split("T")[0]);
     }
@@ -672,6 +675,8 @@ export default function MobileBusiness({
     };
 
     const finalBillTotal = Math.max(0, calc.grand - discountAmount);
+    const calculatedPending = Math.max(0, finalBillTotal - Number(customerPaid));
+    const resolvedStatus = calculatedPending <= 0 ? "Paid" : billStatus;
     const existingBill = editingBillId ? businessBills.find((bill) => bill.id === editingBillId) : undefined;
     const shouldPersistToServer = !editingBillId || existingBill?.source === "server";
 
@@ -685,7 +690,9 @@ export default function MobileBusiness({
       amount: finalBillTotal,
       discountAmount,
       taxRate: 0,
-      status: billStatus,
+      status: resolvedStatus,
+      customerPaid: Number(customerPaid) || 0,
+      paymentDate: paymentDate || undefined,
       borewellType,
       billMode,
       existingDepth,
@@ -775,6 +782,8 @@ export default function MobileBusiness({
         setCasingRate(350);
         setBatta(1500);
         setDiscountAmount(0);
+        setCustomerPaid(0);
+        setPaymentDate("");
         setCustomLocation("");
         setCustomBrokerName("");
         setCustomBillDateType("automatic");
@@ -827,7 +836,9 @@ export default function MobileBusiness({
                   amount: finalBillTotal,
                   discountAmount,
                   taxRate: 0,
-                  status: billStatus,
+                  status: resolvedStatus,
+                  customerPaid: Number(customerPaid) || 0,
+                  paymentDate: paymentDate || undefined,
                   borewellType,
                   billMode,
                   existingDepth,
@@ -873,6 +884,8 @@ export default function MobileBusiness({
     setCasingRate(350);
     setBatta(1500);
     setDiscountAmount(0);
+    setCustomerPaid(0);
+    setPaymentDate("");
 
     // reset custom inputs
     setCustomLocation("");
@@ -919,6 +932,8 @@ export default function MobileBusiness({
     setCasing7Rate(bill.casing7Rate || 350);
     setCustomSlabRates(bill.customSlabRates || {});
     setDiscountAmount(bill.discountAmount !== undefined ? bill.discountAmount : 0);
+    setCustomerPaid(bill.customerPaid !== undefined ? bill.customerPaid : 0);
+    setPaymentDate(bill.paymentDate || "");
     setSelectedBitId(bill.usedBitId || "");
     setSelectedHammerId(bill.usedHammerId || "");
     setSelectedCasing10HammerId(bill.usedCasing10HammerId || "");
@@ -6258,9 +6273,57 @@ export default function MobileBusiness({
                     min={0}
                     placeholder="Enter discount amount to reduce estimated total..."
                     value={discountAmount || ""}
-                    onChange={(e) => setDiscountAmount(Math.max(0, Number(e.target.value)))}
+                    onChange={(e) => {
+                      const newDiscount = Math.max(0, Number(e.target.value));
+                      setDiscountAmount(newDiscount);
+                      const grandTotalVal = Math.max(0, liveCalc.grand - newDiscount);
+                      if (customerPaid >= grandTotalVal) {
+                        setBillStatus("Paid");
+                      } else {
+                        setBillStatus("Pending");
+                      }
+                    }}
                     className="w-full bg-slate-950 p-2 text-xs text-amber-400 font-mono font-bold rounded border border-slate-850 focus:border-amber-550"
                   />
+                </div>
+
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="space-y-1">
+                    <label className="text-[9px] text-teal-400 block uppercase font-mono font-black tracking-wider">Customer Paid Amount (Rs.)</label>
+                    <input
+                      type="number"
+                      min={0}
+                      placeholder="Enter amount paid by customer..."
+                      value={customerPaid || ""}
+                      onChange={(e) => {
+                        const paidVal = Math.max(0, Number(e.target.value));
+                        setCustomerPaid(paidVal);
+                        const grandTotalVal = Math.max(0, liveCalc.grand - discountAmount);
+                        if (paidVal >= grandTotalVal) {
+                          setBillStatus("Paid");
+                        } else {
+                          setBillStatus("Pending");
+                        }
+                      }}
+                      className="w-full bg-slate-950 p-2 text-xs text-teal-400 font-mono font-bold rounded border border-slate-850 focus:border-teal-550"
+                    />
+                  </div>
+                  <div className="space-y-1">
+                    <label className="text-[9px] text-teal-400 block uppercase font-mono font-black tracking-wider">Payment Date</label>
+                    <input
+                      type="date"
+                      value={paymentDate || ""}
+                      onChange={(e) => setPaymentDate(e.target.value)}
+                      className="w-full bg-slate-950 p-2 text-xs text-teal-400 font-mono font-bold rounded border border-slate-850 focus:border-teal-550"
+                    />
+                  </div>
+                </div>
+
+                <div className="flex justify-between items-center bg-slate-950 p-2 rounded border border-slate-850 text-xs font-mono font-bold">
+                  <span className="text-slate-455">Pending Amount:</span>
+                  <span className="text-rose-400 font-black">
+                    Rs. {Math.max(0, Math.max(0, liveCalc.grand - discountAmount) - customerPaid).toLocaleString()}
+                  </span>
                 </div>
 
                 <div className="space-y-1">
@@ -6449,6 +6512,30 @@ export default function MobileBusiness({
                       <div className="flex justify-between items-center text-[9px] text-indigo-400 font-extrabold pt-1 border-t border-slate-850/30">
                         <span>Invoice Total Amount:</span>
                         <span className="text-green-500 text-xs font-black">Rs. {b.amount.toLocaleString()}</span>
+                      </div>
+
+                      {/* Paid Details Section */}
+                      <div className="pt-1.5 border-t border-slate-850/40 mt-1.5 space-y-1 text-slate-400 text-[8.5px]">
+                        <div className="flex justify-between">
+                          <span>Grand Total:</span>
+                          <span className="font-bold text-slate-200">Rs. {b.amount.toLocaleString()}</span>
+                        </div>
+                        <div className="flex justify-between">
+                          <span>Customer Paid:</span>
+                          <span className="font-bold text-teal-400">Rs. {(b.customerPaid || 0).toLocaleString()}</span>
+                        </div>
+                        {b.paymentDate && (
+                          <div className="flex justify-between">
+                            <span>Payment Date:</span>
+                            <span className="text-slate-300">{formatDateToDMY(b.paymentDate)}</span>
+                          </div>
+                        )}
+                        <div className="flex justify-between font-bold text-indigo-400">
+                          <span>Pending Amount:</span>
+                          <span className={`${Math.max(0, b.amount - (b.customerPaid || 0)) === 0 ? "text-emerald-400" : "text-rose-400"}`}>
+                            Rs. {Math.max(0, b.amount - (b.customerPaid || 0)).toLocaleString()}
+                          </span>
+                        </div>
                       </div>
                     </div>
 

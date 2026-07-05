@@ -36,6 +36,8 @@ SQL_STATEMENTS = [
     "ALTER TABLE business_bills ADD COLUMN IF NOT EXISTS casing7_hammer_id varchar(50);",
     "ALTER TABLE bit_entries ADD COLUMN IF NOT EXISTS button_size_mm int DEFAULT 0;",
     "ALTER TABLE bit_entries ADD COLUMN IF NOT EXISTS date_entry date DEFAULT CURRENT_DATE;",
+    "ALTER TABLE business_bills ADD COLUMN IF NOT EXISTS customer_paid numeric(10, 2) DEFAULT 0.00;",
+    "ALTER TABLE business_bills ADD COLUMN IF NOT EXISTS payment_date date;",
 ]
 
 print(f"Connecting to database...")

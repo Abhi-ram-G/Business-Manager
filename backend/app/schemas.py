@@ -200,6 +200,8 @@ class BusinessBillCreate(BaseModel):
     hammer_id: str | None = None
     casing10_hammer_id: str | None = None
     casing7_hammer_id: str | None = None
+    customer_paid: float | None = 0.0
+    payment_date: dt_date | None = None
 
 
 
@@ -242,6 +244,8 @@ class BusinessBillUpdate(BaseModel):
     hammer_id: str | None = None
     casing10_hammer_id: str | None = None
     casing7_hammer_id: str | None = None
+    customer_paid: float | None = None
+    payment_date: dt_date | None = None
 
 
 

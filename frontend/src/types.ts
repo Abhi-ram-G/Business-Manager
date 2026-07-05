@@ -170,6 +170,8 @@ export interface BusinessBill {
   customSlabRates?: Record<string, number>;
   discountAmount?: number;
   source?: "local" | "server";
+  customerPaid?: number;
+  paymentDate?: string;
   // Internal tracking only — NOT printed in invoice PDF
   usedBitId?: string;
   usedHammerId?: string;
