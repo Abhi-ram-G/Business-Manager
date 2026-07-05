@@ -2367,6 +2367,7 @@ export default function App() {
                               bitEntries={bitEntries}
                               hammerEntries={hammerEntries}
                               businessBills={businessBills}
+                              pipeEntries={pipeEntries}
                             />
                           )}
 
@@ -2832,6 +2833,7 @@ export default function App() {
                             bitEntries={bitEntries}
                             hammerEntries={hammerEntries}
                             businessBills={businessBills}
+                            pipeEntries={pipeEntries}
                           />
                         )}
 

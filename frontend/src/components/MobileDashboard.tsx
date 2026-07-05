@@ -29,7 +29,10 @@ import {
   AlertTriangle,
   Wrench,
   Hammer,
-  FileText
+  FileText,
+  Package,
+  PackageCheck,
+  Layers
 } from "lucide-react";
 import { 
   BarChart, 
@@ -41,7 +44,7 @@ import {
   CartesianGrid, 
   Legend 
 } from "recharts";
-import { Labour, Vehicle, FuelEntry, SalaryPayment, LoanGiven, LoanReceived, FamilyExpense, AttendanceRecord, BitEntry, HammerEntry, BusinessBill } from "../types";
+import { Labour, Vehicle, FuelEntry, SalaryPayment, LoanGiven, LoanReceived, FamilyExpense, AttendanceRecord, BitEntry, HammerEntry, BusinessBill, PipeEntry } from "../types";
 
 interface MobileDashboardProps {
   labours: Labour[];
@@ -61,6 +64,7 @@ interface MobileDashboardProps {
   bitEntries?: BitEntry[];
   hammerEntries?: HammerEntry[];
   businessBills?: BusinessBill[];
+  pipeEntries?: PipeEntry[];
 }
 
 export default function MobileDashboard({
@@ -80,7 +84,8 @@ export default function MobileDashboard({
   t,
   bitEntries = [],
   hammerEntries = [],
-  businessBills = []
+  businessBills = [],
+  pipeEntries = []
 }: MobileDashboardProps) {
   // Local fallback translations helper if not passed from parent
   const localT = (key: string) => {
@@ -322,7 +327,7 @@ export default function MobileDashboard({
           <div className="flex justify-between items-start">
             <div>
               <span className="text-[9.5px] font-mono text-slate-400 uppercase tracking-wider font-bold">{localT("bill_count")}</span>
-              <div className="text-lg font-black font-mono mt-1 text-purple-600">
+              <div className="text-lg font-black font-mono mt-1 text-purple-500">
                 {businessBills.length}
               </div>
             </div>
@@ -349,6 +354,119 @@ export default function MobileDashboard({
         </div>
 
       </div>
+
+      {/* Stock Availability Section */}
+      {(() => {
+        // Registered stock counts (from pipe suppliers)
+        const reg7High = (pipeEntries as PipeEntry[]).reduce((s, p) => s + Number(p.pipe7HighCount || 0), 0);
+        const reg7Medium = (pipeEntries as PipeEntry[]).reduce((s, p) => s + Number(p.pipe7MediumCount || 0), 0);
+        const reg10High = (pipeEntries as PipeEntry[]).reduce((s, p) => s + Number(p.pipe10HighCount || 0), 0);
+        const reg10Medium = (pipeEntries as PipeEntry[]).reduce((s, p) => s + Number(p.pipe10MediumCount || 0), 0);
+
+        // Used counts from bills (each 20 ft = 1 casing pipe)
+        const used7High = (businessBills as BusinessBill[]).reduce((s, b) => s + Number(b.casing7HighFeet || 0), 0) / 20;
+        const used7Medium = (businessBills as BusinessBill[]).reduce((s, b) => s + Number(b.casing7MediumFeet || 0), 0) / 20;
+        const used10High = (businessBills as BusinessBill[]).reduce((s, b) => s + Number(b.casing10HighFeet || 0), 0) / 20;
+        const used10Medium = (businessBills as BusinessBill[]).reduce((s, b) => s + Number(b.casing10MediumFeet || 0), 0) / 20;
+
+        // Available stock
+        const avail7High = Math.max(0, reg7High - used7High);
+        const avail7Medium = Math.max(0, reg7Medium - used7Medium);
+        const avail10High = Math.max(0, reg10High - used10High);
+        const avail10Medium = Math.max(0, reg10Medium - used10Medium);
+        const totalAvail = avail7High + avail7Medium + avail10High + avail10Medium;
+
+        return (
+          <div className="space-y-2">
+            {/* Section header */}
+            <div className="flex items-center gap-2 px-0.5">
+              <div className="p-1.5 bg-cyan-500/10 rounded-lg text-cyan-400 border border-cyan-500/20">
+                <Layers className="w-3.5 h-3.5" />
+              </div>
+              <h3 className="text-xs font-bold text-slate-300 uppercase tracking-wider font-mono">Casing Stock Available</h3>
+            </div>
+
+            <div className="grid grid-cols-2 lg:grid-cols-5 gap-3">
+
+              {/* Total Stock Available */}
+              <div className="col-span-2 lg:col-span-1 bg-slate-900/40 p-3 rounded-2xl border border-cyan-500/25 hover:border-cyan-500/50 transition-all duration-300 shadow-sm relative overflow-hidden group">
+                <div className="absolute -right-3 -bottom-3 w-10 h-10 bg-cyan-500/5 rounded-full blur-md group-hover:scale-150 transition-transform duration-500" />
+                <div className="flex justify-between items-start">
+                  <div>
+                    <span className="text-[9px] font-mono text-slate-400 uppercase tracking-wider font-bold block">Total Stock Available</span>
+                    <div className="text-lg font-black font-mono mt-1 text-cyan-400">{Math.round(totalAvail)}</div>
+                    <span className="text-[8px] text-slate-500 font-mono">pipes</span>
+                  </div>
+                  <div className="p-2 bg-cyan-950/80 rounded-xl text-cyan-400 border border-cyan-800/40">
+                    <Package className="w-4 h-4" />
+                  </div>
+                </div>
+              </div>
+
+              {/* 7" High QLT */}
+              <div className="bg-slate-900/40 p-3 rounded-2xl border border-emerald-500/25 hover:border-emerald-500/50 transition-all duration-300 shadow-sm relative overflow-hidden group">
+                <div className="absolute -right-3 -bottom-3 w-10 h-10 bg-emerald-500/5 rounded-full blur-md group-hover:scale-150 transition-transform duration-500" />
+                <div className="flex justify-between items-start">
+                  <div>
+                    <span className="text-[9px] font-mono text-slate-400 uppercase tracking-wider font-bold block">7" H QLT</span>
+                    <div className="text-lg font-black font-mono mt-1 text-emerald-400">{Math.round(avail7High)}</div>
+                    <span className="text-[8px] text-slate-500 font-mono">pipes</span>
+                  </div>
+                  <div className="p-2 bg-emerald-950/80 rounded-xl text-emerald-400 border border-emerald-800/40">
+                    <PackageCheck className="w-3.5 h-3.5" />
+                  </div>
+                </div>
+              </div>
+
+              {/* 7" Medium QLT */}
+              <div className="bg-slate-900/40 p-3 rounded-2xl border border-teal-500/25 hover:border-teal-500/50 transition-all duration-300 shadow-sm relative overflow-hidden group">
+                <div className="absolute -right-3 -bottom-3 w-10 h-10 bg-teal-500/5 rounded-full blur-md group-hover:scale-150 transition-transform duration-500" />
+                <div className="flex justify-between items-start">
+                  <div>
+                    <span className="text-[9px] font-mono text-slate-400 uppercase tracking-wider font-bold block">7" M QLT</span>
+                    <div className="text-lg font-black font-mono mt-1 text-teal-400">{Math.round(avail7Medium)}</div>
+                    <span className="text-[8px] text-slate-500 font-mono">pipes</span>
+                  </div>
+                  <div className="p-2 bg-teal-950/80 rounded-xl text-teal-400 border border-teal-800/40">
+                    <PackageCheck className="w-3.5 h-3.5" />
+                  </div>
+                </div>
+              </div>
+
+              {/* 10" High QLT */}
+              <div className="bg-slate-900/40 p-3 rounded-2xl border border-orange-500/25 hover:border-orange-500/50 transition-all duration-300 shadow-sm relative overflow-hidden group">
+                <div className="absolute -right-3 -bottom-3 w-10 h-10 bg-orange-500/5 rounded-full blur-md group-hover:scale-150 transition-transform duration-500" />
+                <div className="flex justify-between items-start">
+                  <div>
+                    <span className="text-[9px] font-mono text-slate-400 uppercase tracking-wider font-bold block">10" H QLT</span>
+                    <div className="text-lg font-black font-mono mt-1 text-orange-400">{Math.round(avail10High)}</div>
+                    <span className="text-[8px] text-slate-500 font-mono">pipes</span>
+                  </div>
+                  <div className="p-2 bg-orange-950/80 rounded-xl text-orange-400 border border-orange-800/40">
+                    <PackageCheck className="w-3.5 h-3.5" />
+                  </div>
+                </div>
+              </div>
+
+              {/* 10" Medium QLT */}
+              <div className="bg-slate-900/40 p-3 rounded-2xl border border-amber-500/25 hover:border-amber-500/50 transition-all duration-300 shadow-sm relative overflow-hidden group">
+                <div className="absolute -right-3 -bottom-3 w-10 h-10 bg-amber-500/5 rounded-full blur-md group-hover:scale-150 transition-transform duration-500" />
+                <div className="flex justify-between items-start">
+                  <div>
+                    <span className="text-[9px] font-mono text-slate-400 uppercase tracking-wider font-bold block">10" M QLT</span>
+                    <div className="text-lg font-black font-mono mt-1 text-amber-400">{Math.round(avail10Medium)}</div>
+                    <span className="text-[8px] text-slate-500 font-mono">pipes</span>
+                  </div>
+                  <div className="p-2 bg-amber-950/80 rounded-xl text-amber-400 border border-amber-800/40">
+                    <PackageCheck className="w-3.5 h-3.5" />
+                  </div>
+                </div>
+              </div>
+
+            </div>
+          </div>
+        );
+      })()}
 
       {/* 1. BUSINESS METRICS */}
       <div className="bg-indigo-950/40 rounded-2xl border border-indigo-900/50 p-4 space-y-3 shadow-md shadow-indigo-950/20">
