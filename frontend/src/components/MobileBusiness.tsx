@@ -822,9 +822,18 @@ export default function MobileBusiness({
       source: shouldPersistToServer ? "server" : (existingBill?.source ?? "local"),
       ...savedCustomFields
     };
-    // === HAMMER FEET TRACKING (internal, not in PDF) ===
+     // === HAMMER FEET TRACKING (internal, not in PDF) ===
+    let casingToSubtract = 0;
+    if ((casing7Feet || 0) > 0 && (casing10Feet || 0) > 0) {
+      casingToSubtract = casing7Feet || 0;
+    } else if ((casing7Feet || 0) > 0) {
+      casingToSubtract = casing7Feet || 0;
+    } else if ((casing10Feet || 0) > 0) {
+      casingToSubtract = casing10Feet || 0;
+    }
+
     const drillingFeet = billMode === "New" 
-      ? Math.max(0, (isCustom ? customEndingFeet : finalDepth) - ((casing7Feet || 0) + (casing10Feet || 0)))
+      ? Math.max(0, (isCustom ? customEndingFeet : finalDepth) - casingToSubtract)
       : 0;
 
     const updatedHammers = hammerEntries.map((h) => {
@@ -3879,9 +3888,18 @@ export default function MobileBusiness({
                         const c7 = b.casing7Feet || 0;
                         const c10 = b.casing10Feet || 0;
                         
+                        let casingToSubtract = 0;
+                        if (c7 > 0 && c10 > 0) {
+                          casingToSubtract = c7;
+                        } else if (c7 > 0) {
+                          casingToSubtract = c7;
+                        } else if (c10 > 0) {
+                          casingToSubtract = c10;
+                        }
+
                         let feet = 0;
                         if (b.billMode === "New") {
-                          feet = Math.max(0, endFeet - (c7 + c10));
+                          feet = Math.max(0, endFeet - casingToSubtract);
                         }
                         return {
                           id: b.id,
