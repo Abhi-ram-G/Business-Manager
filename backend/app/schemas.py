@@ -202,6 +202,7 @@ class BusinessBillCreate(BaseModel):
     casing7_hammer_id: str | None = None
     customer_paid: float | None = 0.0
     payment_date: dt_date | None = None
+    payments: list[dict[str, Any]] | None = None
 
 
 
@@ -246,6 +247,7 @@ class BusinessBillUpdate(BaseModel):
     casing7_hammer_id: str | None = None
     customer_paid: float | None = None
     payment_date: dt_date | None = None
+    payments: list[dict[str, Any]] | None = None
 
 
 

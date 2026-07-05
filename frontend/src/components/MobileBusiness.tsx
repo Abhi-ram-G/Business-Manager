@@ -325,6 +325,10 @@ export default function MobileBusiness({
   const [billStatus, setBillStatus] = useState<"Paid" | "Pending">("Pending");
   const [customerPaid, setCustomerPaid] = useState<number>(0);
   const [paymentDate, setPaymentDate] = useState<string>("");
+  const [paymentsList, setPaymentsList] = useState<{ id: string; date: string; amount: number }[]>([]);
+  const [tempPayAmount, setTempPayAmount] = useState<string>("");
+  const [tempPayDate, setTempPayDate] = useState<string>("2026-07-05");
+  const [showAddPaymentForm, setShowAddPaymentForm] = useState<boolean>(false);
 
   const [borewellType, setBorewellType] = useState<"Tight Formation" | "Loose Formation">("Tight Formation");
   const [billMode, setBillMode] = useState<"New" | "Re-Borewell" | "Customize">("New");
@@ -675,8 +679,12 @@ export default function MobileBusiness({
     };
 
     const finalBillTotal = Math.max(0, calc.grand - discountAmount);
-    const calculatedPending = Math.max(0, finalBillTotal - Number(customerPaid));
+    const totalPaidCalculated = paymentsList.reduce((sum, p) => sum + p.amount, 0);
+    const calculatedPending = Math.max(0, finalBillTotal - totalPaidCalculated);
     const resolvedStatus = calculatedPending <= 0 ? "Paid" : billStatus;
+    const latestPayment = paymentsList.length > 0 ? [...paymentsList].sort((a,b) => b.date.localeCompare(a.date))[0] : undefined;
+    const resolvedPaymentDate = latestPayment ? latestPayment.date : undefined;
+
     const existingBill = editingBillId ? businessBills.find((bill) => bill.id === editingBillId) : undefined;
     const shouldPersistToServer = !editingBillId || existingBill?.source === "server";
 
@@ -691,8 +699,9 @@ export default function MobileBusiness({
       discountAmount,
       taxRate: 0,
       status: resolvedStatus,
-      customerPaid: Number(customerPaid) || 0,
-      paymentDate: paymentDate || undefined,
+      customerPaid: totalPaidCalculated,
+      paymentDate: resolvedPaymentDate || undefined,
+      payments: paymentsList,
       borewellType,
       billMode,
       existingDepth,
@@ -784,6 +793,10 @@ export default function MobileBusiness({
         setDiscountAmount(0);
         setCustomerPaid(0);
         setPaymentDate("");
+        setPaymentsList([]);
+        setTempPayAmount("");
+        setTempPayDate("2026-07-05");
+        setShowAddPaymentForm(false);
         setCustomLocation("");
         setCustomBrokerName("");
         setCustomBillDateType("automatic");
@@ -837,8 +850,9 @@ export default function MobileBusiness({
                   discountAmount,
                   taxRate: 0,
                   status: resolvedStatus,
-                  customerPaid: Number(customerPaid) || 0,
-                  paymentDate: paymentDate || undefined,
+                  customerPaid: totalPaidCalculated,
+                  paymentDate: resolvedPaymentDate || undefined,
+                  payments: paymentsList,
                   borewellType,
                   billMode,
                   existingDepth,
@@ -886,6 +900,10 @@ export default function MobileBusiness({
     setDiscountAmount(0);
     setCustomerPaid(0);
     setPaymentDate("");
+    setPaymentsList([]);
+    setTempPayAmount("");
+    setTempPayDate("2026-07-05");
+    setShowAddPaymentForm(false);
 
     // reset custom inputs
     setCustomLocation("");
@@ -934,6 +952,10 @@ export default function MobileBusiness({
     setDiscountAmount(bill.discountAmount !== undefined ? bill.discountAmount : 0);
     setCustomerPaid(bill.customerPaid !== undefined ? bill.customerPaid : 0);
     setPaymentDate(bill.paymentDate || "");
+    setPaymentsList(bill.payments || []);
+    setTempPayAmount("");
+    setTempPayDate(bill.paymentDate || "2026-07-05");
+    setShowAddPaymentForm(false);
     setSelectedBitId(bill.usedBitId || "");
     setSelectedHammerId(bill.usedHammerId || "");
     setSelectedCasing10HammerId(bill.usedCasing10HammerId || "");
@@ -6287,42 +6309,132 @@ export default function MobileBusiness({
                   />
                 </div>
 
-                <div className="grid grid-cols-2 gap-3">
-                  <div className="space-y-1">
-                    <label className="text-[9px] text-teal-400 block uppercase font-mono font-black tracking-wider">Customer Paid Amount (Rs.)</label>
-                    <input
-                      type="number"
-                      min={0}
-                      placeholder="Enter amount paid by customer..."
-                      value={customerPaid || ""}
-                      onChange={(e) => {
-                        const paidVal = Math.max(0, Number(e.target.value));
-                        setCustomerPaid(paidVal);
-                        const grandTotalVal = Math.max(0, liveCalc.grand - discountAmount);
-                        if (paidVal >= grandTotalVal) {
-                          setBillStatus("Paid");
-                        } else {
-                          setBillStatus("Pending");
-                        }
+                <div className="space-y-2 border border-slate-850 p-2.5 rounded-xl bg-slate-950/30">
+                  <div className="flex justify-between items-center">
+                    <span className="text-[9.5px] font-mono text-slate-400 uppercase tracking-wider font-bold">Payment History</span>
+                    <span className="text-[9px] text-slate-500 font-mono">{paymentsList.length} Entries</span>
+                  </div>
+
+                  {paymentsList.length > 0 ? (
+                    <div className="space-y-1 max-h-32 overflow-y-auto">
+                      {paymentsList.map((p, idx) => (
+                        <div key={p.id || idx} className="flex justify-between items-center text-[10px] font-mono bg-slate-950 p-1.5 rounded border border-slate-850">
+                          <span className="text-slate-400">{formatDateToDMY(p.date)}</span>
+                          <div className="flex items-center gap-2">
+                            <span className="text-teal-400 font-bold">Rs. {p.amount.toLocaleString()}</span>
+                            <button
+                              type="button"
+                              onClick={() => {
+                                const updated = paymentsList.filter(item => item.id !== p.id);
+                                setPaymentsList(updated);
+                                const totalPaidCalculated = updated.reduce((sum, item) => sum + item.amount, 0);
+                                const grandTotalVal = Math.max(0, liveCalc.grand - discountAmount);
+                                if (totalPaidCalculated >= grandTotalVal) {
+                                  setBillStatus("Paid");
+                                } else {
+                                  setBillStatus("Pending");
+                                }
+                              }}
+                              className="text-rose-450 hover:text-rose-600 cursor-pointer text-[9px] px-1.5 py-0.5 font-bold bg-rose-950/40 rounded border border-rose-900/30"
+                            >
+                              Delete
+                            </button>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  ) : (
+                    <p className="text-[9.5px] text-slate-500 italic text-center py-1">No payment entries added yet.</p>
+                  )}
+
+                  {!showAddPaymentForm ? (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setShowAddPaymentForm(true);
+                        setTempPayAmount("");
+                        setTempPayDate(new Date().toISOString().split("T")[0]);
                       }}
-                      className="w-full bg-slate-950 p-2 text-xs text-teal-400 font-mono font-bold rounded border border-slate-850 focus:border-teal-550"
-                    />
-                  </div>
-                  <div className="space-y-1">
-                    <label className="text-[9px] text-teal-400 block uppercase font-mono font-black tracking-wider">Payment Date</label>
-                    <input
-                      type="date"
-                      value={paymentDate || ""}
-                      onChange={(e) => setPaymentDate(e.target.value)}
-                      className="w-full bg-slate-950 p-2 text-xs text-teal-400 font-mono font-bold rounded border border-slate-850 focus:border-teal-550"
-                    />
-                  </div>
+                      className="w-full mt-1 bg-indigo-950 hover:bg-indigo-900/80 text-indigo-350 hover:text-white py-1.5 px-3 rounded-lg border border-indigo-900/40 text-[9.5px] font-mono font-bold flex items-center justify-center gap-1 transition cursor-pointer active:scale-95"
+                    >
+                      ➕ Add Customer Payment
+                    </button>
+                  ) : (
+                    <div className="bg-slate-950 border border-slate-850 p-2 rounded-xl space-y-2 mt-1 animate-fade-in">
+                      <span className="text-[8.5px] font-mono text-indigo-400 font-bold uppercase tracking-wider block">New Payment Entry</span>
+                      <div className="grid grid-cols-2 gap-2">
+                        <div className="space-y-0.5">
+                          <label className="text-[8px] text-slate-400 font-mono block uppercase">Amount (Rs.)</label>
+                          <input
+                            type="number"
+                            min={1}
+                            placeholder="Enter amount..."
+                            value={tempPayAmount}
+                            onChange={(e) => setTempPayAmount(e.target.value)}
+                            className="w-full bg-slate-900 p-1.5 text-[10px] text-teal-400 font-mono rounded border border-slate-880"
+                          />
+                        </div>
+                        <div className="space-y-0.5">
+                          <label className="text-[8px] text-slate-400 font-mono block uppercase">Date</label>
+                          <input
+                            type="date"
+                            value={tempPayDate}
+                            onChange={(e) => setTempPayDate(e.target.value)}
+                            className="w-full bg-slate-900 p-1.5 text-[10px] text-teal-400 font-mono rounded border border-slate-880"
+                          />
+                        </div>
+                      </div>
+                      <div className="flex gap-1.5 justify-end">
+                        <button
+                          type="button"
+                          onClick={() => setShowAddPaymentForm(false)}
+                          className="px-2 bg-slate-900 hover:bg-slate-800 text-slate-400 py-1 rounded text-[9px] cursor-pointer"
+                        >
+                          Cancel
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            const amt = Number(tempPayAmount);
+                            if (!amt || amt <= 0) {
+                              alert("Please enter a valid payment amount.");
+                              return;
+                            }
+                            if (!tempPayDate) {
+                              alert("Please select a payment date.");
+                              return;
+                            }
+                            const newEntry = {
+                              id: `pay-${Date.now()}-${Math.random().toString(36).substr(2, 4)}`,
+                              date: tempPayDate,
+                              amount: amt
+                            };
+                            const updated = [...paymentsList, newEntry];
+                            setPaymentsList(updated);
+                            setShowAddPaymentForm(false);
+                            setTempPayAmount("");
+
+                            const totalPaidCalculated = updated.reduce((sum, item) => sum + item.amount, 0);
+                            const grandTotalVal = Math.max(0, liveCalc.grand - discountAmount);
+                            if (totalPaidCalculated >= grandTotalVal) {
+                              setBillStatus("Paid");
+                            } else {
+                              setBillStatus("Pending");
+                            }
+                          }}
+                          className="px-2.5 bg-teal-600 hover:bg-teal-500 text-white font-bold py-1 rounded text-[9px] cursor-pointer"
+                        >
+                          Add
+                        </button>
+                      </div>
+                    </div>
+                  )}
                 </div>
 
                 <div className="flex justify-between items-center bg-slate-950 p-2 rounded border border-slate-850 text-xs font-mono font-bold">
                   <span className="text-slate-455">Pending Amount:</span>
-                  <span className="text-rose-400 font-black">
-                    Rs. {Math.max(0, Math.max(0, liveCalc.grand - discountAmount) - customerPaid).toLocaleString()}
+                  <span className="text-rose-455 font-black text-rose-400">
+                    Rs. {Math.max(0, Math.max(0, liveCalc.grand - discountAmount) - paymentsList.reduce((sum, p) => sum + p.amount, 0)).toLocaleString()}
                   </span>
                 </div>
 
@@ -6515,27 +6627,41 @@ export default function MobileBusiness({
                       </div>
 
                       {/* Paid Details Section */}
-                      <div className="pt-1.5 border-t border-slate-850/40 mt-1.5 space-y-1 text-slate-400 text-[8.5px]">
-                        <div className="flex justify-between">
-                          <span>Grand Total:</span>
-                          <span className="font-bold text-slate-200">Rs. {b.amount.toLocaleString()}</span>
+                      <div className="pt-1.5 border-t border-slate-850/40 mt-1.5 space-y-1.5 text-slate-400 text-[8.5px]">
+                        {/* Summary single row */}
+                        <div className="flex flex-wrap items-center justify-between bg-slate-950 p-1.5 rounded border border-slate-850 text-slate-350 font-bold gap-y-1">
+                          <div className="text-center px-1">
+                            <span className="text-[7.5px] text-slate-500 font-mono block uppercase">Date</span>
+                            <span className="font-mono text-[8.5px] text-slate-200">{formatDateToDMY(b.billDate)}</span>
+                          </div>
+                          <div className="text-center px-1 border-l border-slate-850/60">
+                            <span className="text-[7.5px] text-slate-500 font-mono block uppercase">Grand Total</span>
+                            <span className="font-mono text-[8.5px] text-slate-200">Rs. {b.amount.toLocaleString()}</span>
+                          </div>
+                          <div className="text-center px-1 border-l border-slate-850/60">
+                            <span className="text-[7.5px] text-slate-500 font-mono block uppercase">Customer Paid</span>
+                            <span className="font-mono text-[8.5px] text-teal-400">Rs. {(b.customerPaid || 0).toLocaleString()}</span>
+                          </div>
+                          <div className="text-center px-1 border-l border-slate-850/60">
+                            <span className="text-[7.5px] text-slate-500 font-mono block uppercase">Pending</span>
+                            <span className={`font-mono text-[8.5px] ${Math.max(0, b.amount - (b.customerPaid || 0)) === 0 ? "text-emerald-400" : "text-rose-400"}`}>
+                              Rs. {Math.max(0, b.amount - (b.customerPaid || 0)).toLocaleString()}
+                            </span>
+                          </div>
                         </div>
-                        <div className="flex justify-between">
-                          <span>Customer Paid:</span>
-                          <span className="font-bold text-teal-400">Rs. {(b.customerPaid || 0).toLocaleString()}</span>
-                        </div>
-                        {b.paymentDate && (
-                          <div className="flex justify-between">
-                            <span>Payment Date:</span>
-                            <span className="text-slate-300">{formatDateToDMY(b.paymentDate)}</span>
+
+                        {/* Individual payment entries listing */}
+                        {b.payments && b.payments.length > 0 && (
+                          <div className="space-y-1 mt-1 pl-1 font-mono">
+                            <span className="text-[8px] text-slate-500 font-bold uppercase tracking-wider block">Payment Logs:</span>
+                            {b.payments.map((p, pIdx) => (
+                              <div key={p.id || pIdx} className="flex justify-between items-center text-[8px] bg-slate-950/60 px-2 py-0.5 rounded border border-slate-900/60">
+                                <span className="text-slate-450">• {formatDateToDMY(p.date)}</span>
+                                <span className="text-teal-400 font-bold">Rs. {p.amount.toLocaleString()} paid</span>
+                              </div>
+                            ))}
                           </div>
                         )}
-                        <div className="flex justify-between font-bold text-indigo-400">
-                          <span>Pending Amount:</span>
-                          <span className={`${Math.max(0, b.amount - (b.customerPaid || 0)) === 0 ? "text-emerald-400" : "text-rose-400"}`}>
-                            Rs. {Math.max(0, b.amount - (b.customerPaid || 0)).toLocaleString()}
-                          </span>
-                        </div>
                       </div>
                     </div>
 

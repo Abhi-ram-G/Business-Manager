@@ -38,6 +38,7 @@ SQL_STATEMENTS = [
     "ALTER TABLE bit_entries ADD COLUMN IF NOT EXISTS date_entry date DEFAULT CURRENT_DATE;",
     "ALTER TABLE business_bills ADD COLUMN IF NOT EXISTS customer_paid numeric(10, 2) DEFAULT 0.00;",
     "ALTER TABLE business_bills ADD COLUMN IF NOT EXISTS payment_date date;",
+    "ALTER TABLE business_bills ADD COLUMN IF NOT EXISTS payments json DEFAULT '[]';",
 ]
 
 print(f"Connecting to database...")

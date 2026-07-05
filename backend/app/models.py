@@ -167,6 +167,7 @@ class BusinessBill(Base, TimestampMixin):
     casing7_hammer_id: Mapped[str | None] = mapped_column(String(50))
     customer_paid: Mapped[float | None] = mapped_column(Numeric(10, 2), default=0.00)
     payment_date: Mapped[date | None] = mapped_column(Date)
+    payments: Mapped[list[dict[str, Any]] | None] = mapped_column(JSON)
 
 
 

@@ -172,6 +172,7 @@ export interface BusinessBill {
   source?: "local" | "server";
   customerPaid?: number;
   paymentDate?: string;
+  payments?: { id: string; date: string; amount: number }[];
   // Internal tracking only — NOT printed in invoice PDF
   usedBitId?: string;
   usedHammerId?: string;
