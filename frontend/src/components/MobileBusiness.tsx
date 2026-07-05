@@ -4257,7 +4257,7 @@ export default function MobileBusiness({
                                     <p className="text-[8px] text-slate-500">Location: {bill.location || "-"}</p>
                                     
                                     {/* Feet breakdown */}
-                                    <div className="grid grid-cols-2 gap-1 text-[7.5px] text-slate-400 border-t border-slate-850/50 pt-1 mt-1">
+                                    <div className="flex flex-wrap gap-x-3 gap-y-1 text-[7.5px] text-slate-400 border-t border-slate-850/50 pt-1 mt-1">
                                       {Number(bill.casing7HighFeet) > 0 && <span>7" High: {bill.casing7HighFeet} ft</span>}
                                       {Number(bill.casing7MediumFeet) > 0 && <span>7" Med: {bill.casing7MediumFeet} ft</span>}
                                       {Number(bill.casing10HighFeet) > 0 && <span>10" High: {bill.casing10HighFeet} ft</span>}
