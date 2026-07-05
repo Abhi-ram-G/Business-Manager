@@ -284,11 +284,34 @@ export default function MobileBusiness({
       const billToDelete = businessBills.find((bill) => bill.id === id);
       
       // Clean up hammer entries local state
-      setHammerEntries((prev) => 
-        prev.map((h) => ({
-          ...h,
-          usageHistory: (h.usageHistory || []).filter((rec) => rec.billId !== id)
-        }))
+      const cleanedHammers = hammerEntries.map((h) => ({
+        ...h,
+        usageHistory: (h.usageHistory || []).filter((rec) => rec.billId !== id)
+      }));
+      setHammerEntries(cleanedHammers);
+
+      // Find hammers that need database updates
+      const hammersToUpdate = hammerEntries.filter(h => 
+        (h.usageHistory || []).some(rec => rec.billId === id)
+      );
+
+      // Persist modified hammers to server
+      await Promise.all(
+        hammersToUpdate.map(async (h) => {
+          const cleanedHammer = {
+            ...h,
+            usageHistory: (h.usageHistory || []).filter((rec) => rec.billId !== id)
+          };
+          try {
+            await requestJson(apiBaseUrl, `/api/v1/business/hammers/${h.id}`, {
+              method: "PUT",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify(toHammerApiPayload(cleanedHammer)),
+            });
+          } catch (err) {
+            console.error("Failed to clean hammer usage on server:", err);
+          }
+        })
       );
 
       if (!billToDelete || billToDelete.source !== "server") {
