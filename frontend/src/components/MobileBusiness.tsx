@@ -37,7 +37,8 @@ import {
   UserX,
   UserCheck,
   Mars,
-  Venus
+  Venus,
+  History
 } from "lucide-react";
 import { Labour, Vehicle, BitEntry, HammerEntry, HammerUsageRecord, BusinessBill, FuelEntry, SalaryPayment, AdvanceEntry, AttendanceRecord, PipeEntry } from "../types";
 import { downloadSalarySlipPDF, downloadAttendanceReportPDF, downloadSingleLabourAttendancePDF } from "../utils/pdfGenerator";
