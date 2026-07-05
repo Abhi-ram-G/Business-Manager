@@ -6834,7 +6834,7 @@ export default function MobileBusiness({
                   <div className="grid grid-cols-1 gap-2 text-[10px] bg-slate-950/40 p-2.5 rounded-xl border border-slate-850 font-mono">
                     <div className="grid grid-cols-3 gap-2">
                       <div>
-                        <div className="text-[7.5px] text-red-500 font-bold uppercase block mb-1">10" HIGH QTY CASING DEPTH (FT)</div>
+                        <div className="text-[6.5px] text-red-500 font-bold uppercase block mb-1 whitespace-nowrap">10" HIGH QTY CASING DEPTH (FT)</div>
                         <input
                           type="number"
                           min={0}
@@ -6848,7 +6848,7 @@ export default function MobileBusiness({
                         />
                       </div>
                       <div>
-                        <div className="text-[7.5px] text-red-500 font-bold uppercase block mb-1">10" MED QTY CASING DEPTH (FT)</div>
+                        <div className="text-[6.5px] text-red-500 font-bold uppercase block mb-1 whitespace-nowrap">10" MED QTY CASING DEPTH (FT)</div>
                         <input
                           type="number"
                           min={0}
@@ -6862,7 +6862,7 @@ export default function MobileBusiness({
                         />
                       </div>
                       <div>
-                        <div className="text-[7.5px] text-red-500 font-bold uppercase block mb-1">RATE PER FEET (₹)</div>
+                        <div className="text-[6.5px] text-red-500 font-bold uppercase block mb-1 whitespace-nowrap">RATE PER FEET (₹)</div>
                         <input
                           type="number"
                           min={0}
@@ -6897,7 +6897,7 @@ export default function MobileBusiness({
                   <div className="grid grid-cols-1 gap-2 text-[10px] bg-slate-950/40 p-2.5 rounded-xl border border-slate-850 font-mono">
                     <div className="grid grid-cols-3 gap-2">
                       <div>
-                        <div className="text-[7.5px] text-red-500 font-bold uppercase block mb-1">7" HIGH QTY CASING DEPTH (FT)</div>
+                        <div className="text-[6.5px] text-emerald-500 font-bold uppercase block mb-1 whitespace-nowrap">7" HIGH QTY CASING DEPTH (FT)</div>
                         <input
                           type="number"
                           min={0}
@@ -6911,7 +6911,7 @@ export default function MobileBusiness({
                         />
                       </div>
                       <div>
-                        <div className="text-[7.5px] text-red-500 font-bold uppercase block mb-1">7" MED QTY CASING DEPTH (FT)</div>
+                        <div className="text-[6.5px] text-emerald-500 font-bold uppercase block mb-1 whitespace-nowrap">7" MED QTY CASING DEPTH (FT)</div>
                         <input
                           type="number"
                           min={0}
@@ -6925,7 +6925,7 @@ export default function MobileBusiness({
                         />
                       </div>
                       <div>
-                        <div className="text-[7.5px] text-red-500 font-bold uppercase block mb-1">RATE PER FEET (₹)</div>
+                        <div className="text-[6.5px] text-emerald-500 font-bold uppercase block mb-1 whitespace-nowrap">RATE PER FEET (₹)</div>
                         <input
                           type="number"
                           min={0}
