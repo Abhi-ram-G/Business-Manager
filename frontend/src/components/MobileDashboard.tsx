@@ -26,7 +26,10 @@ import {
   Phone,
   MapPin,
   BadgeCheck,
-  AlertTriangle
+  AlertTriangle,
+  Wrench,
+  Hammer,
+  FileText
 } from "lucide-react";
 import { 
   BarChart, 
@@ -38,7 +41,7 @@ import {
   CartesianGrid, 
   Legend 
 } from "recharts";
-import { Labour, Vehicle, FuelEntry, SalaryPayment, LoanGiven, LoanReceived, FamilyExpense, AttendanceRecord } from "../types";
+import { Labour, Vehicle, FuelEntry, SalaryPayment, LoanGiven, LoanReceived, FamilyExpense, AttendanceRecord, BitEntry, HammerEntry, BusinessBill } from "../types";
 
 interface MobileDashboardProps {
   labours: Labour[];
@@ -55,6 +58,9 @@ interface MobileDashboardProps {
   familySavingsRate?: number;
   language?: "en" | "ta";
   t?: (key: any) => string;
+  bitEntries?: BitEntry[];
+  hammerEntries?: HammerEntry[];
+  businessBills?: BusinessBill[];
 }
 
 export default function MobileDashboard({
@@ -71,7 +77,10 @@ export default function MobileDashboard({
   totalMonthlyExpense = 0,
   familySavingsRate = 0,
   language = "en",
-  t
+  t,
+  bitEntries = [],
+  hammerEntries = [],
+  businessBills = []
 }: MobileDashboardProps) {
   // Local fallback translations helper if not passed from parent
   const localT = (key: string) => {
@@ -86,7 +95,11 @@ export default function MobileDashboard({
         lent_portfolio: "Lent Portfolio",
         family_expenses: "Family Expenses",
         family_savings: "Family Savings",
-        surplus: "Surplus"
+        surplus: "Surplus",
+        bit_count: "Bit Count",
+        hammer_count: "Hammer Count",
+        bill_count: "Bill Count",
+        pending_bills_amount: "Pending Bills Amount"
       },
       ta: {
         active_roster: "செயலில் உள்ள ஜூன் பட்டியல்",
@@ -96,7 +109,11 @@ export default function MobileDashboard({
         lent_portfolio: "வழங்கிய கடன்கள்",
         family_expenses: "குடும்ப செலவுகள்",
         family_savings: "குடும்ப சேமிப்பு",
-        surplus: "கூடுதல் சேமிப்பு"
+        surplus: "கூடுதல் சேமிப்பு",
+        bit_count: "பிட் எண்ணிக்கை",
+        hammer_count: "சுத்தியல் எண்ணிக்கை",
+        bill_count: "பில் எண்ணிக்கை",
+        pending_bills_amount: "நிலுவையில் உள்ள பில் தொகை"
       }
     };
     return fallbackDict[language]?.[key] || key;
@@ -155,6 +172,10 @@ export default function MobileDashboard({
   const monthlyFamilyExpenses = familyExpenses
     .filter(e => e.date.startsWith("2026-06"))
     .reduce((sum, e) => sum + e.amount, 0);
+
+  const totalPendingBillsAmount = businessBills
+    .filter(b => b.status === "Pending")
+    .reduce((sum, b) => sum + (b.amount || 0), 0);
 
   // Group family expenses by category for analytics
   const categoriesList = ["Food", "Medical", "Education", "Shopping", "Travel", "House Rent", "Electricity", "Water Bill", "Internet", "Entertainment", "Other"];
@@ -259,6 +280,70 @@ export default function MobileDashboard({
             </div>
             <div className="p-2 bg-purple-950/80 rounded-xl text-purple-400 border border-purple-800/40">
               <ArrowUpRight className="w-4 h-4" />
+            </div>
+          </div>
+        </div>
+
+        {/* Card 5: Bit Count (Blue Theme) */}
+        <div className="bg-slate-900/40 p-3.5 rounded-2xl border border-blue-500/20 hover:border-blue-500/40 transition-all duration-300 shadow-sm relative overflow-hidden group">
+          <div className="absolute -right-4 -bottom-4 w-12 h-12 bg-blue-500/5 rounded-full blur-md group-hover:scale-150 transition-transform duration-500" />
+          <div className="flex justify-between items-start">
+            <div>
+              <span className="text-[9.5px] font-mono text-slate-400 uppercase tracking-wider font-bold">{localT("bit_count")}</span>
+              <div className="text-lg font-black font-mono mt-1 text-blue-400">
+                {bitEntries.length}
+              </div>
+            </div>
+            <div className="p-2 bg-blue-950/80 rounded-xl text-blue-400 border border-blue-800/40">
+              <Wrench className="w-4 h-4" />
+            </div>
+          </div>
+        </div>
+
+        {/* Card 6: Hammer Count (Amber Theme) */}
+        <div className="bg-slate-900/40 p-3.5 rounded-2xl border border-amber-500/20 hover:border-amber-500/40 transition-all duration-300 shadow-sm relative overflow-hidden group">
+          <div className="absolute -right-4 -bottom-4 w-12 h-12 bg-amber-500/5 rounded-full blur-md group-hover:scale-150 transition-transform duration-500" />
+          <div className="flex justify-between items-start">
+            <div>
+              <span className="text-[9.5px] font-mono text-slate-400 uppercase tracking-wider font-bold">{localT("hammer_count")}</span>
+              <div className="text-lg font-black font-mono mt-1 text-amber-400">
+                {hammerEntries.length}
+              </div>
+            </div>
+            <div className="p-2 bg-amber-950/80 rounded-xl text-amber-400 border border-amber-800/40">
+              <Hammer className="w-4 h-4" />
+            </div>
+          </div>
+        </div>
+
+        {/* Card 7: Number of Bill Count (Teal Theme) */}
+        <div className="bg-slate-900/40 p-3.5 rounded-2xl border border-teal-500/20 hover:border-teal-500/40 transition-all duration-300 shadow-sm relative overflow-hidden group">
+          <div className="absolute -right-4 -bottom-4 w-12 h-12 bg-teal-500/5 rounded-full blur-md group-hover:scale-150 transition-transform duration-500" />
+          <div className="flex justify-between items-start">
+            <div>
+              <span className="text-[9.5px] font-mono text-slate-400 uppercase tracking-wider font-bold">{localT("bill_count")}</span>
+              <div className="text-lg font-black font-mono mt-1 text-teal-400">
+                {businessBills.length}
+              </div>
+            </div>
+            <div className="p-2 bg-teal-950/80 rounded-xl text-teal-400 border border-teal-800/40">
+              <FileText className="w-4 h-4" />
+            </div>
+          </div>
+        </div>
+
+        {/* Card 8: Pending Amount in Bill (Rose Theme) */}
+        <div className="bg-slate-900/40 p-3.5 rounded-2xl border border-rose-500/20 hover:border-rose-500/40 transition-all duration-300 shadow-sm relative overflow-hidden group">
+          <div className="absolute -right-4 -bottom-4 w-12 h-12 bg-rose-500/5 rounded-full blur-md group-hover:scale-150 transition-transform duration-500" />
+          <div className="flex justify-between items-start">
+            <div>
+              <span className="text-[9.5px] font-mono text-slate-400 uppercase tracking-wider font-bold">{localT("pending_bills_amount")}</span>
+              <div className="text-lg font-black font-mono mt-1 text-rose-400">
+                ₹{totalPendingBillsAmount.toLocaleString()}
+              </div>
+            </div>
+            <div className="p-2 bg-rose-950/80 rounded-xl text-rose-400 border border-rose-800/40">
+              <AlertTriangle className="w-4 h-4" />
             </div>
           </div>
         </div>

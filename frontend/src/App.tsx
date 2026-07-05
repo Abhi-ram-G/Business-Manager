@@ -100,6 +100,10 @@ const translations = {
     family_expenses: "Family Expenses",
     family_savings: "Family Savings",
     surplus: "Surplus",
+    bit_count: "Bit Count",
+    hammer_count: "Hammer Count",
+    bill_count: "Bill Count",
+    pending_bills_amount: "Pending Bills Amount",
     
     business_ops: "Business Operations",
     fleet_workforce: "Fleet & Workforce",
@@ -216,6 +220,10 @@ const translations = {
     family_expenses: "குடும்ப செலவுகள்",
     family_savings: "குடும்ப சேமிப்பு",
     surplus: "கூடுதல் சேமிப்பு",
+    bit_count: "பிட் எண்ணிக்கை",
+    hammer_count: "சுத்தியல் எண்ணிக்கை",
+    bill_count: "பில் எண்ணிக்கை",
+    pending_bills_amount: "நிலுவையில் உள்ள பில் தொகை",
     
     business_ops: "வணிக செயல்பாடுகள்",
     fleet_workforce: "வாகனங்கள் மற்றும் பணியாளர்கள்",
@@ -2358,6 +2366,9 @@ export default function App() {
                               familySavingsRate={familySavingsRate}
                               language={language}
                               t={t}
+                              bitEntries={bitEntries}
+                              hammerEntries={hammerEntries}
+                              businessBills={businessBills}
                             />
                           )}
 
@@ -2818,6 +2829,9 @@ export default function App() {
                             attendance={attendance}
                             language={language}
                             t={t}
+                            bitEntries={bitEntries}
+                            hammerEntries={hammerEntries}
+                            businessBills={businessBills}
                           />
                         )}
 
