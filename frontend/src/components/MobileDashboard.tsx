@@ -322,7 +322,7 @@ export default function MobileDashboard({
           <div className="flex justify-between items-start">
             <div>
               <span className="text-[9.5px] font-mono text-slate-400 uppercase tracking-wider font-bold">{localT("bill_count")}</span>
-              <div className="text-lg font-black font-mono mt-1 text-teal-400">
+              <div className="text-lg font-black font-mono mt-1 text-purple-600">
                 {businessBills.length}
               </div>
             </div>
