@@ -392,18 +392,16 @@ html, body {
 }
 
 .stock-card-label {
-  font-family: "Outfit", "Inter", system-ui, sans-serif !important;
-  font-size: 11px !important;
-  line-height: 14px !important;
+  font-size: 9.5px !important;
+  line-height: 12px !important;
   font-weight: 700 !important;
   color: #1e293b !important;
   letter-spacing: 0.05em !important;
 }
 
 .stock-card-number {
-  font-family: "Outfit", "Inter", system-ui, sans-serif !important;
-  font-size: 28px !important;
-  line-height: 34px !important;
+  font-size: 18px !important;
+  line-height: 24px !important;
   font-weight: 800 !important;
 }
 
@@ -420,9 +418,8 @@ html, body {
 }
 
 .stock-card-unit {
-  font-family: "Outfit", "Inter", system-ui, sans-serif !important;
-  font-size: 13px !important;
-  line-height: 18px !important;
+  font-size: 12px !important;
+  line-height: 16px !important;
   font-weight: 600 !important;
   color: #475569 !important;
   margin-left: 4px !important;
