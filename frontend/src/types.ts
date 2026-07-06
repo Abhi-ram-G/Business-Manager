@@ -112,6 +112,7 @@ export interface BitEntry {
   dateEntry?: string;
   rate: number;
   isPaid?: boolean;
+  payments?: { id: string; date: string; amount: number }[];
 }
 
 export interface HammerUsageRecord {
@@ -133,6 +134,7 @@ export interface HammerEntry {
   isPaid: boolean;
   casingType?: "7 inch" | "10 inch"; // set after limit is reached
   usageHistory: HammerUsageRecord[];
+  payments?: { id: string; date: string; amount: number }[];
 }
 
 export interface PipeEntry {
@@ -165,6 +167,7 @@ export interface PipeEntry {
   discountAmount: number;
   grandPrice: number;
   isPaid?: boolean;
+  payments?: { id: string; date: string; amount: number }[];
 }
 
 
@@ -233,6 +236,7 @@ export interface FuelEntry {
   cost?: number;
   currentOdometer?: number;
   isPaid?: boolean;
+  payments?: { id: string; date: string; amount: number }[];
 }
 
 export interface MaintenanceRecord {

@@ -70,6 +70,7 @@ export interface ServiceRecord {
   spareParts: string;
   remarks?: string;
   isPaid?: boolean;
+  payments?: { id: string; date: string; amount: number }[];
 }
 
 export interface MaterialPurchase {
@@ -84,6 +85,7 @@ export interface MaterialPurchase {
   vendorName?: string;
   remarks?: string;
   isPaid?: boolean;
+  payments?: { id: string; date: string; amount: number }[];
 }
 
 const isLegacyDemoServiceEntry = (service: ServiceRecord) =>
@@ -130,6 +132,169 @@ const renderLabourAvatar = (
   );
 };
 
+function PaymentTrackerSection({
+  grandTotal,
+  dateEntry,
+  payments = [],
+  onAddPayment,
+  onDeletePayment
+}: {
+  grandTotal: number;
+  dateEntry: string;
+  payments?: { id: string; date: string; amount: number }[];
+  onAddPayment: (amount: number, date: string) => void;
+  onDeletePayment: (id: string) => void;
+}) {
+  const [isOpen, setIsOpen] = useState(false);
+  const [showAddForm, setShowAddForm] = useState(false);
+  const [amount, setAmount] = useState("");
+  const [date, setDate] = useState(() => new Date().toISOString().split("T")[0]);
+
+  const totalPaid = payments.reduce((sum, p) => sum + p.amount, 0);
+  const pending = Math.max(0, grandTotal - totalPaid);
+
+  const formatDateToDMY = (dateStr: string) => {
+    if (!dateStr) return "";
+    const parts = dateStr.split("-");
+    if (parts.length === 3) {
+      return `${parts[2]}/${parts[1]}/${parts[0]}`;
+    }
+    return dateStr;
+  };
+
+  return (
+    <div className="mt-2.5 pt-2 border-t border-slate-800/60 text-[9px] font-mono">
+      <button
+        type="button"
+        onClick={() => setIsOpen(!isOpen)}
+        className="w-full flex justify-between items-center bg-slate-950 p-2 rounded-lg border border-slate-850 hover:bg-slate-900 transition-colors text-indigo-400 font-bold uppercase tracking-wider"
+      >
+        <span>💰 Payment Logs & Status</span>
+        <span className={pending === 0 ? "text-emerald-450 font-bold" : "text-rose-455 font-bold"}>
+          {pending === 0 ? "Fully Paid" : `Pending: ₹${pending.toLocaleString()}`}
+        </span>
+      </button>
+
+      {isOpen && (
+        <div className="bg-slate-955 p-2.5 rounded-xl border border-slate-850 mt-1.5 space-y-2 animate-fade-in">
+          {/* Summary Row */}
+          <div className="flex flex-wrap items-center justify-between bg-slate-900 p-1.5 rounded border border-slate-800 text-slate-350 font-bold gap-y-1 text-center">
+            <div className="px-1">
+              <span className="text-[7.5px] text-slate-500 block uppercase">Date</span>
+              <span className="text-slate-200">{formatDateToDMY(dateEntry)}</span>
+            </div>
+            <div className="px-1 border-l border-slate-800">
+              <span className="text-[7.5px] text-slate-500 block uppercase">Grand Total</span>
+              <span className="text-slate-205">Rs. {grandTotal.toLocaleString()}</span>
+            </div>
+            <div className="px-1 border-l border-slate-800">
+              <span className="text-[7.5px] text-slate-500 block uppercase">Paid</span>
+              <span className="text-teal-400">Rs. {totalPaid.toLocaleString()}</span>
+            </div>
+            <div className="px-1 border-l border-slate-800">
+              <span className="text-[7.5px] text-slate-500 block uppercase">Pending</span>
+              <span className={pending === 0 ? "text-emerald-400 font-bold" : "text-rose-400 font-bold"}>
+                Rs. {pending.toLocaleString()}
+              </span>
+            </div>
+          </div>
+
+          {/* Payment Logs */}
+          <div className="space-y-1">
+            <span className="text-[8px] text-slate-500 font-bold uppercase tracking-wider block">Payment Logs:</span>
+            {payments.length === 0 ? (
+              <p className="text-slate-500 italic text-center py-1">No payment logs added yet.</p>
+            ) : (
+              <div className="space-y-1 max-h-24 overflow-y-auto pr-0.5">
+                {payments.map((p, idx) => (
+                  <div key={p.id || idx} className="flex justify-between items-center bg-slate-900/60 px-2 py-0.5 rounded border border-slate-850/50">
+                    <span className="text-slate-400">• {formatDateToDMY(p.date)}</span>
+                    <div className="flex items-center gap-2">
+                      <span className="text-teal-400 font-bold">Rs. {p.amount.toLocaleString()} paid</span>
+                      <button
+                        type="button"
+                        onClick={() => onDeletePayment(p.id)}
+                        className="text-rose-455 hover:text-rose-500 cursor-pointer text-[8px] px-1.5 py-0.5 bg-rose-950/40 rounded border border-rose-900/30"
+                      >
+                        Delete
+                      </button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+
+          {/* Add Payment Form */}
+          {!showAddForm ? (
+            <button
+              type="button"
+              onClick={() => {
+                setShowAddForm(true);
+                setAmount("");
+                setDate(new Date().toISOString().split("T")[0]);
+              }}
+              className="w-full bg-slate-900 hover:bg-slate-850 text-indigo-400 py-1.5 rounded-lg border border-slate-800 font-bold text-center flex items-center justify-center gap-1 cursor-pointer"
+            >
+              ➕ Add Payment Log
+            </button>
+          ) : (
+            <div className="bg-slate-900 border border-slate-800 p-2 rounded-lg space-y-2 animate-fade-in">
+              <span className="text-[8px] text-indigo-450 font-bold uppercase tracking-wider block">New Payment Entry</span>
+              <div className="grid grid-cols-2 gap-2">
+                <div className="space-y-0.5">
+                  <label className="text-[7.5px] text-slate-400 block uppercase">Amount (Rs.)</label>
+                  <input
+                    type="number"
+                    min={1}
+                    value={amount}
+                    onChange={(e) => setAmount(e.target.value)}
+                    className="w-full bg-slate-950 p-1.5 text-[9.5px] text-teal-400 rounded border border-slate-800 focus:outline-none"
+                    placeholder="Amount..."
+                  />
+                </div>
+                <div className="space-y-0.5">
+                  <label className="text-[7.5px] text-slate-400 block uppercase">Date</label>
+                  <input
+                    type="date"
+                    value={date}
+                    onChange={(e) => setDate(e.target.value)}
+                    className="w-full bg-slate-950 p-1.5 text-[9.5px] text-teal-400 rounded border border-slate-800 font-mono focus:outline-none"
+                  />
+                </div>
+              </div>
+              <div className="flex gap-1.5 justify-end">
+                <button
+                  type="button"
+                  onClick={() => setShowAddForm(false)}
+                  className="px-2 bg-slate-950 text-slate-400 py-1 rounded text-[8.5px] cursor-pointer"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    const amt = Number(amount);
+                    if (!amt || amt <= 0) {
+                      alert("Enter valid amount");
+                      return;
+                    }
+                    onAddPayment(amt, date);
+                    setShowAddForm(false);
+                    setAmount("");
+                  }}
+                  className="px-2.5 bg-teal-650 hover:bg-teal-600 text-white font-bold py-1 rounded text-[8.5px] cursor-pointer"
+                >
+                  Add
+                </button>
+              </div>
+            </div>
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
 
 interface MobileBusinessProps {
   key?: string;
@@ -3945,19 +4110,6 @@ export default function MobileBusiness({
                               <p className={`text-[8.5px] font-mono mt-0.5 font-bold ${bit.isPaid ? "text-green-600" : "text-indigo-400"}`}>Usage: {totalFeetUsed} ft used</p>
                             </div>
                             <div className="flex items-center gap-1.5 shrink-0 flex-wrap justify-end">
-                              {/* Paid / Pending toggle */}
-                              <div className="flex gap-1">
-                                <button
-                                  type="button"
-                                  onClick={() => setBitEntries(prev => prev.map(b => b.id === bit.id ? { ...b, isPaid: true } : b))}
-                                  className={`text-[8px] font-bold px-2 py-0.5 rounded border cursor-pointer transition ${bit.isPaid ? "bg-green-500 text-white border-green-600 shadow-sm" : "bg-slate-950 text-slate-400 border-slate-700 hover:bg-green-100 hover:text-green-700 hover:border-green-400"}`}
-                                >Paid</button>
-                                <button
-                                  type="button"
-                                  onClick={() => setBitEntries(prev => prev.map(b => b.id === bit.id ? { ...b, isPaid: false } : b))}
-                                  className={`text-[8px] font-bold px-2 py-0.5 rounded border cursor-pointer transition ${!bit.isPaid ? "bg-rose-500 text-white border-rose-600 shadow-sm" : "bg-slate-950 text-slate-400 border-slate-700 hover:bg-rose-100 hover:text-rose-700 hover:border-rose-400"}`}
-                                >Pending</button>
-                              </div>
                               <button
                                 type="button"
                                 onClick={() => handleOpenEditBit(bit)}
@@ -3989,7 +4141,7 @@ export default function MobileBusiness({
                             </button>
 
                             {selectedBitForHistory === bit.id && (
-                              <div className="bg-slate-950 p-2.5 rounded-xl border border-slate-850 mt-2 space-y-2 text-[9px] font-mono animate-fade-in">
+                              <div className="bg-slate-955 p-2.5 rounded-xl border border-slate-850 mt-2 space-y-2 text-[9px] font-mono animate-fade-in">
                                 <span className="font-bold uppercase text-slate-500 tracking-wider block text-[8px]">Bit Usage History</span>
                                 {usageRecords.length === 0 ? (
                                   <p className="text-slate-500 italic">No usage history recorded. This bit is fully unused.</p>
@@ -4000,7 +4152,7 @@ export default function MobileBusiness({
                                       .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
                                       .map((rec) => (
                                         <div key={rec.id} className="bg-slate-900/60 p-2 rounded border border-slate-850/50 space-y-1">
-                                          <div className="flex flex-wrap items-center gap-x-2 text-[8px] text-slate-350">
+                                          <div className="flex flex-wrap items-center gap-x-2 text-[8px] text-slate-355">
                                             <span className="font-bold">{rec.date}</span>
                                             <span className="text-indigo-400 font-extrabold">{rec.clientName}</span>
                                             <span className="text-slate-500 font-medium">({rec.location})</span>
@@ -4013,6 +4165,34 @@ export default function MobileBusiness({
                               </div>
                             )}
                           </div>
+
+                          <PaymentTrackerSection
+                            grandTotal={bit.rate}
+                            dateEntry={bit.dateEntry || ""}
+                            payments={bit.payments || (bit.isPaid ? [{ id: "init", date: bit.dateEntry || "2026-06-18", amount: bit.rate }] : [])}
+                            onAddPayment={(amount, date) => {
+                              setBitEntries(prev => prev.map(b => {
+                                if (b.id === bit.id) {
+                                  const current = b.payments || (b.isPaid ? [{ id: "init", date: b.dateEntry || "2026-06-18", amount: b.rate }] : []);
+                                  const nextPay = [...current, { id: `pay-${Date.now()}`, date, amount }];
+                                  const paid = nextPay.reduce((s, p) => s + p.amount, 0);
+                                  return { ...b, payments: nextPay, isPaid: paid >= b.rate };
+                                }
+                                return b;
+                              }));
+                            }}
+                            onDeletePayment={(payId) => {
+                              setBitEntries(prev => prev.map(b => {
+                                if (b.id === bit.id) {
+                                  const current = b.payments || (b.isPaid ? [{ id: "init", date: b.dateEntry || "2026-06-18", amount: b.rate }] : []);
+                                  const nextPay = current.filter(p => p.id !== payId);
+                                  const paid = nextPay.reduce((s, p) => s + p.amount, 0);
+                                  return { ...b, payments: nextPay, isPaid: paid >= b.rate };
+                                }
+                                return b;
+                              }));
+                            }}
+                          />
                         </div>
                       );
                     })
@@ -4177,19 +4357,6 @@ export default function MobileBusiness({
                             </div>
 
                             <div className="flex flex-col items-end gap-1.5 shrink-0">
-                              {/* Paid / Pending toggle */}
-                              <div className="flex gap-1">
-                                <button
-                                  type="button"
-                                  onClick={() => setHammerEntries(prev => prev.map(h => h.id === hammer.id ? { ...h, isPaid: true } : h))}
-                                  className={`text-[8px] font-bold px-2 py-0.5 rounded border cursor-pointer transition ${hammer.isPaid ? "bg-green-500 text-white border-green-600 shadow-sm" : "bg-slate-950 text-slate-400 border-slate-700 hover:bg-green-100 hover:text-green-700 hover:border-green-400"}`}
-                                >Paid</button>
-                                <button
-                                  type="button"
-                                  onClick={() => setHammerEntries(prev => prev.map(h => h.id === hammer.id ? { ...h, isPaid: false } : h))}
-                                  className={`text-[8px] font-bold px-2 py-0.5 rounded border cursor-pointer transition ${!hammer.isPaid ? "bg-rose-500 text-white border-rose-600 shadow-sm" : "bg-slate-950 text-slate-400 border-slate-700 hover:bg-rose-100 hover:text-rose-700 hover:border-rose-400"}`}
-                                >Pending</button>
-                              </div>
                               <div className="flex items-center gap-1">
                                 <button
                                   type="button"
@@ -4219,7 +4386,6 @@ export default function MobileBusiness({
                             </div>
                           </div>
 
-                          {/* Limit indicator & casing configuration options */}
                           {isLimitReached && (
                             <div className="bg-amber-955/20 border border-amber-900/30 rounded-xl p-2 text-[9px] text-amber-400 space-y-1">
                               <span className="font-bold flex items-center gap-1 font-mono uppercase">
@@ -4257,7 +4423,6 @@ export default function MobileBusiness({
                             </div>
                           )}
 
-                          {/* History Table Dropdown */}
                           {selectedHammerForHistory === hammer.id && (
                             <div className="bg-slate-950 p-2.5 rounded-xl border border-slate-850 space-y-1.5 text-[9px] font-mono">
                               <span className="font-bold uppercase text-slate-500 tracking-wider">Usage Records</span>
@@ -4289,6 +4454,34 @@ export default function MobileBusiness({
                               )}
                             </div>
                           )}
+
+                          <PaymentTrackerSection
+                            grandTotal={hammer.rate}
+                            dateEntry={hammer.dateEntry || ""}
+                            payments={hammer.payments || (hammer.isPaid ? [{ id: "init", date: hammer.dateEntry || "2026-06-18", amount: hammer.rate }] : [])}
+                            onAddPayment={(amount, date) => {
+                              setHammerEntries(prev => prev.map(h => {
+                                if (h.id === hammer.id) {
+                                  const current = h.payments || (h.isPaid ? [{ id: "init", date: h.dateEntry || "2026-06-18", amount: h.rate }] : []);
+                                  const nextPay = [...current, { id: `pay-${Date.now()}`, date, amount }];
+                                  const paid = nextPay.reduce((s, p) => s + p.amount, 0);
+                                  return { ...h, payments: nextPay, isPaid: paid >= h.rate };
+                                }
+                                return h;
+                              }));
+                            }}
+                            onDeletePayment={(payId) => {
+                              setHammerEntries(prev => prev.map(h => {
+                                if (h.id === hammer.id) {
+                                  const current = h.payments || (h.isPaid ? [{ id: "init", date: h.dateEntry || "2026-06-18", amount: h.rate }] : []);
+                                  const nextPay = current.filter(p => p.id !== payId);
+                                  const paid = nextPay.reduce((s, p) => s + p.amount, 0);
+                                  return { ...h, payments: nextPay, isPaid: paid >= h.rate };
+                                }
+                                return h;
+                              }));
+                            }}
+                          />
                         </div>
                       );
                     })
@@ -4731,19 +4924,6 @@ export default function MobileBusiness({
                               </span>
                             </div>
                             <div className="flex flex-col items-end gap-1.5">
-                              {/* Paid / Pending toggle */}
-                              <div className="flex gap-1">
-                                <button
-                                  type="button"
-                                  onClick={() => setPipeEntries(prev => prev.map(p => p.id === supplier.id ? { ...p, isPaid: true } : p))}
-                                  className={`text-[8px] font-bold px-2 py-0.5 rounded border cursor-pointer transition ${supplier.isPaid ? "bg-green-500 text-white border-green-600 shadow-sm" : "bg-slate-950 text-slate-400 border-slate-700 hover:bg-green-100 hover:text-green-700 hover:border-green-400"}`}
-                                >Paid</button>
-                                <button
-                                  type="button"
-                                  onClick={() => setPipeEntries(prev => prev.map(p => p.id === supplier.id ? { ...p, isPaid: false } : p))}
-                                  className={`text-[8px] font-bold px-2 py-0.5 rounded border cursor-pointer transition ${!supplier.isPaid ? "bg-rose-500 text-white border-rose-600 shadow-sm" : "bg-slate-950 text-slate-400 border-slate-700 hover:bg-rose-100 hover:text-rose-700 hover:border-rose-400"}`}
-                                >Pending</button>
-                              </div>
                               <div className="flex items-center gap-1.5">
                                 <button
                                   type="button"
@@ -4788,6 +4968,35 @@ export default function MobileBusiness({
                               <span className={`font-black ${supplier.isPaid ? "text-green-800" : "text-indigo-350"}`}>{totalRegistered}</span>
                             </div>
                           </div>
+                          <PaymentTrackerSection
+                            grandTotal={supplier.grandPrice || supplier.grandTotal || 0}
+                            dateEntry={supplier.dateEntry || ""}
+                            payments={supplier.payments || (supplier.isPaid ? [{ id: "init", date: supplier.dateEntry || "2026-06-18", amount: (supplier.grandPrice || supplier.grandTotal || 0) }] : [])}
+                            onAddPayment={(amount, date) => {
+                              setPipeEntries(prev => prev.map(p => {
+                                if (p.id === supplier.id) {
+                                  const totalCost = supplier.grandPrice || supplier.grandTotal || 0;
+                                  const current = p.payments || (p.isPaid ? [{ id: "init", date: p.dateEntry || "2026-06-18", amount: totalCost }] : []);
+                                  const nextPay = [...current, { id: `pay-${Date.now()}`, date, amount }];
+                                  const paid = nextPay.reduce((s, pay) => s + pay.amount, 0);
+                                  return { ...p, payments: nextPay, isPaid: paid >= totalCost };
+                                }
+                                return p;
+                              }));
+                            }}
+                            onDeletePayment={(payId) => {
+                              setPipeEntries(prev => prev.map(p => {
+                                if (p.id === supplier.id) {
+                                  const totalCost = supplier.grandPrice || supplier.grandTotal || 0;
+                                  const current = p.payments || (p.isPaid ? [{ id: "init", date: p.dateEntry || "2026-06-18", amount: totalCost }] : []);
+                                  const nextPay = current.filter(pay => pay.id !== payId);
+                                  const paid = nextPay.reduce((s, pay) => s + pay.amount, 0);
+                                  return { ...p, payments: nextPay, isPaid: paid >= totalCost };
+                                }
+                                return p;
+                              }));
+                            }}
+                          />
                         </div>
                       );
                     })
@@ -6005,19 +6214,6 @@ export default function MobileBusiness({
                             
                             <div className="text-right shrink-0 flex flex-col items-end justify-between h-full gap-2 pl-2">
                               <span className={`font-black text-[10.5px] ${s.isPaid ? "text-green-700" : "text-amber-500"}`}>₹{s.cost.toLocaleString()}</span>
-                              {/* Paid / Pending toggle buttons */}
-                              <div className="flex gap-1 mt-1">
-                                <button
-                                  type="button"
-                                  onClick={() => setServices(prev => prev.map(item => item.id === s.id ? { ...item, isPaid: true } : item))}
-                                  className={`text-[8px] font-bold px-2 py-0.5 rounded border cursor-pointer transition ${s.isPaid ? "bg-green-500 text-white border-green-600 shadow-sm" : "bg-slate-950 text-slate-400 border-slate-700 hover:bg-green-105 hover:text-green-750"}`}
-                                >Paid</button>
-                                <button
-                                  type="button"
-                                  onClick={() => setServices(prev => prev.map(item => item.id === s.id ? { ...item, isPaid: false } : item))}
-                                  className={`text-[8px] font-bold px-2 py-0.5 rounded border cursor-pointer transition ${!s.isPaid ? "bg-rose-500 text-white border-rose-600 shadow-sm" : "bg-slate-950 text-slate-400 border-slate-700 hover:bg-rose-105 hover:text-rose-750"}`}
-                                >Pending</button>
-                              </div>
                               <div className="flex gap-1.5 mt-2">
                                 <button type="button" onClick={() => handleOpenEditService(s)} className="p-1 px-1.5 bg-slate-900 border border-slate-800 text-slate-400 hover:text-white rounded">
                                   <Edit className="w-2.5 h-2.5" />
@@ -6028,6 +6224,34 @@ export default function MobileBusiness({
                               </div>
                             </div>
                           </div>
+
+                          <PaymentTrackerSection
+                            grandTotal={s.cost}
+                            dateEntry={s.date || ""}
+                            payments={s.payments || (s.isPaid ? [{ id: "init", date: s.date || "2026-06-18", amount: s.cost }] : [])}
+                            onAddPayment={(amount, date) => {
+                              setServices(prev => prev.map(item => {
+                                if (item.id === s.id) {
+                                  const current = item.payments || (item.isPaid ? [{ id: "init", date: item.date || "2026-06-18", amount: item.cost }] : []);
+                                  const nextPay = [...current, { id: `pay-${Date.now()}`, date, amount }];
+                                  const paid = nextPay.reduce((sum, p) => sum + p.amount, 0);
+                                  return { ...item, payments: nextPay, isPaid: paid >= item.cost };
+                                }
+                                return item;
+                              }));
+                            }}
+                            onDeletePayment={(payId) => {
+                              setServices(prev => prev.map(item => {
+                                if (item.id === s.id) {
+                                  const current = item.payments || (item.isPaid ? [{ id: "init", date: item.date || "2026-06-18", amount: item.cost }] : []);
+                                  const nextPay = current.filter(p => p.id !== payId);
+                                  const paid = nextPay.reduce((sum, p) => sum + p.amount, 0);
+                                  return { ...item, payments: nextPay, isPaid: paid >= item.cost };
+                                }
+                                return item;
+                              }));
+                            }}
+                          />
                         </div>
                       );
                     })
@@ -6139,52 +6363,69 @@ export default function MobileBusiness({
                   {fuelEntries.map(f => {
                     const displayAmount = Number(f.totalAmount ?? f.cost ?? ((f.liters ?? 0) * (f.perLiterCost ?? 0)));
                     return (
-                      <div key={f.id} className={`p-2 rounded-xl text-[10px] font-mono border transition-colors duration-300 flex justify-between items-center gap-2 ${
+                      <div key={f.id} className={`p-2.5 rounded-xl text-[10px] font-mono border transition-colors duration-300 ${
                         f.isPaid ? "bg-green-50 border-green-300" : "bg-slate-950 border-slate-850/50"
                       }`}>
-                        <div className="min-w-0">
-                          <span className={`text-[8.5px] block truncate flex items-center gap-1 ${f.isPaid ? "text-green-700" : "text-slate-500"}`}>
-                            <span>{f.dateTime}</span>
-                            <Car className={`w-3 h-3 shrink-0 ${f.isPaid ? "text-green-600" : "text-emerald-500"}`} />
-                            <span className="truncate">{f.vehicleName}</span>
-                          </span>
-                          <span className={`font-bold block truncate ${f.isPaid ? "text-green-800" : "text-slate-350"}`}>{f.fuelType} ₹ {f.liters} Liters ({f.perLiterCost}/L)</span>
-                          <span className={`inline-block text-[8px] font-bold px-1.5 py-0.2 rounded mt-0.5 ${f.isPaid ? "bg-green-200 text-green-800" : "bg-rose-950 text-rose-455"}`}>
-                            {f.isPaid ? "Paid" : "Pending"}
-                          </span>
-                        </div>
-                        <div className="flex items-center gap-2 shrink-0 flex-wrap justify-end">
-                          <span className={`font-black text-[10.5px] ${f.isPaid ? "text-green-700" : "text-rose-450"}`}>₹{displayAmount.toLocaleString()}</span>
-                          {/* Paid / Pending toggle */}
-                          <div className="flex gap-1">
-                            <button
-                              type="button"
-                              onClick={() => setFuelEntries(prev => prev.map(item => item.id === f.id ? { ...item, isPaid: true } : item))}
-                              className={`text-[8px] font-bold px-1.5 py-0.2 rounded border cursor-pointer transition ${f.isPaid ? "bg-green-500 text-white border-green-600 shadow-sm" : "bg-slate-950 text-slate-400 border-slate-700 hover:bg-green-105 hover:text-green-755"}`}
-                            >Paid</button>
-                            <button
-                              type="button"
-                              onClick={() => setFuelEntries(prev => prev.map(item => item.id === f.id ? { ...item, isPaid: false } : item))}
-                              className={`text-[8px] font-bold px-1.5 py-0.2 rounded border cursor-pointer transition ${!f.isPaid ? "bg-rose-500 text-white border-rose-600 shadow-sm" : "bg-slate-950 text-slate-400 border-slate-700 hover:bg-rose-105 hover:text-rose-755"}`}
-                            >Pending</button>
+                        <div className="flex justify-between items-center gap-2">
+                          <div className="min-w-0">
+                            <span className={`text-[8.5px] block truncate flex items-center gap-1 ${f.isPaid ? "text-green-700" : "text-slate-500"}`}>
+                              <span>{f.dateTime}</span>
+                              <Car className={`w-3 h-3 shrink-0 ${f.isPaid ? "text-green-600" : "text-emerald-500"}`} />
+                              <span className="truncate">{f.vehicleName}</span>
+                            </span>
+                            <span className={`font-bold block truncate ${f.isPaid ? "text-green-800" : "text-slate-350"}`}>{f.fuelType} ₹ {f.liters} Liters ({f.perLiterCost}/L)</span>
+                            <span className={`inline-block text-[8px] font-bold px-1.5 py-0.2 rounded mt-0.5 ${f.isPaid ? "bg-green-200 text-green-800" : "bg-rose-950 text-rose-455"}`}>
+                              {f.isPaid ? "Paid" : "Pending"}
+                            </span>
                           </div>
-                          <button
-                            type="button"
-                            onClick={() => handleOpenEditFuel(f)}
-                            className="p-1 rounded bg-slate-900 border border-slate-800 text-slate-400 hover:text-white hover:bg-slate-800"
-                            title="Edit fuel entry"
-                          >
-                            <Edit className="w-3 h-3" />
-                          </button>
-                          <button
-                            type="button"
-                            onClick={() => handleDeleteFuel(f)}
-                            className="p-1 rounded bg-rose-950/40 border border-rose-900/40 text-rose-400 hover:text-rose-300"
-                            title="Delete fuel entry"
-                          >
-                            <Trash2 className="w-3 h-3" />
-                          </button>
+                          <div className="flex items-center gap-2 shrink-0 flex-wrap justify-end">
+                            <span className={`font-black text-[10.5px] ${f.isPaid ? "text-green-700" : "text-rose-450"}`}>₹{displayAmount.toLocaleString()}</span>
+                            <button
+                              type="button"
+                              onClick={() => handleOpenEditFuel(f)}
+                              className="p-1 rounded bg-slate-900 border border-slate-800 text-slate-400 hover:text-white hover:bg-slate-800"
+                              title="Edit fuel entry"
+                            >
+                              <Edit className="w-3 h-3" />
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => handleDeleteFuel(f)}
+                              className="p-1 rounded bg-rose-950/40 border border-rose-900/40 text-rose-400 hover:text-rose-300"
+                              title="Delete fuel entry"
+                            >
+                              <Trash2 className="w-3 h-3" />
+                            </button>
+                          </div>
                         </div>
+
+                        <PaymentTrackerSection
+                          grandTotal={displayAmount}
+                          dateEntry={f.dateTime || f.date || ""}
+                          payments={f.payments || (f.isPaid ? [{ id: "init", date: f.dateTime || f.date || "2026-06-18", amount: displayAmount }] : [])}
+                          onAddPayment={(amount, date) => {
+                            setFuelEntries(prev => prev.map(item => {
+                              if (item.id === f.id) {
+                                const current = item.payments || (item.isPaid ? [{ id: "init", date: item.dateTime || item.date || "2026-06-18", amount: displayAmount }] : []);
+                                const nextPay = [...current, { id: `pay-${Date.now()}`, date, amount }];
+                                const paid = nextPay.reduce((sum, p) => sum + p.amount, 0);
+                                return { ...item, payments: nextPay, isPaid: paid >= displayAmount };
+                              }
+                              return item;
+                            }));
+                          }}
+                          onDeletePayment={(payId) => {
+                            setFuelEntries(prev => prev.map(item => {
+                              if (item.id === f.id) {
+                                const current = item.payments || (item.isPaid ? [{ id: "init", date: item.dateTime || item.date || "2026-06-18", amount: displayAmount }] : []);
+                                const nextPay = current.filter(p => p.id !== payId);
+                                const paid = nextPay.reduce((sum, p) => sum + p.amount, 0);
+                                return { ...item, payments: nextPay, isPaid: paid >= displayAmount };
+                              }
+                              return item;
+                            }));
+                          }}
+                        />
                       </div>
                     );
                   })}
@@ -6394,19 +6635,6 @@ export default function MobileBusiness({
 
                             <div className="text-right shrink-0 flex flex-col items-end justify-between h-full gap-2 pl-2">
                               <span className={`font-black text-[10.5px] ${m.isPaid ? "text-green-700" : "text-teal-450"}`}>₹{m.totalAmount.toLocaleString()}</span>
-                              {/* Paid / Pending toggle buttons */}
-                              <div className="flex gap-1 mt-1">
-                                <button
-                                  type="button"
-                                  onClick={() => setMaterials(prev => prev.map(item => item.id === m.id ? { ...item, isPaid: true } : item))}
-                                  className={`text-[8px] font-bold px-2 py-0.5 rounded border cursor-pointer transition ${m.isPaid ? "bg-green-500 text-white border-green-600 shadow-sm" : "bg-slate-950 text-slate-400 border-slate-700 hover:bg-green-105 hover:text-green-755"}`}
-                                >Paid</button>
-                                <button
-                                  type="button"
-                                  onClick={() => setMaterials(prev => prev.map(item => item.id === m.id ? { ...item, isPaid: false } : item))}
-                                  className={`text-[8px] font-bold px-2 py-0.5 rounded border cursor-pointer transition ${!m.isPaid ? "bg-rose-500 text-white border-rose-600 shadow-sm" : "bg-slate-950 text-slate-400 border-slate-700 hover:bg-rose-105 hover:text-rose-755"}`}
-                                >Pending</button>
-                              </div>
                               <div className="flex gap-1.5 mt-2">
                                 <button type="button" onClick={() => handleOpenEditMaterial(m)} className="p-1 px-1.5 bg-slate-900 border border-slate-800 text-slate-400 hover:text-white rounded">
                                   <Edit className="w-2.5 h-2.5" />
@@ -6417,6 +6645,34 @@ export default function MobileBusiness({
                               </div>
                             </div>
                           </div>
+
+                          <PaymentTrackerSection
+                            grandTotal={m.totalAmount}
+                            dateEntry={m.date || ""}
+                            payments={m.payments || (m.isPaid ? [{ id: "init", date: m.date || "2026-06-18", amount: m.totalAmount }] : [])}
+                            onAddPayment={(amount, date) => {
+                              setMaterials(prev => prev.map(item => {
+                                if (item.id === m.id) {
+                                  const current = item.payments || (item.isPaid ? [{ id: "init", date: item.date || "2026-06-18", amount: item.totalAmount }] : []);
+                                  const nextPay = [...current, { id: `pay-${Date.now()}`, date, amount }];
+                                  const paid = nextPay.reduce((sum, p) => sum + p.amount, 0);
+                                  return { ...item, payments: nextPay, isPaid: paid >= item.totalAmount };
+                                }
+                                return item;
+                              }));
+                            }}
+                            onDeletePayment={(payId) => {
+                              setMaterials(prev => prev.map(item => {
+                                if (item.id === m.id) {
+                                  const current = item.payments || (item.isPaid ? [{ id: "init", date: item.date || "2026-06-18", amount: item.totalAmount }] : []);
+                                  const nextPay = current.filter(p => p.id !== payId);
+                                  const paid = nextPay.reduce((sum, p) => sum + p.amount, 0);
+                                  return { ...item, payments: nextPay, isPaid: paid >= item.totalAmount };
+                                }
+                                return item;
+                              }));
+                            }}
+                          />
                         </div>
                       );
                     })
