@@ -395,7 +395,7 @@ export default function MobileDashboard({
                   <div>
                     <span className="stock-card-label block uppercase">Total Stock Available</span>
                     <div className="mt-1 flex items-baseline gap-1">
-                      <span className="stock-card-number stock-card-number-blue" style={{ color: "#1e40af", fontSize: "16px", lineHeight: "22px", fontWeight: 800 }}>{Math.round(totalAvail)}</span>
+                      <span className="stock-card-number stock-card-number-blue" style={{ color: "#1e40af", fontSize: "32px", lineHeight: "38px", fontWeight: 800 }}>{Math.round(totalAvail)}</span>
                       <span className="stock-card-unit">pipes</span>
                     </div>
                   </div>
@@ -412,7 +412,7 @@ export default function MobileDashboard({
                   <div>
                     <span className="stock-card-label block uppercase">7" H QLT</span>
                     <div className="mt-1 flex items-baseline gap-1">
-                      <span className="stock-card-number stock-card-number-green" style={{ color: "#10b981", fontSize: "16px", lineHeight: "22px", fontWeight: 800 }}>{Math.round(avail7High)}</span>
+                      <span className="stock-card-number stock-card-number-green" style={{ color: "#10b981", fontSize: "32px", lineHeight: "38px", fontWeight: 800 }}>{Math.round(avail7High)}</span>
                       <span className="stock-card-unit">pipes</span>
                     </div>
                   </div>
@@ -429,7 +429,7 @@ export default function MobileDashboard({
                   <div>
                     <span className="stock-card-label block uppercase">7" M QLT</span>
                     <div className="mt-1 flex items-baseline gap-1">
-                      <span className="stock-card-number stock-card-number-green" style={{ color: "#10b981", fontSize: "16px", lineHeight: "22px", fontWeight: 800 }}>{Math.round(avail7Medium)}</span>
+                      <span className="stock-card-number stock-card-number-green" style={{ color: "#10b981", fontSize: "32px", lineHeight: "38px", fontWeight: 800 }}>{Math.round(avail7Medium)}</span>
                       <span className="stock-card-unit">pipes</span>
                     </div>
                   </div>
@@ -446,7 +446,7 @@ export default function MobileDashboard({
                   <div>
                     <span className="stock-card-label block uppercase">10" H QLT</span>
                     <div className="mt-1 flex items-baseline gap-1">
-                      <span className="stock-card-number stock-card-number-orange" style={{ color: "#f97316", fontSize: "16px", lineHeight: "22px", fontWeight: 800 }}>{Math.round(avail10High)}</span>
+                      <span className="stock-card-number stock-card-number-orange" style={{ color: "#f97316", fontSize: "32px", lineHeight: "38px", fontWeight: 800 }}>{Math.round(avail10High)}</span>
                       <span className="stock-card-unit">pipes</span>
                     </div>
                   </div>
@@ -463,7 +463,7 @@ export default function MobileDashboard({
                   <div>
                     <span className="stock-card-label block uppercase">10" M QLT</span>
                     <div className="mt-1 flex items-baseline gap-1">
-                      <span className="stock-card-number stock-card-number-orange" style={{ color: "#f97316", fontSize: "16px", lineHeight: "22px", fontWeight: 800 }}>{Math.round(avail10Medium)}</span>
+                      <span className="stock-card-number stock-card-number-orange" style={{ color: "#f97316", fontSize: "32px", lineHeight: "38px", fontWeight: 800 }}>{Math.round(avail10Medium)}</span>
                       <span className="stock-card-unit">pipes</span>
                     </div>
                   </div>
