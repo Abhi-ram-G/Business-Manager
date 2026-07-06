@@ -407,6 +407,18 @@ html, body {
   font-weight: 800 !important;
 }
 
+.stock-card-number-blue {
+  color: #2563eb !important;
+}
+
+.stock-card-number-green {
+  color: #10b981 !important;
+}
+
+.stock-card-number-orange {
+  color: #ea580c !important;
+}
+
 .stock-card-unit {
   font-family: "Outfit", "Inter", system-ui, sans-serif !important;
   font-size: 13px !important;
