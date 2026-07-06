@@ -394,7 +394,7 @@ export default function MobileDashboard({
                 <div className="flex justify-between items-start">
                   <div>
                     <span className="text-[9px] font-mono text-slate-400 uppercase tracking-wider font-bold block">Total Stock Available</span>
-                    <div className="text-lg font-black font-mono mt-1 text-cyan-700">{Math.round(totalAvail)}</div>
+                    <div className="text-lg font-black font-mono mt-1 text-blue-700">{Math.round(totalAvail)}</div>
                     <span className="text-[8px] text-slate-500 font-mono">pipes</span>
                   </div>
                   <div className="p-2 bg-cyan-950/80 rounded-xl text-cyan-400 border border-cyan-800/40">
@@ -424,7 +424,7 @@ export default function MobileDashboard({
                 <div className="flex justify-between items-start">
                   <div>
                     <span className="text-[9px] font-mono text-slate-400 uppercase tracking-wider font-bold block">7" M QLT</span>
-                    <div className="text-lg font-black font-mono mt-1 text-teal-700">{Math.round(avail7Medium)}</div>
+                    <div className="text-lg font-black font-mono mt-1 text-green-600">{Math.round(avail7Medium)}</div>
                     <span className="text-[8px] text-slate-500 font-mono">pipes</span>
                   </div>
                   <div className="p-2 bg-teal-950/80 rounded-xl text-teal-400 border border-teal-800/40">
