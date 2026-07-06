@@ -150,6 +150,8 @@ class BitEntryCreate(BaseModel):
     button_size_mm: int
     date_entry: dt_date
     rate: float
+    is_paid: bool = False
+    payments: list[dict[str, Any]] | None = None
 
 
 class BitEntryUpdate(BaseModel):
@@ -159,6 +161,8 @@ class BitEntryUpdate(BaseModel):
     button_size_mm: int | None = None
     date_entry: dt_date | None = None
     rate: float | None = None
+    is_paid: bool | None = None
+    payments: list[dict[str, Any]] | None = None
 
 
 class HammerCreate(BaseModel):
@@ -171,6 +175,7 @@ class HammerCreate(BaseModel):
     is_paid: bool = False
     casing_type: str | None = None
     usage_history: list[dict[str, Any]] | None = None
+    payments: list[dict[str, Any]] | None = None
 
 
 class HammerUpdate(BaseModel):
@@ -182,6 +187,7 @@ class HammerUpdate(BaseModel):
     is_paid: bool | None = None
     casing_type: str | None = None
     usage_history: list[dict[str, Any]] | None = None
+    payments: list[dict[str, Any]] | None = None
 
 
 class PipeEntryCreate(BaseModel):
@@ -204,6 +210,8 @@ class PipeEntryCreate(BaseModel):
     grand_total: float = 0.0
     discount_amount: float = 0.0
     grand_price: float = 0.0
+    is_paid: bool = False
+    payments: list[dict[str, Any]] | None = None
 
 
 class PipeEntryUpdate(BaseModel):
@@ -225,6 +233,8 @@ class PipeEntryUpdate(BaseModel):
     grand_total: float | None = None
     discount_amount: float | None = None
     grand_price: float | None = None
+    is_paid: bool | None = None
+    payments: list[dict[str, Any]] | None = None
 
 
 class BusinessBillCreate(BaseModel):

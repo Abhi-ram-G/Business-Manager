@@ -122,6 +122,8 @@ class BitEntry(Base, TimestampMixin):
     button_size_mm: Mapped[int] = mapped_column(Integer, nullable=False)
     date_entry: Mapped[date] = mapped_column(Date, nullable=False)
     rate: Mapped[float] = mapped_column(Numeric(12, 2), nullable=False)
+    is_paid: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
+    payments: Mapped[list[dict[str, Any]] | None] = mapped_column(JSON)
 
 
 class Hammer(Base, TimestampMixin):
@@ -136,6 +138,7 @@ class Hammer(Base, TimestampMixin):
     is_paid: Mapped[bool] = mapped_column(Boolean, default=False)
     casing_type: Mapped[str | None] = mapped_column(String(50))
     usage_history: Mapped[list[dict[str, Any]] | None] = mapped_column(JSON)
+    payments: Mapped[list[dict[str, Any]] | None] = mapped_column(JSON)
 
 
 class PipeEntry(Base, TimestampMixin):
@@ -169,6 +172,8 @@ class PipeEntry(Base, TimestampMixin):
     grand_total: Mapped[float] = mapped_column(Numeric(12, 2), default=0.00)
     discount_amount: Mapped[float] = mapped_column(Numeric(10, 2), default=0.00)
     grand_price: Mapped[float] = mapped_column(Numeric(12, 2), default=0.00)
+    is_paid: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
+    payments: Mapped[list[dict[str, Any]] | None] = mapped_column(JSON)
 
 
 class BusinessBill(Base, TimestampMixin):
@@ -237,6 +242,39 @@ class FuelEntry(Base, TimestampMixin):
     date_time: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
     vehicle_name: Mapped[str | None] = mapped_column(String(100))
     total_amount: Mapped[float | None] = mapped_column(Numeric(10, 2))
+    is_paid: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
+    payments: Mapped[list[dict[str, Any]] | None] = mapped_column(JSON)
+
+
+class ServiceEntry(Base, TimestampMixin):
+    __tablename__ = "service_entries"
+
+    id: Mapped[str] = mapped_column(String(50), primary_key=True)
+    vehicle_id: Mapped[str | None] = mapped_column(String(50))
+    date: Mapped[date | None] = mapped_column(Date)
+    service_type: Mapped[str] = mapped_column(String(150), nullable=False)
+    cost: Mapped[float] = mapped_column(Numeric(10, 2), nullable=False)
+    spare_parts: Mapped[str | None] = mapped_column(Text)
+    remarks: Mapped[str | None] = mapped_column(Text)
+    is_paid: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
+    payments: Mapped[list[dict[str, Any]] | None] = mapped_column(JSON)
+
+
+class MaterialEntry(Base, TimestampMixin):
+    __tablename__ = "material_entries"
+
+    id: Mapped[str] = mapped_column(String(50), primary_key=True)
+    vehicle_id: Mapped[str | None] = mapped_column(String(50))
+    date: Mapped[date | None] = mapped_column(Date)
+    material_name: Mapped[str] = mapped_column(String(150), nullable=False)
+    quantity: Mapped[float] = mapped_column(Numeric(10, 2), nullable=False)
+    unit: Mapped[str] = mapped_column(String(20), nullable=False)
+    rate: Mapped[float] = mapped_column(Numeric(10, 2), nullable=False)
+    total_amount: Mapped[float] = mapped_column(Numeric(12, 2), nullable=False)
+    vendor_name: Mapped[str | None] = mapped_column(String(150))
+    remarks: Mapped[str | None] = mapped_column(Text)
+    is_paid: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
+    payments: Mapped[list[dict[str, Any]] | None] = mapped_column(JSON)
 
 
 class TripRecord(Base, TimestampMixin):

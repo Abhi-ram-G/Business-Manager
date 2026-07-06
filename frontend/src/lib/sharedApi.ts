@@ -95,6 +95,8 @@ export const mapBitFromApi = (item: ApiRecord): BitEntry => ({
   buttonSizeMm: item.button_size_mm != null ? toNumber(item.button_size_mm) : undefined,
   dateEntry: item.date_entry ? String(item.date_entry) : undefined,
   rate: toNumber(item.rate ?? 0),
+  isPaid: !!item.is_paid,
+  payments: Array.isArray(item.payments) ? (item.payments as any) : [],
 });
 
 export const mapHammerFromApi = (item: ApiRecord): HammerEntry => ({
@@ -107,6 +109,7 @@ export const mapHammerFromApi = (item: ApiRecord): HammerEntry => ({
   isPaid: !!item.is_paid,
   casingType: item.casing_type ? (item.casing_type as any) : undefined,
   usageHistory: Array.isArray(item.usage_history) ? (item.usage_history as any) : [],
+  payments: Array.isArray(item.payments) ? (item.payments as any) : [],
 });
 
 export const mapPipeFromApi = (item: ApiRecord): PipeEntry => ({
@@ -129,6 +132,8 @@ export const mapPipeFromApi = (item: ApiRecord): PipeEntry => ({
   grandTotal: toNumber(item.grand_total ?? 0),
   discountAmount: toNumber(item.discount_amount ?? 0),
   grandPrice: toNumber(item.grand_price ?? 0),
+  isPaid: !!item.is_paid,
+  payments: Array.isArray(item.payments) ? (item.payments as any) : [],
 });
 
 export const mapBusinessBillFromApi = (item: ApiRecord): BusinessBill => ({
@@ -272,6 +277,35 @@ export const mapFuelFromApi = (item: ApiRecord): FuelEntry => ({
   date: item.date ? String(item.date) : undefined,
   cost: item.cost != null ? toNumber(item.cost) : undefined,
   currentOdometer: item.current_odometer != null ? toNumber(item.current_odometer) : undefined,
+  isPaid: !!item.is_paid,
+  payments: Array.isArray(item.payments) ? (item.payments as any) : [],
+});
+
+export const mapServiceFromApi = (item: ApiRecord): any => ({
+  id: String(item.id ?? ""),
+  vehicleId: String(item.vehicle_id ?? ""),
+  date: String(item.date ?? ""),
+  serviceType: String(item.service_type ?? ""),
+  cost: toNumber(item.cost ?? 0),
+  spareParts: String(item.spare_parts ?? ""),
+  remarks: item.remarks ? String(item.remarks) : undefined,
+  isPaid: !!item.is_paid,
+  payments: Array.isArray(item.payments) ? (item.payments as any) : [],
+});
+
+export const mapMaterialFromApi = (item: ApiRecord): any => ({
+  id: String(item.id ?? ""),
+  vehicleId: String(item.vehicle_id ?? ""),
+  date: String(item.date ?? ""),
+  materialName: String(item.material_name ?? ""),
+  quantity: toNumber(item.quantity ?? 0),
+  unit: String(item.unit ?? "pcs"),
+  rate: toNumber(item.rate ?? 0),
+  totalAmount: toNumber(item.total_amount ?? 0),
+  vendorName: item.vendor_name ? String(item.vendor_name) : undefined,
+  remarks: item.remarks ? String(item.remarks) : undefined,
+  isPaid: !!item.is_paid,
+  payments: Array.isArray(item.payments) ? (item.payments as any) : [],
 });
 
 export const mapTripFromApi = (item: ApiRecord): TripRecord => ({
@@ -381,6 +415,8 @@ export const toBitApiPayload = (bit: BitEntry) => ({
   button_size_mm: bit.buttonSizeMm ?? null,
   date_entry: bit.dateEntry ?? null,
   rate: bit.rate,
+  is_paid: bit.isPaid ?? false,
+  payments: bit.payments ?? [],
 });
 
 export const toHammerApiPayload = (hammer: HammerEntry) => ({
@@ -393,6 +429,7 @@ export const toHammerApiPayload = (hammer: HammerEntry) => ({
   is_paid: hammer.isPaid,
   casing_type: hammer.casingType ?? null,
   usage_history: hammer.usageHistory ?? [],
+  payments: hammer.payments ?? [],
 });
 
 export const toPipeApiPayload = (pipe: PipeEntry) => ({
@@ -415,7 +452,53 @@ export const toPipeApiPayload = (pipe: PipeEntry) => ({
   grand_total: pipe.grandTotal,
   discount_amount: pipe.discountAmount,
   grand_price: pipe.grandPrice,
+  is_paid: pipe.isPaid ?? false,
+  payments: pipe.payments ?? [],
 });
+
+export const toFuelApiPayload = (fuel: FuelEntry) => ({
+  id: fuel.id,
+  vehicle_id: fuel.vehicleId ?? null,
+  date: fuel.date ?? null,
+  date_time: fuel.dateTime ?? null,
+  liters: fuel.liters ?? null,
+  cost: fuel.cost ?? null,
+  current_odometer: fuel.currentOdometer ?? null,
+  fuel_type: fuel.fuelType ?? null,
+  per_liter_cost: fuel.perLiterCost ?? null,
+  vehicle_name: fuel.vehicleName ?? null,
+  total_amount: fuel.totalAmount ?? null,
+  is_paid: fuel.isPaid ?? false,
+  payments: fuel.payments ?? [],
+});
+
+export const toServiceApiPayload = (service: any) => ({
+  id: service.id,
+  vehicle_id: service.vehicleId ?? null,
+  date: service.date ?? null,
+  service_type: service.serviceType,
+  cost: service.cost,
+  spare_parts: service.spareParts ?? null,
+  remarks: service.remarks ?? null,
+  is_paid: service.isPaid ?? false,
+  payments: service.payments ?? [],
+});
+
+export const toMaterialApiPayload = (material: any) => ({
+  id: material.id,
+  vehicle_id: material.vehicleId ?? null,
+  date: material.date ?? null,
+  material_name: material.materialName,
+  quantity: material.quantity,
+  unit: material.unit,
+  rate: material.rate,
+  total_amount: material.totalAmount,
+  vendor_name: material.vendorName ?? null,
+  remarks: material.remarks ?? null,
+  is_paid: material.isPaid ?? false,
+  payments: material.payments ?? [],
+});
+
 
 export const toBusinessBillApiPayload = (bill: BusinessBill) => ({
   id: bill.id,
@@ -571,7 +654,7 @@ export const fetchSharedSnapshot = async (apiBaseUrl: string) => {
     }
   };
 
-  const [labours, attendance, salaryPayments, vehicles, bitEntries, businessBills, fuelEntries, trips, loansGiven, loansReceived, familyMembers, incomeEntries, familyExpenses, categoryBudgets, documents, notifications, hammers, pipes] = await Promise.all([
+  const [labours, attendance, salaryPayments, vehicles, bitEntries, businessBills, fuelEntries, trips, loansGiven, loansReceived, familyMembers, incomeEntries, familyExpenses, categoryBudgets, documents, notifications, hammers, pipes, services, materials] = await Promise.all([
     fetchSafe("/api/v1/labours"),
     fetchSafe("/api/v1/labours/attendance"),
     fetchSafe("/api/v1/labours/salary-payments"),
@@ -590,6 +673,8 @@ export const fetchSharedSnapshot = async (apiBaseUrl: string) => {
     fetchSafe("/api/v1/notifications"),
     fetchSafe("/api/v1/business/hammers"),
     fetchSafe("/api/v1/business/pipes"),
+    fetchSafe("/api/v1/business/services"),
+    fetchSafe("/api/v1/business/materials"),
   ]);
 
   return {
@@ -611,6 +696,8 @@ export const fetchSharedSnapshot = async (apiBaseUrl: string) => {
     notifications: Array.isArray(notifications) ? notifications.map(mapNotificationFromApi) : [],
     hammerEntries: Array.isArray(hammers) ? hammers.map(mapHammerFromApi) : [],
     pipeEntries: Array.isArray(pipes) ? pipes.map(mapPipeFromApi) : [],
+    serviceEntries: Array.isArray(services) ? services.map(mapServiceFromApi) : [],
+    materialEntries: Array.isArray(materials) ? materials.map(mapMaterialFromApi) : [],
   };
 };
 

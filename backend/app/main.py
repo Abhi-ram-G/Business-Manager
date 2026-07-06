@@ -21,6 +21,8 @@ from .models import (
     Hammer,
     PipeEntry,
     FuelEntry,
+    ServiceEntry,
+    MaterialEntry,
     IncomeEntry,
     Labour,
     LoanGiven,
@@ -53,6 +55,10 @@ from .schemas import (
     FamilyMemberUpdate,
     FuelEntryCreate,
     FuelEntryUpdate,
+    ServiceEntryCreate,
+    ServiceEntryUpdate,
+    MaterialEntryCreate,
+    MaterialEntryUpdate,
     IncomeEntryCreate,
     IncomeEntryUpdate,
     LabourCreate,
@@ -143,6 +149,51 @@ def initialize_database() -> None:
     print("="*50 + "\n")
 
     try:
+        # Run programmatic migrations to alter existing tables
+        print("Running database schema migrations...")
+        migration_statements = [
+            "ALTER TABLE labours ADD COLUMN IF NOT EXISTS gender varchar(10);",
+            "ALTER TABLE labours ADD COLUMN IF NOT EXISTS profile_photo_name varchar(255);",
+            "ALTER TABLE labours ALTER COLUMN profile_photo TYPE text;",
+            "ALTER TABLE labours DROP CONSTRAINT IF EXISTS labours_aadhaar_number_key;",
+            "ALTER TABLE labours ALTER COLUMN aadhaar_number DROP NOT NULL;",
+            "ALTER TABLE labours ALTER COLUMN address DROP NOT NULL;",
+            "ALTER TABLE labours ALTER COLUMN emergency_contact DROP NOT NULL;",
+            "ALTER TABLE business_bills ADD COLUMN IF NOT EXISTS bit_id varchar(50);",
+            "ALTER TABLE business_bills ADD COLUMN IF NOT EXISTS hammer_id varchar(50);",
+            "ALTER TABLE business_bills ADD COLUMN IF NOT EXISTS casing10_hammer_id varchar(50);",
+            "ALTER TABLE business_bills ADD COLUMN IF NOT EXISTS casing7_hammer_id varchar(50);",
+            "ALTER TABLE bit_entries ADD COLUMN IF NOT EXISTS button_size_mm int DEFAULT 0;",
+            "ALTER TABLE bit_entries ADD COLUMN IF NOT EXISTS date_entry date DEFAULT CURRENT_DATE;",
+            "ALTER TABLE business_bills ADD COLUMN IF NOT EXISTS customer_paid numeric(10, 2) DEFAULT 0.00;",
+            "ALTER TABLE business_bills ADD COLUMN IF NOT EXISTS payment_date date;",
+            "ALTER TABLE business_bills ADD COLUMN IF NOT EXISTS payments json DEFAULT '[]';",
+            "CREATE TABLE IF NOT EXISTS hammer_entries (id VARCHAR(50) PRIMARY KEY, hammer_no VARCHAR(50) NOT NULL, brand VARCHAR(100) NOT NULL, date_entry DATE, rate NUMERIC(10, 2) DEFAULT 0.00, capable_feet_depth INTEGER DEFAULT 950, is_paid BOOLEAN DEFAULT FALSE, casing_type VARCHAR(50), usage_history JSON DEFAULT '[]', created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP, updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP);",
+            "ALTER TABLE hammer_entries ADD COLUMN IF NOT EXISTS updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP;",
+            "CREATE TABLE IF NOT EXISTS pipe_entries (id VARCHAR(50) PRIMARY KEY, company_name VARCHAR(150) NOT NULL, location VARCHAR(200) NOT NULL, date_entry DATE, pipe_7_high_count INT DEFAULT 0, pipe_7_high_rate NUMERIC(10, 2) DEFAULT 0.00, pipe_7_high_total NUMERIC(12, 2) DEFAULT 0.00, pipe_7_medium_count INT DEFAULT 0, pipe_7_medium_rate NUMERIC(10, 2) DEFAULT 0.00, pipe_7_medium_total NUMERIC(12, 2) DEFAULT 0.00, pipe_10_high_count INT DEFAULT 0, pipe_10_high_rate NUMERIC(10, 2) DEFAULT 0.00, pipe_10_high_total NUMERIC(12, 2) DEFAULT 0.00, pipe_10_medium_count INT DEFAULT 0, pipe_10_medium_rate NUMERIC(10, 2) DEFAULT 0.00, pipe_10_medium_total NUMERIC(12, 2) DEFAULT 0.00, grand_total NUMERIC(12, 2) DEFAULT 0.00, discount_amount NUMERIC(10, 2) DEFAULT 0.00, grand_price NUMERIC(12, 2) DEFAULT 0.00, created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP, updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP);",
+            "ALTER TABLE pipe_entries ADD COLUMN IF NOT EXISTS updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP;",
+            "ALTER TABLE business_bills ADD COLUMN IF NOT EXISTS pipe_supplier_id VARCHAR(50);",
+            "ALTER TABLE business_bills ADD COLUMN IF NOT EXISTS casing_7_high_feet NUMERIC(10, 2) DEFAULT 0.00;",
+            "ALTER TABLE business_bills ADD COLUMN IF NOT EXISTS casing_7_medium_feet NUMERIC(10, 2) DEFAULT 0.00;",
+            "ALTER TABLE business_bills ADD COLUMN IF NOT EXISTS casing_10_high_feet NUMERIC(10, 2) DEFAULT 0.00;",
+            "ALTER TABLE business_bills ADD COLUMN IF NOT EXISTS casing_10_medium_feet NUMERIC(10, 2) DEFAULT 0.00;",
+            "ALTER TABLE bit_entries ADD COLUMN IF NOT EXISTS is_paid BOOLEAN DEFAULT FALSE;",
+            "ALTER TABLE bit_entries ADD COLUMN IF NOT EXISTS payments json DEFAULT '[]';",
+            "ALTER TABLE hammer_entries ADD COLUMN IF NOT EXISTS payments json DEFAULT '[]';",
+            "ALTER TABLE pipe_entries ADD COLUMN IF NOT EXISTS is_paid BOOLEAN DEFAULT FALSE;",
+            "ALTER TABLE pipe_entries ADD COLUMN IF NOT EXISTS payments json DEFAULT '[]';",
+            "ALTER TABLE fuel_entries ADD COLUMN IF NOT EXISTS is_paid BOOLEAN DEFAULT FALSE;",
+            "ALTER TABLE fuel_entries ADD COLUMN IF NOT EXISTS payments json DEFAULT '[]';",
+            "CREATE TABLE IF NOT EXISTS service_entries (id VARCHAR(50) PRIMARY KEY, vehicle_id VARCHAR(50), date DATE, service_type VARCHAR(150), cost NUMERIC(10, 2), spare_parts TEXT, remarks TEXT, is_paid BOOLEAN DEFAULT FALSE, payments json DEFAULT '[]', created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP, updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP);",
+            "CREATE TABLE IF NOT EXISTS material_entries (id VARCHAR(50) PRIMARY KEY, vehicle_id VARCHAR(50), date DATE, material_name VARCHAR(150), quantity NUMERIC(10, 2), unit VARCHAR(20), rate NUMERIC(10, 2), total_amount NUMERIC(12, 2), vendor_name VARCHAR(150), remarks TEXT, is_paid BOOLEAN DEFAULT FALSE, payments json DEFAULT '[]', created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP, updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP);",
+        ]
+        with engine.connect() as connection:
+            for statement in migration_statements:
+                try:
+                    connection.execute(text(statement))
+                    connection.commit()
+                except Exception as stmt_err:
+                    print(f"Skipping migration statement due to error: {stmt_err}")
         Base.metadata.create_all(bind=engine)
         print("Database initialized/synchronized successfully.\n")
         
@@ -588,6 +639,64 @@ def delete_fuel_entry(fuel_id: str, db: Session = Depends(get_db)):
     if not entry:
         raise HTTPException(status_code=404, detail="Fuel entry not found")
     db.delete(entry)
+    db.commit()
+
+
+# Service Log Entries
+@app.get("/api/v1/business/services")
+def list_service_entries(db: Session = Depends(get_db)):
+    return [serialize_model(item) for item in db.execute(select(ServiceEntry).order_by(ServiceEntry.created_at.desc())).scalars()]
+
+
+@app.post("/api/v1/business/services", status_code=status.HTTP_201_CREATED)
+def create_service_entry(payload: ServiceEntryCreate, db: Session = Depends(get_db)):
+    service = ServiceEntry(**payload.model_dump())
+    return serialize_model(create_or_400(db, ServiceEntry, service, "Unable to create service entry"))
+
+
+@app.put("/api/v1/business/services/{service_id}")
+def update_service_entry(service_id: str, payload: ServiceEntryUpdate, db: Session = Depends(get_db)):
+    service = db.get(ServiceEntry, service_id)
+    if not service:
+        raise HTTPException(status_code=404, detail="Service entry not found")
+    return serialize_model(update_instance(db, service, payload.model_dump(exclude_unset=True)))
+
+
+@app.delete("/api/v1/business/services/{service_id}", status_code=status.HTTP_204_NO_CONTENT)
+def delete_service_entry(service_id: str, db: Session = Depends(get_db)):
+    service = db.get(ServiceEntry, service_id)
+    if not service:
+        raise HTTPException(status_code=404, detail="Service entry not found")
+    db.delete(service)
+    db.commit()
+
+
+# Materials Purchased Entries
+@app.get("/api/v1/business/materials")
+def list_material_entries(db: Session = Depends(get_db)):
+    return [serialize_model(item) for item in db.execute(select(MaterialEntry).order_by(MaterialEntry.created_at.desc())).scalars()]
+
+
+@app.post("/api/v1/business/materials", status_code=status.HTTP_201_CREATED)
+def create_material_entry(payload: MaterialEntryCreate, db: Session = Depends(get_db)):
+    material = MaterialEntry(**payload.model_dump())
+    return serialize_model(create_or_400(db, MaterialEntry, material, "Unable to create material entry"))
+
+
+@app.put("/api/v1/business/materials/{mat_id}")
+def update_material_entry(mat_id: str, payload: MaterialEntryUpdate, db: Session = Depends(get_db)):
+    material = db.get(MaterialEntry, mat_id)
+    if not material:
+        raise HTTPException(status_code=404, detail="Material entry not found")
+    return serialize_model(update_instance(db, material, payload.model_dump(exclude_unset=True)))
+
+
+@app.delete("/api/v1/business/materials/{mat_id}", status_code=status.HTTP_204_NO_CONTENT)
+def delete_material_entry(mat_id: str, db: Session = Depends(get_db)):
+    material = db.get(MaterialEntry, mat_id)
+    if not material:
+        raise HTTPException(status_code=404, detail="Material entry not found")
+    db.delete(material)
     db.commit()
 
 

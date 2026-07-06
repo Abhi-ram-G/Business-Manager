@@ -48,6 +48,15 @@ SQL_STATEMENTS = [
     "ALTER TABLE business_bills ADD COLUMN IF NOT EXISTS casing_7_medium_feet NUMERIC(10, 2) DEFAULT 0.00;",
     "ALTER TABLE business_bills ADD COLUMN IF NOT EXISTS casing_10_high_feet NUMERIC(10, 2) DEFAULT 0.00;",
     "ALTER TABLE business_bills ADD COLUMN IF NOT EXISTS casing_10_medium_feet NUMERIC(10, 2) DEFAULT 0.00;",
+    "ALTER TABLE bit_entries ADD COLUMN IF NOT EXISTS is_paid BOOLEAN DEFAULT FALSE;",
+    "ALTER TABLE bit_entries ADD COLUMN IF NOT EXISTS payments json DEFAULT '[]';",
+    "ALTER TABLE hammer_entries ADD COLUMN IF NOT EXISTS payments json DEFAULT '[]';",
+    "ALTER TABLE pipe_entries ADD COLUMN IF NOT EXISTS is_paid BOOLEAN DEFAULT FALSE;",
+    "ALTER TABLE pipe_entries ADD COLUMN IF NOT EXISTS payments json DEFAULT '[]';",
+    "ALTER TABLE fuel_entries ADD COLUMN IF NOT EXISTS is_paid BOOLEAN DEFAULT FALSE;",
+    "ALTER TABLE fuel_entries ADD COLUMN IF NOT EXISTS payments json DEFAULT '[]';",
+    "CREATE TABLE IF NOT EXISTS service_entries (id VARCHAR(50) PRIMARY KEY, vehicle_id VARCHAR(50), date DATE, service_type VARCHAR(150), cost NUMERIC(10, 2), spare_parts TEXT, remarks TEXT, is_paid BOOLEAN DEFAULT FALSE, payments json DEFAULT '[]', created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP, updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP);",
+    "CREATE TABLE IF NOT EXISTS material_entries (id VARCHAR(50) PRIMARY KEY, vehicle_id VARCHAR(50), date DATE, material_name VARCHAR(150), quantity NUMERIC(10, 2), unit VARCHAR(20), rate NUMERIC(10, 2), total_amount NUMERIC(12, 2), vendor_name VARCHAR(150), remarks TEXT, is_paid BOOLEAN DEFAULT FALSE, payments json DEFAULT '[]', created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP, updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP);",
 ]
 
 print(f"Connecting to database...")

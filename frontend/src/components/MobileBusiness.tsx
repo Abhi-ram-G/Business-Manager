@@ -51,6 +51,8 @@ import {
   mapVehicleFromApi,
   mapHammerFromApi,
   mapPipeFromApi,
+  mapServiceFromApi,
+  mapMaterialFromApi,
   requestJson,
   toBusinessBillApiPayload,
   toBitApiPayload,
@@ -58,6 +60,9 @@ import {
   toVehicleApiPayload,
   toHammerApiPayload,
   toPipeApiPayload,
+  toFuelApiPayload,
+  toServiceApiPayload,
+  toMaterialApiPayload,
 } from "../lib/sharedApi";
 import borewellLogo from "../assets/images/borewell_machine_logo_1782797350175.jpg";
 
@@ -540,11 +545,23 @@ export default function MobileBusiness({
         console.error(error);
       }
     } else if (type === "service") {
-      setServices(prev => prev.filter(s => s.id !== id));
-      triggerOnlineSync(`DELETED SERVICE LOG: ${id}`);
+      try {
+        await requestJson(apiBaseUrl, `/api/v1/business/services/${id}`, { method: "DELETE" });
+        setServices(prev => prev.filter(s => s.id !== id));
+        triggerOnlineSync(`DELETED SERVICE LOG: ${id}`);
+      } catch (error) {
+        console.error(error);
+        setServices(prev => prev.filter(s => s.id !== id));
+      }
     } else if (type === "material") {
-      setMaterials(prev => prev.filter(m => m.id !== id));
-      triggerOnlineSync(`DELETED MATERIAL BOUGHT: ${id}`);
+      try {
+        await requestJson(apiBaseUrl, `/api/v1/business/materials/${id}`, { method: "DELETE" });
+        setMaterials(prev => prev.filter(m => m.id !== id));
+        triggerOnlineSync(`DELETED MATERIAL BOUGHT: ${id}`);
+      } catch (error) {
+        console.error(error);
+        setMaterials(prev => prev.filter(m => m.id !== id));
+      }
     } else if (type === "hammer") {
       try {
         await requestJson(apiBaseUrl, `/api/v1/business/hammers/${id}`, { method: "DELETE" });
@@ -1716,40 +1733,57 @@ export default function MobileBusiness({
   // 4-Way subfolder switcher under Vehicle Management
   const [vehicleSubTab, setVehicleSubTab] = useState<"profiles" | "fuel" | "service" | "materials">("profiles");
 
-  // Services State with local persistence fallback
-  const [services, setServices] = useState<ServiceRecord[]>(() => {
-    const saved = localStorage.getItem("srs_vehicle_services");
-    if (saved) {
-      try {
-        const parsed = JSON.parse(saved) as ServiceRecord[];
-        return Array.isArray(parsed) ? parsed.filter((service) => !isLegacyDemoServiceEntry(service)) : [];
-      } catch (e) {
-        console.error(e);
-      }
-    }
-    return [];
-  });
+  // Services State initialized to empty, hydrated from DB
+  const [services, setServices] = useState<ServiceRecord[]>([]);
 
-  // Materials State with local persistence fallback
-  const [materials, setMaterials] = useState<MaterialPurchase[]>(() => {
-    const saved = localStorage.getItem("srs_materials_purchased");
-    if (saved) {
-      try { return JSON.parse(saved); } catch (e) { console.error(e); }
-    }
-    return [
-      { id: "MAT-201", vehicleId: "KA-51-MM-9999", date: "2026-06-12", materialName: "Heavy Duty Air Filter", quantity: 2, unit: "pcs", rate: 1200, totalAmount: 2400, vendorName: "Sathy Spares & Co.", remarks: "Spares kept in cabin toolbox." },
-      { id: "MAT-202", vehicleId: "MH-12-GP-5678", date: "2026-06-16", materialName: "Borewell Drilling Bit 6 1/2 inch", quantity: 1, unit: "pc", rate: 18500, totalAmount: 18500, vendorName: "Kovai Indus Tools", remarks: "Core drilling bit replacement purchased with warranty card." },
-      { id: "MAT-203", vehicleId: "All", date: "2026-06-18", materialName: "Premium Grease Buckets", quantity: 3, unit: "buckets", rate: 1500, totalAmount: 4500, vendorName: "Annur Lubricants", remarks: "Lubricating grease for drilling rod slider channels." }
-    ];
-  });
+  // Materials State initialized to empty, hydrated from DB
+  const [materials, setMaterials] = useState<MaterialPurchase[]>([]);
+
+  // Load Services and Materials from Database with local persistence fallback
+  React.useEffect(() => {
+    let active = true;
+    const loadSharedRecords = async () => {
+      try {
+        const sResponse = await requestJson(apiBaseUrl, "/api/v1/business/services");
+        const mResponse = await requestJson(apiBaseUrl, "/api/v1/business/materials");
+        if (active) {
+          setServices(Array.isArray(sResponse) ? sResponse.map(mapServiceFromApi) : []);
+          setMaterials(Array.isArray(mResponse) ? mResponse.map(mapMaterialFromApi) : []);
+        }
+      } catch (error) {
+        console.error("Failed to load services or materials from API, falling back to localStorage:", error);
+        if (!active) return;
+        const savedS = localStorage.getItem("srs_vehicle_services");
+        if (savedS) {
+          try {
+            const parsed = JSON.parse(savedS);
+            setServices(Array.isArray(parsed) ? parsed : []);
+          } catch (e) {}
+        }
+        const savedM = localStorage.getItem("srs_materials_purchased");
+        if (savedM) {
+          try {
+            const parsed = JSON.parse(savedM);
+            setMaterials(Array.isArray(parsed) ? parsed : []);
+          } catch (e) {}
+        }
+      }
+    };
+    void loadSharedRecords();
+    return () => { active = false; };
+  }, [apiBaseUrl]);
 
   // Sync state back to localStorage
   React.useEffect(() => {
-    localStorage.setItem("srs_vehicle_services", JSON.stringify(services));
+    if (services.length > 0) {
+      localStorage.setItem("srs_vehicle_services", JSON.stringify(services));
+    }
   }, [services]);
 
   React.useEffect(() => {
-    localStorage.setItem("srs_materials_purchased", JSON.stringify(materials));
+    if (materials.length > 0) {
+      localStorage.setItem("srs_materials_purchased", JSON.stringify(materials));
+    }
   }, [materials]);
 
   // Services Form Inputs
@@ -2341,40 +2375,54 @@ export default function MobileBusiness({
     setIsServiceFormOpen(true);
   };
 
-  const handleSaveService = (e: React.FormEvent) => {
+  const handleSaveService = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!serviceVehicleId || !serviceTypeInput) return;
 
-    if (editingServiceId) {
-      setServices(prev => prev.map(s => {
-        if (s.id === editingServiceId) {
-          return {
-            ...s,
-            vehicleId: serviceVehicleId,
-            date: serviceDate,
-            serviceType: serviceTypeInput,
-            cost: Number(serviceCost),
-            spareParts: serviceSpareParts,
-            remarks: serviceRemarks
-          };
+    const existing = editingServiceId ? services.find(s => s.id === editingServiceId) : undefined;
+    const targetId = editingServiceId || `SVR-${Date.now()}`;
+    const payloadService = {
+      id: targetId,
+      vehicleId: serviceVehicleId,
+      date: serviceDate,
+      serviceType: serviceTypeInput,
+      cost: Number(serviceCost),
+      spareParts: serviceSpareParts,
+      remarks: serviceRemarks,
+      isPaid: existing?.isPaid ?? false,
+      payments: existing?.payments ?? [],
+    };
+
+    try {
+      const response = await requestJson(
+        apiBaseUrl,
+        editingServiceId ? `/api/v1/business/services/${editingServiceId}` : "/api/v1/business/services",
+        {
+          method: editingServiceId ? "PUT" : "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(toServiceApiPayload(payloadService)),
         }
-        return s;
-      }));
-      triggerOnlineSync(`UPDATED SERVICE LOG FOR: ${serviceVehicleId}`);
-    } else {
-      const newSrv: ServiceRecord = {
-        id: `SVR-${Date.now()}`,
-        vehicleId: serviceVehicleId,
-        date: serviceDate,
-        serviceType: serviceTypeInput,
-        cost: Number(serviceCost),
-        spareParts: serviceSpareParts,
-        remarks: serviceRemarks
-      };
-      setServices(prev => [newSrv, ...prev]);
-      triggerOnlineSync(`ADDED NEW SERVICE LOG: ${serviceTypeInput} FOR ${serviceVehicleId}`);
+      );
+      const savedService = mapServiceFromApi(response);
+      if (editingServiceId) {
+        setServices(prev => prev.map(s => s.id === editingServiceId ? savedService : s));
+        triggerOnlineSync(`UPDATED SERVICE LOG FOR: ${serviceVehicleId}`);
+      } else {
+        setServices(prev => [savedService, ...prev]);
+        triggerOnlineSync(`ADDED NEW SERVICE LOG: ${serviceTypeInput} FOR ${serviceVehicleId}`);
+      }
+    } catch (error) {
+      console.error(error);
+      if (editingServiceId) {
+        setServices(prev => prev.map(s => s.id === editingServiceId ? payloadService : s));
+        triggerOnlineSync(`UPDATED SERVICE LOG: ${serviceTypeInput} (local fallback)`);
+      } else {
+        setServices(prev => [payloadService, ...prev]);
+        triggerOnlineSync(`ADDED NEW SERVICE LOG: ${serviceTypeInput} (local fallback)`);
+      }
     }
     setIsServiceFormOpen(false);
+    await onSharedDataChanged?.();
   };
 
   const handleDeleteService = (id: string) => {
@@ -2408,48 +2456,58 @@ export default function MobileBusiness({
     setIsMatFormOpen(true);
   };
 
-  const handleSaveMaterial = (e: React.FormEvent) => {
+  const handleSaveMaterial = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!matName) return;
 
     const totalAmount = Number(matQuantity) * Number(matRate);
+    const existing = editingMatId ? materials.find(m => m.id === editingMatId) : undefined;
+    const targetId = editingMatId || `MAT-${Date.now()}`;
+    const payloadMaterial = {
+      id: targetId,
+      vehicleId: matVehicleId,
+      date: matDate,
+      materialName: matName,
+      quantity: Number(matQuantity),
+      unit: matUnit,
+      rate: Number(matRate),
+      totalAmount: totalAmount,
+      vendorName: matVendor,
+      remarks: matRemarks,
+      isPaid: existing?.isPaid ?? false,
+      payments: existing?.payments ?? [],
+    };
 
-    if (editingMatId) {
-      setMaterials(prev => prev.map(m => {
-        if (m.id === editingMatId) {
-          return {
-            ...m,
-            vehicleId: matVehicleId,
-            date: matDate,
-            materialName: matName,
-            quantity: Number(matQuantity),
-            unit: matUnit,
-            rate: Number(matRate),
-            totalAmount: totalAmount,
-            vendorName: matVendor,
-            remarks: matRemarks
-          };
+    try {
+      const response = await requestJson(
+        apiBaseUrl,
+        editingMatId ? `/api/v1/business/materials/${editingMatId}` : "/api/v1/business/materials",
+        {
+          method: editingMatId ? "PUT" : "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(toMaterialApiPayload(payloadMaterial)),
         }
-        return m;
-      }));
-      triggerOnlineSync(`UPDATED PURCHASE RECORD: ${matName}`);
-    } else {
-      const newMat: MaterialPurchase = {
-        id: `MAT-${Date.now()}`,
-        vehicleId: matVehicleId,
-        date: matDate,
-        materialName: matName,
-        quantity: Number(matQuantity),
-        unit: matUnit,
-        rate: Number(matRate),
-        totalAmount: totalAmount,
-        vendorName: matVendor,
-        remarks: matRemarks
-      };
-      setMaterials(prev => [newMat, ...prev]);
-      triggerOnlineSync(`ADDED MATERIAL PURCHASED: ${matName} FOR ${matVehicleId}`);
+      );
+      const savedMat = mapMaterialFromApi(response);
+      if (editingMatId) {
+        setMaterials(prev => prev.map(m => m.id === editingMatId ? savedMat : m));
+        triggerOnlineSync(`UPDATED PURCHASE RECORD: ${matName}`);
+      } else {
+        setMaterials(prev => [savedMat, ...prev]);
+        triggerOnlineSync(`ADDED MATERIAL PURCHASED: ${matName} FOR ${matVehicleId}`);
+      }
+    } catch (error) {
+      console.error(error);
+      if (editingMatId) {
+        setMaterials(prev => prev.map(m => m.id === editingMatId ? payloadMaterial : m));
+        triggerOnlineSync(`UPDATED PURCHASE RECORD: ${matName} (local fallback)`);
+      } else {
+        setMaterials(prev => [payloadMaterial, ...prev]);
+        triggerOnlineSync(`ADDED MATERIAL PURCHASED: ${matName} (local fallback)`);
+      }
     }
     setIsMatFormOpen(false);
+    await onSharedDataChanged?.();
   };
 
   const handleDeleteMaterial = (id: string) => {
@@ -4107,6 +4165,11 @@ export default function MobileBusiness({
                               <h4 className="text-xs font-bold text-red-500 truncate mt-0.5">{bit.brand}</h4>
                               <p className={`text-[8.5px] font-mono mt-1 ${bit.isPaid ? "text-green-700" : "text-slate-500"}`}>Date: {bit.dateEntry || "-"}</p>
                               <p className={`text-[8.5px] font-mono mt-0.5 ${bit.isPaid ? "text-green-700" : "text-slate-500"}`}>Rate: ₹{Number(bit.rate || 0).toLocaleString()}</p>
+                              {!bit.isPaid && (
+                                <p className="text-[8.5px] font-mono mt-0.5 text-rose-455 font-black">
+                                  Pending Amount: ₹{Math.max(0, bit.rate - (bit.payments || []).reduce((s, p) => s + p.amount, 0)).toLocaleString()}
+                                </p>
+                              )}
                               <p className={`text-[8.5px] font-mono mt-0.5 font-bold ${bit.isPaid ? "text-green-600" : "text-indigo-400"}`}>Usage: {totalFeetUsed} ft used</p>
                             </div>
                             <div className="flex items-center gap-1.5 shrink-0 flex-wrap justify-end">
@@ -4171,26 +4234,46 @@ export default function MobileBusiness({
                             dateEntry={bit.dateEntry || ""}
                             payments={bit.payments || (bit.isPaid ? [{ id: "init", date: bit.dateEntry || "2026-06-18", amount: bit.rate }] : [])}
                             onAddPayment={(amount, date) => {
-                              setBitEntries(prev => prev.map(b => {
-                                if (b.id === bit.id) {
-                                  const current = b.payments || (b.isPaid ? [{ id: "init", date: b.dateEntry || "2026-06-18", amount: b.rate }] : []);
-                                  const nextPay = [...current, { id: `pay-${Date.now()}`, date, amount }];
-                                  const paid = nextPay.reduce((s, p) => s + p.amount, 0);
-                                  return { ...b, payments: nextPay, isPaid: paid >= b.rate };
+                              void (async () => {
+                                const current = bit.payments || (bit.isPaid ? [{ id: "init", date: bit.dateEntry || "2026-06-18", amount: bit.rate }] : []);
+                                const nextPay = [...current, { id: `pay-${Date.now()}`, date, amount }];
+                                const paid = nextPay.reduce((s, p) => s + p.amount, 0);
+                                const isPaid = paid >= bit.rate;
+                                const nextRecord = { ...bit, payments: nextPay, isPaid };
+
+                                setBitEntries(prev => prev.map(b => b.id === bit.id ? nextRecord : b));
+                                try {
+                                  await requestJson(apiBaseUrl, `/api/v1/business/bits/${bit.id}`, {
+                                    method: "PUT",
+                                    headers: { "Content-Type": "application/json" },
+                                    body: JSON.stringify(toBitApiPayload(nextRecord))
+                                  });
+                                  await onSharedDataChanged?.();
+                                } catch (e) {
+                                  console.error("Failed to sync bit payment to database", e);
                                 }
-                                return b;
-                              }));
+                              })();
                             }}
                             onDeletePayment={(payId) => {
-                              setBitEntries(prev => prev.map(b => {
-                                if (b.id === bit.id) {
-                                  const current = b.payments || (b.isPaid ? [{ id: "init", date: b.dateEntry || "2026-06-18", amount: b.rate }] : []);
-                                  const nextPay = current.filter(p => p.id !== payId);
-                                  const paid = nextPay.reduce((s, p) => s + p.amount, 0);
-                                  return { ...b, payments: nextPay, isPaid: paid >= b.rate };
+                              void (async () => {
+                                const current = bit.payments || (bit.isPaid ? [{ id: "init", date: bit.dateEntry || "2026-06-18", amount: bit.rate }] : []);
+                                const nextPay = current.filter(p => p.id !== payId);
+                                const paid = nextPay.reduce((s, p) => s + p.amount, 0);
+                                const isPaid = paid >= bit.rate;
+                                const nextRecord = { ...bit, payments: nextPay, isPaid };
+
+                                setBitEntries(prev => prev.map(b => b.id === bit.id ? nextRecord : b));
+                                try {
+                                  await requestJson(apiBaseUrl, `/api/v1/business/bits/${bit.id}`, {
+                                    method: "PUT",
+                                    headers: { "Content-Type": "application/json" },
+                                    body: JSON.stringify(toBitApiPayload(nextRecord))
+                                  });
+                                  await onSharedDataChanged?.();
+                                } catch (e) {
+                                  console.error("Failed to sync bit payment to database", e);
                                 }
-                                return b;
-                              }));
+                              })();
                             }}
                           />
                         </div>
@@ -4351,6 +4434,11 @@ export default function MobileBusiness({
                               <h4 className="text-xs font-bold text-red-500 truncate mt-0.5">{hammer.brand}</h4>
                               <p className={`text-[8.5px] font-mono ${hammer.isPaid ? "text-green-700" : "text-slate-500"}`}>Purchased: {hammer.dateEntry || "-"}</p>
                               <p className={`text-[8.5px] font-mono ${hammer.isPaid ? "text-green-700" : "text-slate-500"}`}>Rate: ₹{Number(hammer.rate || 0).toLocaleString()}</p>
+                              {!hammer.isPaid && (
+                                <p className="text-[8.5px] font-mono mt-0.5 text-rose-455 font-black">
+                                  Pending Amount: ₹{Math.max(0, hammer.rate - (hammer.payments || []).reduce((s, p) => s + p.amount, 0)).toLocaleString()}
+                                </p>
+                              )}
                               <p className={`text-[8.5px] font-mono font-bold mt-1 ${hammer.isPaid ? "text-green-600" : "text-indigo-400"}`}>
                                 Usage: {totalFeetUsed} / {hammer.capableFeetDepth} ft used
                               </p>
@@ -4460,26 +4548,46 @@ export default function MobileBusiness({
                             dateEntry={hammer.dateEntry || ""}
                             payments={hammer.payments || (hammer.isPaid ? [{ id: "init", date: hammer.dateEntry || "2026-06-18", amount: hammer.rate }] : [])}
                             onAddPayment={(amount, date) => {
-                              setHammerEntries(prev => prev.map(h => {
-                                if (h.id === hammer.id) {
-                                  const current = h.payments || (h.isPaid ? [{ id: "init", date: h.dateEntry || "2026-06-18", amount: h.rate }] : []);
-                                  const nextPay = [...current, { id: `pay-${Date.now()}`, date, amount }];
-                                  const paid = nextPay.reduce((s, p) => s + p.amount, 0);
-                                  return { ...h, payments: nextPay, isPaid: paid >= h.rate };
+                              void (async () => {
+                                const current = hammer.payments || (hammer.isPaid ? [{ id: "init", date: hammer.dateEntry || "2026-06-18", amount: hammer.rate }] : []);
+                                const nextPay = [...current, { id: `pay-${Date.now()}`, date, amount }];
+                                const paid = nextPay.reduce((s, p) => s + p.amount, 0);
+                                const isPaid = paid >= hammer.rate;
+                                const nextRecord = { ...hammer, payments: nextPay, isPaid };
+
+                                setHammerEntries(prev => prev.map(h => h.id === hammer.id ? nextRecord : h));
+                                try {
+                                  await requestJson(apiBaseUrl, `/api/v1/business/hammers/${hammer.id}`, {
+                                    method: "PUT",
+                                    headers: { "Content-Type": "application/json" },
+                                    body: JSON.stringify(toHammerApiPayload(nextRecord))
+                                  });
+                                  await onSharedDataChanged?.();
+                                } catch (e) {
+                                  console.error("Failed to sync hammer payment to database", e);
                                 }
-                                return h;
-                              }));
+                              })();
                             }}
                             onDeletePayment={(payId) => {
-                              setHammerEntries(prev => prev.map(h => {
-                                if (h.id === hammer.id) {
-                                  const current = h.payments || (h.isPaid ? [{ id: "init", date: h.dateEntry || "2026-06-18", amount: h.rate }] : []);
-                                  const nextPay = current.filter(p => p.id !== payId);
-                                  const paid = nextPay.reduce((s, p) => s + p.amount, 0);
-                                  return { ...h, payments: nextPay, isPaid: paid >= h.rate };
+                              void (async () => {
+                                const current = hammer.payments || (hammer.isPaid ? [{ id: "init", date: hammer.dateEntry || "2026-06-18", amount: hammer.rate }] : []);
+                                const nextPay = current.filter(p => p.id !== payId);
+                                const paid = nextPay.reduce((s, p) => s + p.amount, 0);
+                                const isPaid = paid >= hammer.rate;
+                                const nextRecord = { ...hammer, payments: nextPay, isPaid };
+
+                                setHammerEntries(prev => prev.map(h => h.id === hammer.id ? nextRecord : h));
+                                try {
+                                  await requestJson(apiBaseUrl, `/api/v1/business/hammers/${hammer.id}`, {
+                                    method: "PUT",
+                                    headers: { "Content-Type": "application/json" },
+                                    body: JSON.stringify(toHammerApiPayload(nextRecord))
+                                  });
+                                  await onSharedDataChanged?.();
+                                } catch (e) {
+                                  console.error("Failed to sync hammer payment to database", e);
                                 }
-                                return h;
-                              }));
+                              })();
                             }}
                           />
                         </div>
@@ -4915,11 +5023,15 @@ export default function MobileBusiness({
                               {supplier.dateEntry && (
                                 <p className={`text-[8px] font-mono ${supplier.isPaid ? "text-green-700" : "text-slate-500"}`}>Date Purchased: {supplier.dateEntry}</p>
                               )}
-                              {/* Total Amount */}
                               <p className={`text-[9px] font-mono font-black mt-1 ${supplier.isPaid ? "text-green-700" : "text-emerald-400"}`}>
                                 Total Amount: ₹{Number(supplier.grandPrice || supplier.grandTotal || 0).toLocaleString()}
                               </p>
-                              <span className={`inline-block text-[8px] font-bold px-1.5 py-0.5 rounded mt-1 ${supplier.isPaid ? "bg-green-200 text-green-800" : "bg-rose-950 text-rose-400"}`}>
+                              {!supplier.isPaid && (
+                                <p className="text-[9px] font-mono mt-0.5 text-rose-455 font-black">
+                                  Pending Amount: ₹{Math.max(0, (supplier.grandPrice || supplier.grandTotal || 0) - (supplier.payments || []).reduce((s, p) => s + p.amount, 0)).toLocaleString()}
+                                </p>
+                              )}
+                              <span className={`inline-block text-[8px] font-bold px-1.5 py-0.5 rounded mt-1 ${supplier.isPaid ? "bg-green-200 text-green-800" : "bg-rose-950 text-rose-450"}`}>
                                 {supplier.isPaid ? "Paid" : "Pending"}
                               </span>
                             </div>
@@ -4973,28 +5085,48 @@ export default function MobileBusiness({
                             dateEntry={supplier.dateEntry || ""}
                             payments={supplier.payments || (supplier.isPaid ? [{ id: "init", date: supplier.dateEntry || "2026-06-18", amount: (supplier.grandPrice || supplier.grandTotal || 0) }] : [])}
                             onAddPayment={(amount, date) => {
-                              setPipeEntries(prev => prev.map(p => {
-                                if (p.id === supplier.id) {
-                                  const totalCost = supplier.grandPrice || supplier.grandTotal || 0;
-                                  const current = p.payments || (p.isPaid ? [{ id: "init", date: p.dateEntry || "2026-06-18", amount: totalCost }] : []);
-                                  const nextPay = [...current, { id: `pay-${Date.now()}`, date, amount }];
-                                  const paid = nextPay.reduce((s, pay) => s + pay.amount, 0);
-                                  return { ...p, payments: nextPay, isPaid: paid >= totalCost };
+                              void (async () => {
+                                const totalCost = supplier.grandPrice || supplier.grandTotal || 0;
+                                const current = supplier.payments || (supplier.isPaid ? [{ id: "init", date: supplier.dateEntry || "2026-06-18", amount: totalCost }] : []);
+                                const nextPay = [...current, { id: `pay-${Date.now()}`, date, amount }];
+                                const paid = nextPay.reduce((s, pay) => s + pay.amount, 0);
+                                const isPaid = paid >= totalCost;
+                                const nextRecord = { ...supplier, payments: nextPay, isPaid };
+
+                                setPipeEntries(prev => prev.map(p => p.id === supplier.id ? nextRecord : p));
+                                try {
+                                  await requestJson(apiBaseUrl, `/api/v1/business/pipes/${supplier.id}`, {
+                                    method: "PUT",
+                                    headers: { "Content-Type": "application/json" },
+                                    body: JSON.stringify(toPipeApiPayload(nextRecord))
+                                  });
+                                  await onSharedDataChanged?.();
+                                } catch (e) {
+                                  console.error("Failed to sync pipe payment to database", e);
                                 }
-                                return p;
-                              }));
+                              })();
                             }}
                             onDeletePayment={(payId) => {
-                              setPipeEntries(prev => prev.map(p => {
-                                if (p.id === supplier.id) {
-                                  const totalCost = supplier.grandPrice || supplier.grandTotal || 0;
-                                  const current = p.payments || (p.isPaid ? [{ id: "init", date: p.dateEntry || "2026-06-18", amount: totalCost }] : []);
-                                  const nextPay = current.filter(pay => pay.id !== payId);
-                                  const paid = nextPay.reduce((s, pay) => s + pay.amount, 0);
-                                  return { ...p, payments: nextPay, isPaid: paid >= totalCost };
+                              void (async () => {
+                                const totalCost = supplier.grandPrice || supplier.grandTotal || 0;
+                                const current = supplier.payments || (supplier.isPaid ? [{ id: "init", date: supplier.dateEntry || "2026-06-18", amount: totalCost }] : []);
+                                const nextPay = current.filter(pay => pay.id !== payId);
+                                const paid = nextPay.reduce((s, pay) => s + pay.amount, 0);
+                                const isPaid = paid >= totalCost;
+                                const nextRecord = { ...supplier, payments: nextPay, isPaid };
+
+                                setPipeEntries(prev => prev.map(p => p.id === supplier.id ? nextRecord : p));
+                                try {
+                                  await requestJson(apiBaseUrl, `/api/v1/business/pipes/${supplier.id}`, {
+                                    method: "PUT",
+                                    headers: { "Content-Type": "application/json" },
+                                    body: JSON.stringify(toPipeApiPayload(nextRecord))
+                                  });
+                                  await onSharedDataChanged?.();
+                                } catch (e) {
+                                  console.error("Failed to sync pipe payment to database", e);
                                 }
-                                return p;
-                              }));
+                              })();
                             }}
                           />
                         </div>
@@ -6214,6 +6346,11 @@ export default function MobileBusiness({
                             
                             <div className="text-right shrink-0 flex flex-col items-end justify-between h-full gap-2 pl-2">
                               <span className={`font-black text-[10.5px] ${s.isPaid ? "text-green-700" : "text-amber-500"}`}>₹{s.cost.toLocaleString()}</span>
+                              {!s.isPaid && (
+                                <span className="text-[8px] text-rose-455 font-black block mt-0.5">
+                                  Pending: ₹{Math.max(0, s.cost - (s.payments || []).reduce((sum, p) => sum + p.amount, 0)).toLocaleString()}
+                                </span>
+                              )}
                               <div className="flex gap-1.5 mt-2">
                                 <button type="button" onClick={() => handleOpenEditService(s)} className="p-1 px-1.5 bg-slate-900 border border-slate-800 text-slate-400 hover:text-white rounded">
                                   <Edit className="w-2.5 h-2.5" />
@@ -6230,26 +6367,46 @@ export default function MobileBusiness({
                             dateEntry={s.date || ""}
                             payments={s.payments || (s.isPaid ? [{ id: "init", date: s.date || "2026-06-18", amount: s.cost }] : [])}
                             onAddPayment={(amount, date) => {
-                              setServices(prev => prev.map(item => {
-                                if (item.id === s.id) {
-                                  const current = item.payments || (item.isPaid ? [{ id: "init", date: item.date || "2026-06-18", amount: item.cost }] : []);
-                                  const nextPay = [...current, { id: `pay-${Date.now()}`, date, amount }];
-                                  const paid = nextPay.reduce((sum, p) => sum + p.amount, 0);
-                                  return { ...item, payments: nextPay, isPaid: paid >= item.cost };
+                              void (async () => {
+                                const current = s.payments || (s.isPaid ? [{ id: "init", date: s.date || "2026-06-18", amount: s.cost }] : []);
+                                const nextPay = [...current, { id: `pay-${Date.now()}`, date, amount }];
+                                const paid = nextPay.reduce((sum, p) => sum + p.amount, 0);
+                                const isPaid = paid >= s.cost;
+                                const nextRecord = { ...s, payments: nextPay, isPaid };
+
+                                setServices(prev => prev.map(item => item.id === s.id ? nextRecord : item));
+                                try {
+                                  await requestJson(apiBaseUrl, `/api/v1/business/services/${s.id}`, {
+                                    method: "PUT",
+                                    headers: { "Content-Type": "application/json" },
+                                    body: JSON.stringify(toServiceApiPayload(nextRecord))
+                                  });
+                                  await onSharedDataChanged?.();
+                                } catch (e) {
+                                  console.error("Failed to sync service payment to database", e);
                                 }
-                                return item;
-                              }));
+                              })();
                             }}
                             onDeletePayment={(payId) => {
-                              setServices(prev => prev.map(item => {
-                                if (item.id === s.id) {
-                                  const current = item.payments || (item.isPaid ? [{ id: "init", date: item.date || "2026-06-18", amount: item.cost }] : []);
-                                  const nextPay = current.filter(p => p.id !== payId);
-                                  const paid = nextPay.reduce((sum, p) => sum + p.amount, 0);
-                                  return { ...item, payments: nextPay, isPaid: paid >= item.cost };
+                              void (async () => {
+                                const current = s.payments || (s.isPaid ? [{ id: "init", date: s.date || "2026-06-18", amount: s.cost }] : []);
+                                const nextPay = current.filter(p => p.id !== payId);
+                                const paid = nextPay.reduce((sum, p) => sum + p.amount, 0);
+                                const isPaid = paid >= s.cost;
+                                const nextRecord = { ...s, payments: nextPay, isPaid };
+
+                                setServices(prev => prev.map(item => item.id === s.id ? nextRecord : item));
+                                try {
+                                  await requestJson(apiBaseUrl, `/api/v1/business/services/${s.id}`, {
+                                    method: "PUT",
+                                    headers: { "Content-Type": "application/json" },
+                                    body: JSON.stringify(toServiceApiPayload(nextRecord))
+                                  });
+                                  await onSharedDataChanged?.();
+                                } catch (e) {
+                                  console.error("Failed to sync service payment to database", e);
                                 }
-                                return item;
-                              }));
+                              })();
                             }}
                           />
                         </div>
@@ -6379,7 +6536,14 @@ export default function MobileBusiness({
                             </span>
                           </div>
                           <div className="flex items-center gap-2 shrink-0 flex-wrap justify-end">
-                            <span className={`font-black text-[10.5px] ${f.isPaid ? "text-green-700" : "text-rose-450"}`}>₹{displayAmount.toLocaleString()}</span>
+                            <div className="text-right">
+                              <span className={`font-black text-[10.5px] ${f.isPaid ? "text-green-700" : "text-rose-450"}`}>₹{displayAmount.toLocaleString()}</span>
+                              {!f.isPaid && (
+                                <span className="text-[8px] text-rose-455 font-black block mt-0.5">
+                                  Pending: ₹{Math.max(0, displayAmount - (f.payments || []).reduce((sum, p) => sum + p.amount, 0)).toLocaleString()}
+                                </span>
+                              )}
+                            </div>
                             <button
                               type="button"
                               onClick={() => handleOpenEditFuel(f)}
@@ -6404,26 +6568,46 @@ export default function MobileBusiness({
                           dateEntry={f.dateTime || f.date || ""}
                           payments={f.payments || (f.isPaid ? [{ id: "init", date: f.dateTime || f.date || "2026-06-18", amount: displayAmount }] : [])}
                           onAddPayment={(amount, date) => {
-                            setFuelEntries(prev => prev.map(item => {
-                              if (item.id === f.id) {
-                                const current = item.payments || (item.isPaid ? [{ id: "init", date: item.dateTime || item.date || "2026-06-18", amount: displayAmount }] : []);
-                                const nextPay = [...current, { id: `pay-${Date.now()}`, date, amount }];
-                                const paid = nextPay.reduce((sum, p) => sum + p.amount, 0);
-                                return { ...item, payments: nextPay, isPaid: paid >= displayAmount };
+                            void (async () => {
+                              const current = f.payments || (f.isPaid ? [{ id: "init", date: f.dateTime || f.date || "2026-06-18", amount: displayAmount }] : []);
+                              const nextPay = [...current, { id: `pay-${Date.now()}`, date, amount }];
+                              const paid = nextPay.reduce((sum, p) => sum + p.amount, 0);
+                              const isPaid = paid >= displayAmount;
+                              const nextRecord = { ...f, payments: nextPay, isPaid };
+
+                              setFuelEntries(prev => prev.map(item => item.id === f.id ? nextRecord : item));
+                              try {
+                                await requestJson(apiBaseUrl, `/api/v1/vehicles/fuel/${f.id}`, {
+                                  method: "PUT",
+                                  headers: { "Content-Type": "application/json" },
+                                  body: JSON.stringify(toFuelApiPayload(nextRecord))
+                                });
+                                await onSharedDataChanged?.();
+                              } catch (e) {
+                                console.error("Failed to sync fuel payment to database", e);
                               }
-                              return item;
-                            }));
+                            })();
                           }}
                           onDeletePayment={(payId) => {
-                            setFuelEntries(prev => prev.map(item => {
-                              if (item.id === f.id) {
-                                const current = item.payments || (item.isPaid ? [{ id: "init", date: item.dateTime || item.date || "2026-06-18", amount: displayAmount }] : []);
-                                const nextPay = current.filter(p => p.id !== payId);
-                                const paid = nextPay.reduce((sum, p) => sum + p.amount, 0);
-                                return { ...item, payments: nextPay, isPaid: paid >= displayAmount };
+                            void (async () => {
+                              const current = f.payments || (f.isPaid ? [{ id: "init", date: f.dateTime || f.date || "2026-06-18", amount: displayAmount }] : []);
+                              const nextPay = current.filter(p => p.id !== payId);
+                              const paid = nextPay.reduce((sum, p) => sum + p.amount, 0);
+                              const isPaid = paid >= displayAmount;
+                              const nextRecord = { ...f, payments: nextPay, isPaid };
+
+                              setFuelEntries(prev => prev.map(item => item.id === f.id ? nextRecord : item));
+                              try {
+                                await requestJson(apiBaseUrl, `/api/v1/vehicles/fuel/${f.id}`, {
+                                  method: "PUT",
+                                  headers: { "Content-Type": "application/json" },
+                                  body: JSON.stringify(toFuelApiPayload(nextRecord))
+                                });
+                                await onSharedDataChanged?.();
+                              } catch (e) {
+                                console.error("Failed to sync fuel payment to database", e);
                               }
-                              return item;
-                            }));
+                            })();
                           }}
                         />
                       </div>
@@ -6635,6 +6819,11 @@ export default function MobileBusiness({
 
                             <div className="text-right shrink-0 flex flex-col items-end justify-between h-full gap-2 pl-2">
                               <span className={`font-black text-[10.5px] ${m.isPaid ? "text-green-700" : "text-teal-450"}`}>₹{m.totalAmount.toLocaleString()}</span>
+                              {!m.isPaid && (
+                                <span className="text-[8px] text-rose-455 font-black block mt-0.5">
+                                  Pending: ₹{Math.max(0, m.totalAmount - (m.payments || []).reduce((sum, p) => sum + p.amount, 0)).toLocaleString()}
+                                </span>
+                              )}
                               <div className="flex gap-1.5 mt-2">
                                 <button type="button" onClick={() => handleOpenEditMaterial(m)} className="p-1 px-1.5 bg-slate-900 border border-slate-800 text-slate-400 hover:text-white rounded">
                                   <Edit className="w-2.5 h-2.5" />
@@ -6651,26 +6840,46 @@ export default function MobileBusiness({
                             dateEntry={m.date || ""}
                             payments={m.payments || (m.isPaid ? [{ id: "init", date: m.date || "2026-06-18", amount: m.totalAmount }] : [])}
                             onAddPayment={(amount, date) => {
-                              setMaterials(prev => prev.map(item => {
-                                if (item.id === m.id) {
-                                  const current = item.payments || (item.isPaid ? [{ id: "init", date: item.date || "2026-06-18", amount: item.totalAmount }] : []);
-                                  const nextPay = [...current, { id: `pay-${Date.now()}`, date, amount }];
-                                  const paid = nextPay.reduce((sum, p) => sum + p.amount, 0);
-                                  return { ...item, payments: nextPay, isPaid: paid >= item.totalAmount };
+                              void (async () => {
+                                const current = m.payments || (m.isPaid ? [{ id: "init", date: m.date || "2026-06-18", amount: m.totalAmount }] : []);
+                                const nextPay = [...current, { id: `pay-${Date.now()}`, date, amount }];
+                                const paid = nextPay.reduce((sum, p) => sum + p.amount, 0);
+                                const isPaid = paid >= m.totalAmount;
+                                const nextRecord = { ...m, payments: nextPay, isPaid };
+
+                                setMaterials(prev => prev.map(item => item.id === m.id ? nextRecord : item));
+                                try {
+                                  await requestJson(apiBaseUrl, `/api/v1/business/materials/${m.id}`, {
+                                    method: "PUT",
+                                    headers: { "Content-Type": "application/json" },
+                                    body: JSON.stringify(toMaterialApiPayload(nextRecord))
+                                  });
+                                  await onSharedDataChanged?.();
+                                } catch (e) {
+                                  console.error("Failed to sync material payment to database", e);
                                 }
-                                return item;
-                              }));
+                              })();
                             }}
                             onDeletePayment={(payId) => {
-                              setMaterials(prev => prev.map(item => {
-                                if (item.id === m.id) {
-                                  const current = item.payments || (item.isPaid ? [{ id: "init", date: item.date || "2026-06-18", amount: item.totalAmount }] : []);
-                                  const nextPay = current.filter(p => p.id !== payId);
-                                  const paid = nextPay.reduce((sum, p) => sum + p.amount, 0);
-                                  return { ...item, payments: nextPay, isPaid: paid >= item.totalAmount };
+                              void (async () => {
+                                const current = m.payments || (m.isPaid ? [{ id: "init", date: m.date || "2026-06-18", amount: m.totalAmount }] : []);
+                                const nextPay = current.filter(p => p.id !== payId);
+                                const paid = nextPay.reduce((sum, p) => sum + p.amount, 0);
+                                const isPaid = paid >= m.totalAmount;
+                                const nextRecord = { ...m, payments: nextPay, isPaid };
+
+                                setMaterials(prev => prev.map(item => item.id === m.id ? nextRecord : item));
+                                try {
+                                  await requestJson(apiBaseUrl, `/api/v1/business/materials/${m.id}`, {
+                                    method: "PUT",
+                                    headers: { "Content-Type": "application/json" },
+                                    body: JSON.stringify(toMaterialApiPayload(nextRecord))
+                                  });
+                                  await onSharedDataChanged?.();
+                                } catch (e) {
+                                  console.error("Failed to sync material payment to database", e);
                                 }
-                                return item;
-                              }));
+                              })();
                             }}
                           />
                         </div>
