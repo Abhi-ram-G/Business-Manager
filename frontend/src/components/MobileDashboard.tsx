@@ -295,7 +295,7 @@ export default function MobileDashboard({
           <div className="flex justify-between items-start">
             <div>
               <span className="text-[9.5px] font-mono text-slate-400 uppercase tracking-wider font-bold">{localT("bit_count")}</span>
-              <div className="text-lg font-black font-mono mt-1 text-blue-400">
+              <div className="text-lg font-black font-mono mt-1 text-blue-700">
                 {bitEntries.length}
               </div>
             </div>
@@ -311,7 +311,7 @@ export default function MobileDashboard({
           <div className="flex justify-between items-start">
             <div>
               <span className="text-[9.5px] font-mono text-slate-400 uppercase tracking-wider font-bold">{localT("hammer_count")}</span>
-              <div className="text-lg font-black font-mono mt-1 text-amber-400">
+              <div className="text-lg font-black font-mono mt-1 text-amber-700">
                 {hammerEntries.length}
               </div>
             </div>
@@ -327,7 +327,7 @@ export default function MobileDashboard({
           <div className="flex justify-between items-start">
             <div>
               <span className="text-[9.5px] font-mono text-slate-400 uppercase tracking-wider font-bold">{localT("bill_count")}</span>
-              <div className="text-lg font-black font-mono mt-1 text-purple-500">
+              <div className="text-lg font-black font-mono mt-1 text-purple-700">
                 {businessBills.length}
               </div>
             </div>
@@ -343,7 +343,7 @@ export default function MobileDashboard({
           <div className="flex justify-between items-start">
             <div>
               <span className="text-[9.5px] font-mono text-slate-400 uppercase tracking-wider font-bold">{localT("pending_bills_amount")}</span>
-              <div className="text-lg font-black font-mono mt-1 text-rose-400">
+              <div className="text-lg font-black font-mono mt-1 text-rose-700">
                 ₹{totalPendingBillsAmount.toLocaleString()}
               </div>
             </div>
@@ -394,7 +394,7 @@ export default function MobileDashboard({
                 <div className="flex justify-between items-start">
                   <div>
                     <span className="text-[9px] font-mono text-slate-400 uppercase tracking-wider font-bold block">Total Stock Available</span>
-                    <div className="text-lg font-black font-mono mt-1 text-cyan-400">{Math.round(totalAvail)}</div>
+                    <div className="text-lg font-black font-mono mt-1 text-cyan-700">{Math.round(totalAvail)}</div>
                     <span className="text-[8px] text-slate-500 font-mono">pipes</span>
                   </div>
                   <div className="p-2 bg-cyan-950/80 rounded-xl text-cyan-400 border border-cyan-800/40">
@@ -409,7 +409,7 @@ export default function MobileDashboard({
                 <div className="flex justify-between items-start">
                   <div>
                     <span className="text-[9px] font-mono text-slate-400 uppercase tracking-wider font-bold block">7" H QLT</span>
-                    <div className="text-lg font-black font-mono mt-1 text-emerald-400">{Math.round(avail7High)}</div>
+                    <div className="text-lg font-black font-mono mt-1 text-emerald-700">{Math.round(avail7High)}</div>
                     <span className="text-[8px] text-slate-500 font-mono">pipes</span>
                   </div>
                   <div className="p-2 bg-emerald-950/80 rounded-xl text-emerald-400 border border-emerald-800/40">
@@ -424,7 +424,7 @@ export default function MobileDashboard({
                 <div className="flex justify-between items-start">
                   <div>
                     <span className="text-[9px] font-mono text-slate-400 uppercase tracking-wider font-bold block">7" M QLT</span>
-                    <div className="text-lg font-black font-mono mt-1 text-teal-400">{Math.round(avail7Medium)}</div>
+                    <div className="text-lg font-black font-mono mt-1 text-teal-700">{Math.round(avail7Medium)}</div>
                     <span className="text-[8px] text-slate-500 font-mono">pipes</span>
                   </div>
                   <div className="p-2 bg-teal-950/80 rounded-xl text-teal-400 border border-teal-800/40">
@@ -439,7 +439,7 @@ export default function MobileDashboard({
                 <div className="flex justify-between items-start">
                   <div>
                     <span className="text-[9px] font-mono text-slate-400 uppercase tracking-wider font-bold block">10" H QLT</span>
-                    <div className="text-lg font-black font-mono mt-1 text-orange-400">{Math.round(avail10High)}</div>
+                    <div className="text-lg font-black font-mono mt-1 text-orange-700">{Math.round(avail10High)}</div>
                     <span className="text-[8px] text-slate-500 font-mono">pipes</span>
                   </div>
                   <div className="p-2 bg-orange-950/80 rounded-xl text-orange-400 border border-orange-800/40">
@@ -454,7 +454,7 @@ export default function MobileDashboard({
                 <div className="flex justify-between items-start">
                   <div>
                     <span className="text-[9px] font-mono text-slate-400 uppercase tracking-wider font-bold block">10" M QLT</span>
-                    <div className="text-lg font-black font-mono mt-1 text-amber-400">{Math.round(avail10Medium)}</div>
+                    <div className="text-lg font-black font-mono mt-1 text-amber-700">{Math.round(avail10Medium)}</div>
                     <span className="text-[8px] text-slate-500 font-mono">pipes</span>
                   </div>
                   <div className="p-2 bg-amber-950/80 rounded-xl text-amber-400 border border-amber-800/40">
