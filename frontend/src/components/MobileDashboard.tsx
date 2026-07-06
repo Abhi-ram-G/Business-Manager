@@ -378,6 +378,30 @@ export default function MobileDashboard({
 
         return (
           <div className="space-y-2">
+            {/* Scoped style override — guarantees colors + font size beat any global !important rule */}
+            <style>{`
+              span.stock-card-number {
+                font-size: 32px !important;
+                line-height: 38px !important;
+                font-weight: 800 !important;
+              }
+              span.stock-card-number.stock-card-number-blue {
+                color: #1e40af !important;
+              }
+              span.stock-card-number.stock-card-number-green {
+                color: #059669 !important;
+              }
+              span.stock-card-number.stock-card-number-orange {
+                color: #c2410c !important;
+              }
+              span.stock-card-unit {
+                font-size: 18px !important;
+                line-height: 24px !important;
+                font-weight: 600 !important;
+                color: #64748b !important;
+              }
+            `}</style>
+
             {/* Section header */}
             <div className="flex items-center gap-2 px-0.5">
               <div className="p-1.5 bg-cyan-500/10 rounded-lg text-cyan-400 border border-cyan-500/20">
@@ -395,7 +419,7 @@ export default function MobileDashboard({
                   <div>
                     <span className="stock-card-label block uppercase">Total Stock Available</span>
                     <div className="mt-1 flex items-baseline gap-1">
-                      <span className="stock-card-number stock-card-number-blue" style={{ color: "#1e40af", fontSize: "32px", lineHeight: "38px", fontWeight: 800 }}>{Math.round(totalAvail)}</span>
+                      <span className="stock-card-number stock-card-number-blue">{Math.round(totalAvail)}</span>
                       <span className="stock-card-unit">pipes</span>
                     </div>
                   </div>
@@ -412,7 +436,7 @@ export default function MobileDashboard({
                   <div>
                     <span className="stock-card-label block uppercase">7" H QLT</span>
                     <div className="mt-1 flex items-baseline gap-1">
-                      <span className="stock-card-number stock-card-number-green" style={{ color: "#10b981", fontSize: "32px", lineHeight: "38px", fontWeight: 800 }}>{Math.round(avail7High)}</span>
+                      <span className="stock-card-number stock-card-number-green">{Math.round(avail7High)}</span>
                       <span className="stock-card-unit">pipes</span>
                     </div>
                   </div>
@@ -429,7 +453,7 @@ export default function MobileDashboard({
                   <div>
                     <span className="stock-card-label block uppercase">7" M QLT</span>
                     <div className="mt-1 flex items-baseline gap-1">
-                      <span className="stock-card-number stock-card-number-green" style={{ color: "#10b981", fontSize: "32px", lineHeight: "38px", fontWeight: 800 }}>{Math.round(avail7Medium)}</span>
+                      <span className="stock-card-number stock-card-number-green">{Math.round(avail7Medium)}</span>
                       <span className="stock-card-unit">pipes</span>
                     </div>
                   </div>
@@ -446,7 +470,7 @@ export default function MobileDashboard({
                   <div>
                     <span className="stock-card-label block uppercase">10" H QLT</span>
                     <div className="mt-1 flex items-baseline gap-1">
-                      <span className="stock-card-number stock-card-number-orange" style={{ color: "#f97316", fontSize: "32px", lineHeight: "38px", fontWeight: 800 }}>{Math.round(avail10High)}</span>
+                      <span className="stock-card-number stock-card-number-orange">{Math.round(avail10High)}</span>
                       <span className="stock-card-unit">pipes</span>
                     </div>
                   </div>
@@ -463,7 +487,7 @@ export default function MobileDashboard({
                   <div>
                     <span className="stock-card-label block uppercase">10" M QLT</span>
                     <div className="mt-1 flex items-baseline gap-1">
-                      <span className="stock-card-number stock-card-number-orange" style={{ color: "#f97316", fontSize: "32px", lineHeight: "38px", fontWeight: 800 }}>{Math.round(avail10Medium)}</span>
+                      <span className="stock-card-number stock-card-number-orange">{Math.round(avail10Medium)}</span>
                       <span className="stock-card-unit">pipes</span>
                     </div>
                   </div>
