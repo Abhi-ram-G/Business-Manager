@@ -364,6 +364,58 @@ class FuelEntryUpdate(BaseModel):
     total_amount: float | None = None
 
 
+class ServiceEntryCreate(BaseModel):
+    id: str
+    vehicle_id: str | None = None
+    date: dt_date | None = None
+    service_type: str
+    cost: float
+    spare_parts: str | None = None
+    remarks: str | None = None
+    is_paid: bool = False
+    payments: list[dict[str, Any]] | None = None
+
+
+class ServiceEntryUpdate(BaseModel):
+    vehicle_id: str | None = None
+    date: dt_date | None = None
+    service_type: str | None = None
+    cost: float | None = None
+    spare_parts: str | None = None
+    remarks: str | None = None
+    is_paid: bool | None = None
+    payments: list[dict[str, Any]] | None = None
+
+
+class MaterialEntryCreate(BaseModel):
+    id: str
+    vehicle_id: str | None = None
+    date: dt_date | None = None
+    material_name: str
+    quantity: float
+    unit: str
+    rate: float
+    total_amount: float
+    vendor_name: str | None = None
+    remarks: str | None = None
+    is_paid: bool = False
+    payments: list[dict[str, Any]] | None = None
+
+
+class MaterialEntryUpdate(BaseModel):
+    vehicle_id: str | None = None
+    date: dt_date | None = None
+    material_name: str | None = None
+    quantity: float | None = None
+    unit: str | None = None
+    rate: float | None = None
+    total_amount: float | None = None
+    vendor_name: str | None = None
+    remarks: str | None = None
+    is_paid: bool | None = None
+    payments: list[dict[str, Any]] | None = None
+
+
 class TripCreate(BaseModel):
     id: str
     vehicle_id: str | None = None
