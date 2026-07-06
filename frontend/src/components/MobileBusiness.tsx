@@ -38,10 +38,11 @@ import {
   UserCheck,
   Mars,
   Venus,
-  History
+  History,
+  Layers
 } from "lucide-react";
 import { Labour, Vehicle, BitEntry, HammerEntry, HammerUsageRecord, BusinessBill, FuelEntry, SalaryPayment, AdvanceEntry, AttendanceRecord, PipeEntry } from "../types";
-import { downloadSalarySlipPDF, downloadAttendanceReportPDF, downloadSingleLabourAttendancePDF } from "../utils/pdfGenerator";
+import { downloadSalarySlipPDF, downloadAttendanceReportPDF, downloadSingleLabourAttendancePDF, downloadBusinessReportPDF } from "../utils/pdfGenerator";
 import {
   mapFuelFromApi,
   mapBusinessBillFromApi,
@@ -182,7 +183,10 @@ export default function MobileBusiness({
 }: MobileBusinessProps) {
   // Navigation tabs inside Business Section
   const [activeSubSection, setActiveSubSection] = React.useState<"labour" | "bit" | "attendance" | "vehicles" | "salaries">(initialSubSection);
-  const [activeMainSection, setActiveMainSection] = React.useState<"management" | "bill" >("management");
+  const [activeMainSection, setActiveMainSection] = React.useState<"management" | "bill" | "reports">("management");
+  // Reports section: month/year state
+  const [reportMonth, setReportMonth] = React.useState(new Date().getMonth());
+  const [reportYear, setReportYear] = React.useState(new Date().getFullYear());
 
 
   const persistBit = async (record: BitEntry, method: "POST" | "PUT") => {
@@ -2636,7 +2640,7 @@ export default function MobileBusiness({
     <div id="mobile-business-root" className="space-y-4">
       
       {/* SECTION METADATA SPLIT SWITCHER HEADER */}
-      <div className="grid grid-cols-2 gap-1.5 bg-slate-950 p-1 rounded-xl border border-slate-850">
+      <div className="grid grid-cols-3 gap-1.5 bg-slate-950 p-1 rounded-xl border border-slate-850">
         <button
           onClick={() => {
             setActiveMainSection("management");
@@ -2658,6 +2662,17 @@ export default function MobileBusiness({
         >
           <FileText className="w-4 h-4" />
           <span>Bill / Invoices</span>
+        </button>
+        <button
+          onClick={() => {
+            setActiveMainSection("reports");
+          }}
+          className={`py-2 rounded-lg text-[10px] font-extrabold uppercase tracking-widest flex items-center justify-center gap-1.5 transition cursor-pointer ${
+            activeMainSection === "reports" ? "bg-emerald-700 text-white" : "text-slate-400 hover:text-slate-200"
+          }`}
+        >
+          <Download className="w-4 h-4" />
+          <span>Reports</span>
         </button>
       </div>
 
@@ -7648,6 +7663,176 @@ export default function MobileBusiness({
           </div>
         );
       })()}
+
+      {/* ======================= REPORTS SUBSECTION ======================= */}
+      {activeMainSection === "reports" && (
+        <div className="space-y-4 animate-fade-in">
+          
+          {/* MONTHLY WORKSPACE SELECTOR CARD */}
+          <div className="bg-slate-900 border border-slate-850 p-4 rounded-2xl flex items-center justify-between shadow-lg">
+            <div className="space-y-1">
+              <span className="text-[10px] text-slate-500 font-bold uppercase tracking-wider font-mono">Select Monthly Workspace</span>
+              <div className="flex items-center gap-2">
+                <select
+                  value={reportMonth}
+                  onChange={(e) => setReportMonth(Number(e.target.value))}
+                  className="bg-slate-950 border border-slate-800 rounded-lg px-2.5 py-1.5 text-xs text-indigo-400 font-mono font-bold focus:outline-none cursor-pointer"
+                >
+                  {["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"].map((m, idx) => (
+                    <option key={m} value={idx}>{m}</option>
+                  ))}
+                </select>
+
+                <select
+                  value={reportYear}
+                  onChange={(e) => setReportYear(Number(e.target.value))}
+                  className="bg-slate-950 border border-slate-800 rounded-lg px-2.5 py-1.5 text-xs text-indigo-400 font-mono font-bold focus:outline-none cursor-pointer"
+                >
+                  {Array.from({ length: 86 }, (_, i) => 2015 + i).map(y => (
+                    <option key={y} value={y}>{y}</option>
+                  ))}
+                </select>
+              </div>
+            </div>
+
+            <div className="flex gap-1.5">
+              <button
+                type="button"
+                onClick={() => {
+                  setReportMonth(prev => {
+                    if (prev === 0) {
+                      setReportYear(y => y - 1);
+                      return 11;
+                    }
+                    return prev - 1;
+                  });
+                }}
+                className="bg-slate-950 border border-slate-800 px-3 py-1.5 text-xs text-slate-350 hover:bg-slate-800 cursor-pointer font-bold font-mono rounded-lg transition"
+              >
+                ← Prev
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  setReportMonth(prev => {
+                    if (prev === 11) {
+                      setReportYear(y => y + 1);
+                      return 0;
+                    }
+                    return prev + 1;
+                  });
+                }}
+                className="bg-slate-950 border border-slate-800 px-3 py-1.5 text-xs text-slate-350 hover:bg-slate-800 cursor-pointer font-bold font-mono rounded-lg transition"
+              >
+                Next →
+              </button>
+            </div>
+          </div>
+
+          {/* REPORTS LISTING */}
+          <div className="grid grid-cols-1 gap-3.5">
+            {[
+              {
+                id: "bit",
+                name: "Bit Details",
+                description: "Bit inventory rates, sizes, buttons, and purchase log",
+                icon: Package
+              },
+              {
+                id: "hammer",
+                name: "Hammer Details",
+                description: "Hammer inventory, depth capacity, rates, and usage logs",
+                icon: Wrench
+              },
+              {
+                id: "pipe",
+                name: "Pipe / Casing Details",
+                description: "Registered & used stock ledger for 7\" & 10\" casing pipes",
+                icon: Layers
+              },
+              {
+                id: "service",
+                name: "Service Entries",
+                description: "Vehicle maintenance schedules, spare parts cost, and servicing history",
+                icon: Activity
+              },
+              {
+                id: "fuel",
+                name: "Fuel Entries",
+                description: "Fuel logs, consumption stats, and total billing metrics by vehicle",
+                icon: Fuel
+              },
+              {
+                id: "material",
+                name: "Materials Purchased",
+                description: "General material purchases, grease buckets, and tools procurement",
+                icon: Upload
+              },
+              {
+                id: "bill",
+                name: "Bill / Invoices",
+                description: "Complete borewell drilling customer invoices, paid vs pending registry",
+                icon: FileText
+              }
+            ].map((report) => {
+              const Icon = report.icon;
+              return (
+                <div key={report.id} className="bg-slate-900 border border-slate-850 p-4 rounded-2xl space-y-3.5 shadow-md hover:border-slate-800 transition">
+                  <div className="flex items-start gap-3">
+                    <div className="p-2.5 rounded-xl bg-slate-950 border border-slate-800">
+                      <Icon className="w-5 h-5 text-indigo-400" />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <h4 className="text-xs font-black text-slate-200 uppercase tracking-wider">{report.name}</h4>
+                      <p className="text-[10px] text-slate-450 mt-1 leading-normal">{report.description}</p>
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-2 pt-1 font-mono text-[9px] uppercase tracking-wider font-extrabold">
+                    <button
+                      onClick={() => downloadBusinessReportPDF({
+                        reportType: report.id as any,
+                        mode: "monthly",
+                        month: reportMonth,
+                        year: reportYear,
+                        bitEntries,
+                        hammerEntries,
+                        pipeEntries,
+                        businessBills,
+                        fuelEntries,
+                        services,
+                        materials
+                      })}
+                      className="bg-indigo-600 hover:bg-indigo-550 active:bg-indigo-700 text-white border border-indigo-500/20 py-2 px-3 rounded-xl flex items-center justify-center gap-1.5 cursor-pointer shadow-md shadow-indigo-950/45 transition uppercase tracking-widest text-[8px]"
+                    >
+                      <Calendar className="w-3.5 h-3.5" /> Download Monthly
+                    </button>
+                    <button
+                      onClick={() => downloadBusinessReportPDF({
+                        reportType: report.id as any,
+                        mode: "overall",
+                        month: reportMonth,
+                        year: reportYear,
+                        bitEntries,
+                        hammerEntries,
+                        pipeEntries,
+                        businessBills,
+                        fuelEntries,
+                        services,
+                        materials
+                      })}
+                      className="bg-emerald-600 hover:bg-emerald-550 active:bg-emerald-700 text-white border border-emerald-500/20 py-2 px-3 rounded-xl flex items-center justify-center gap-1.5 cursor-pointer shadow-md shadow-emerald-950/45 transition uppercase tracking-widest text-[8px]"
+                    >
+                      <History className="w-3.5 h-3.5" /> Download Overall
+                    </button>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+
+        </div>
+      )}
 
       {/* ======================= VEHICLE DOCUMENT VIEWER MODAL ======================= */}
       {selectedFileToView && (

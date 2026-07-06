@@ -1,5 +1,5 @@
 import { jsPDF } from "jspdf";
-import { Labour, SalaryPayment, AttendanceRecord } from "../types";
+import { Labour, SalaryPayment, AttendanceRecord, BitEntry, HammerEntry, PipeEntry, BusinessBill, FuelEntry } from "../types";
 
 /**
  * Generates and downloads a beautiful, professional, and compliant A4 Salary Slip PDF.
@@ -898,6 +898,397 @@ export function downloadSingleLabourAttendancePDF(
   doc.setFontSize(7);
   doc.text("Official digitized attendance document. Balaji Heavy Transports & Logistics Roster Control System. Secure SHA-1 Encrypted database record.", 15, 278);
 
+
   // Save/Download PDF
   doc.save(`Attendance_Individual_${labour.fullName.replace(/\s+/g, "_")}_${selectedMonthName}_${year}.pdf`);
+}
+
+// ─── Helper ────────────────────────────────────────────────────────────────
+type ServiceRecord = {
+  id: string; vehicleId: string; date: string;
+  serviceType: string; cost: number; spareParts: string; remarks?: string;
+};
+type MaterialPurchase = {
+  id: string; vehicleId?: string; date: string; materialName: string;
+  quantity: number; unit: string; rate: number; totalAmount: number;
+  vendorName?: string; remarks?: string;
+};
+
+function drawReportHeader(doc: jsPDF, title: string, subtitle: string) {
+  doc.setDrawColor(203, 213, 225);
+  doc.setLineWidth(0.4);
+  doc.rect(7, 7, 196, 283);
+
+  doc.setFillColor(15, 23, 42);
+  doc.rect(7, 7, 196, 30, "F");
+
+  doc.setTextColor(255, 255, 255);
+  doc.setFont("Helvetica", "bold");
+  doc.setFontSize(14);
+  doc.text("SRS (Sri Selvanayagi Rig Service)", 15, 15);
+
+  doc.setFont("Helvetica", "normal");
+  doc.setFontSize(8);
+  doc.setTextColor(203, 213, 225);
+  doc.text("8\", 6 1/2\", 4 1/2\" Borewells in Best | Office at Sathy Road, Annur.", 15, 21);
+  doc.text(subtitle, 15, 25);
+
+  doc.setFont("Helvetica", "bold");
+  doc.setFontSize(9);
+  doc.setTextColor(129, 140, 248);
+  doc.text(title, 195, 15, { align: "right" });
+
+  doc.setFont("Helvetica", "normal");
+  doc.setFontSize(7.5);
+  doc.setTextColor(203, 213, 225);
+  doc.text(`Generated: ${new Date().toLocaleString()}`, 195, 21, { align: "right" });
+  doc.text("Status: ARCHIVE VALIDATED", 195, 25, { align: "right" });
+}
+
+function drawTableHeader(doc: jsPDF, y: number, cols: string[], xs: number[], color: [number, number, number]) {
+  doc.setFillColor(...color);
+  doc.rect(15, y, 180, 8, "F");
+  doc.setTextColor(255, 255, 255);
+  doc.setFont("Helvetica", "bold");
+  doc.setFontSize(8);
+  cols.forEach((col, i) => doc.text(col, xs[i], y + 5.5));
+}
+
+function drawRow(doc: jsPDF, y: number, vals: string[], xs: number[], rowIdx: number, height = 8) {
+  if (rowIdx % 2 === 0) { doc.setFillColor(255, 255, 255); } else { doc.setFillColor(248, 250, 252); }
+  doc.rect(15, y, 180, height, "F");
+  doc.setDrawColor(241, 245, 249);
+  doc.setLineWidth(0.3);
+  doc.line(15, y + height, 195, y + height);
+  doc.setFont("Helvetica", "normal");
+  doc.setFontSize(7.5);
+  doc.setTextColor(15, 23, 42);
+  vals.forEach((val, i) => {
+    const maxLen = Math.floor((xs[i + 1] ?? 195) - xs[i] - 1) * 1.2;
+    const txt = String(val).length > maxLen ? String(val).slice(0, maxLen - 3) + "..." : String(val);
+    doc.text(txt, xs[i], y + 5.2);
+  });
+  return y + height;
+}
+
+/**
+ * Multi-type Business Report PDF generator supporting Monthly and Overall downloads.
+ * reportType: "bit" | "hammer" | "pipe" | "service" | "fuel" | "material" | "bill"
+ * mode: "monthly" (filter by month/year) | "overall" (all data, grouped by year)
+ */
+export function downloadBusinessReportPDF(options: {
+  reportType: "bit" | "hammer" | "pipe" | "service" | "fuel" | "material" | "bill";
+  mode: "monthly" | "overall";
+  month?: number; // 0-indexed, required for monthly
+  year?: number;  // required for monthly
+  bitEntries?: BitEntry[];
+  hammerEntries?: HammerEntry[];
+  pipeEntries?: PipeEntry[];
+  businessBills?: BusinessBill[];
+  fuelEntries?: FuelEntry[];
+  services?: ServiceRecord[];
+  materials?: MaterialPurchase[];
+}) {
+  const {
+    reportType, mode, month = 0, year = new Date().getFullYear(),
+    bitEntries = [], hammerEntries = [], pipeEntries = [],
+    businessBills = [], fuelEntries = [], services = [], materials = []
+  } = options;
+
+  const monthNames = ["January","February","March","April","May","June","July","August","September","October","November","December"];
+  const monthStr = String(month + 1).padStart(2, "0");
+  const monthPrefix = `${year}-${monthStr}-`;
+
+  const doc = new jsPDF({ orientation: "portrait", unit: "mm", format: "a4" });
+
+  const typeLabel: Record<string, string> = {
+    bit: "BIT DETAILS REPORT", hammer: "HAMMER DETAILS REPORT",
+    pipe: "PIPE / CASING SUPPLIER REPORT", service: "SERVICE ENTRIES REPORT",
+    fuel: "FUEL ENTRIES REPORT", material: "MATERIALS PURCHASED REPORT",
+    bill: "BILL & INVOICES REPORT"
+  };
+
+  const periodLabel = mode === "monthly"
+    ? `Period: ${monthNames[month].toUpperCase()} ${year}`
+    : `Period: ALL TIME (OVERALL)`;
+
+  drawReportHeader(doc, typeLabel[reportType], periodLabel);
+
+  // Title line
+  doc.setTextColor(15, 23, 42);
+  doc.setFont("Helvetica", "bold");
+  doc.setFontSize(11);
+  const fullTitle = mode === "monthly"
+    ? `${typeLabel[reportType]} — ${monthNames[month].toUpperCase()} ${year}`
+    : `${typeLabel[reportType]} — OVERALL SUMMARY`;
+  doc.text(fullTitle, 15, 44);
+  doc.setDrawColor(79, 70, 229);
+  doc.setLineWidth(1);
+  doc.line(15, 47, 195, 47);
+
+  let curY = 53;
+  const pageH = 283;
+
+  function checkPage() {
+    if (curY > pageH - 20) {
+      doc.addPage();
+      doc.setDrawColor(203, 213, 225);
+      doc.setLineWidth(0.4);
+      doc.rect(7, 7, 196, 283);
+      curY = 18;
+    }
+  }
+
+  function filterByDate<T extends { date?: string; billDate?: string; dateEntry?: string }>(arr: T[]) {
+    if (mode === "overall") return arr;
+    return arr.filter(item => {
+      const d = item.date ?? item.billDate ?? item.dateEntry ?? "";
+      return d.startsWith(monthPrefix);
+    });
+  }
+
+  // ── BIT REPORT ────────────────────────────────────────────────────────────
+  if (reportType === "bit") {
+    const data = mode === "overall" ? bitEntries : bitEntries.filter(b => (b.dateEntry ?? "").startsWith(monthPrefix));
+    // Summary box
+    doc.setFillColor(248, 250, 252);
+    doc.rect(15, curY, 180, 14, "F");
+    doc.setDrawColor(226, 232, 240);
+    doc.rect(15, curY, 180, 14);
+    doc.setFont("Helvetica", "bold");
+    doc.setFontSize(8.5);
+    doc.setTextColor(71, 85, 105);
+    doc.text("SUMMARY", 20, curY + 5);
+    doc.setFont("Helvetica", "normal");
+    doc.setFontSize(8);
+    doc.setTextColor(15, 23, 42);
+    doc.text(`Total Bits: ${data.length}`, 20, curY + 10);
+    doc.text(`Total Value: ₹${data.reduce((s, b) => s + (b.rate || 0), 0).toLocaleString()}`, 70, curY + 10);
+    curY += 18;
+    drawTableHeader(doc, curY, ["#", "Bit No", "Brand", "Size (mm)", "Button Size", "Date Entry", "Rate (₹)"],
+      [17, 25, 55, 90, 115, 140, 168], [30, 64, 99]);
+    curY += 8;
+    data.forEach((b, i) => {
+      checkPage();
+      curY = drawRow(doc, curY, [
+        String(i + 1), b.bitNo, b.brand, String(b.sizeMm),
+        String(b.buttonSizeMm ?? "-"), b.dateEntry ?? "-", `₹${(b.rate || 0).toLocaleString()}`
+      ], [17, 25, 55, 90, 115, 140, 168], i);
+    });
+    if (data.length === 0) {
+      doc.setFont("Helvetica", "normal"); doc.setFontSize(9); doc.setTextColor(100, 116, 139);
+      doc.text("No bit entries found for the selected period.", 20, curY + 6);
+    }
+  }
+
+  // ── HAMMER REPORT ─────────────────────────────────────────────────────────
+  if (reportType === "hammer") {
+    const data = mode === "overall" ? hammerEntries : hammerEntries.filter(h => h.dateEntry.startsWith(monthPrefix));
+    doc.setFillColor(248, 250, 252);
+    doc.rect(15, curY, 180, 14, "F");
+    doc.setDrawColor(226, 232, 240); doc.rect(15, curY, 180, 14);
+    doc.setFont("Helvetica", "bold"); doc.setFontSize(8.5); doc.setTextColor(71, 85, 105);
+    doc.text("SUMMARY", 20, curY + 5);
+    doc.setFont("Helvetica", "normal"); doc.setFontSize(8); doc.setTextColor(15, 23, 42);
+    doc.text(`Total Hammers: ${data.length}`, 20, curY + 10);
+    doc.text(`Total Feet Capacity: ${data.reduce((s, h) => s + (h.capableFeetDepth || 0), 0)} ft`, 70, curY + 10);
+    curY += 18;
+    drawTableHeader(doc, curY, ["#", "Hammer No", "Brand", "Cap. Feet", "Casing Type", "Date Entry", "Rate (₹)", "Paid"],
+      [17, 25, 60, 90, 112, 140, 160, 178], [30, 64, 99]);
+    curY += 8;
+    data.forEach((h, i) => {
+      checkPage();
+      curY = drawRow(doc, curY, [
+        String(i + 1), h.hammerNo, h.brand, `${h.capableFeetDepth}ft`,
+        h.casingType ?? "-", h.dateEntry, `₹${(h.rate || 0).toLocaleString()}`, h.isPaid ? "Yes" : "No"
+      ], [17, 25, 60, 90, 112, 140, 160, 178], i);
+    });
+    if (data.length === 0) {
+      doc.setFont("Helvetica", "normal"); doc.setFontSize(9); doc.setTextColor(100, 116, 139);
+      doc.text("No hammer entries found for the selected period.", 20, curY + 6);
+    }
+  }
+
+  // ── PIPE REPORT ───────────────────────────────────────────────────────────
+  if (reportType === "pipe") {
+    const data = mode === "overall" ? pipeEntries : pipeEntries.filter(p => (p.dateEntry ?? "").startsWith(monthPrefix));
+    doc.setFillColor(248, 250, 252);
+    doc.rect(15, curY, 180, 14, "F");
+    doc.setDrawColor(226, 232, 240); doc.rect(15, curY, 180, 14);
+    doc.setFont("Helvetica", "bold"); doc.setFontSize(8.5); doc.setTextColor(71, 85, 105);
+    doc.text("SUMMARY", 20, curY + 5);
+    doc.setFont("Helvetica", "normal"); doc.setFontSize(8); doc.setTextColor(15, 23, 42);
+    doc.text(`Total Suppliers: ${data.length}`, 20, curY + 10);
+    doc.text(`Total Spend: ₹${data.reduce((s, p) => s + (p.grandPrice || 0), 0).toLocaleString()}`, 70, curY + 10);
+    curY += 18;
+    drawTableHeader(doc, curY, ["Company", "Location", "7\"H", "7\"M", "10\"H", "10\"M", "Total", "Price"],
+      [17, 55, 90, 105, 120, 135, 153, 170], [30, 64, 99]);
+    curY += 8;
+    data.forEach((p, i) => {
+      checkPage();
+      curY = drawRow(doc, curY, [
+        p.companyName, p.location ?? "-",
+        String(p.pipe7HighCount), String(p.pipe7MediumCount),
+        String(p.pipe10HighCount), String(p.pipe10MediumCount),
+        `₹${(p.grandTotal || 0).toLocaleString()}`, `₹${(p.grandPrice || 0).toLocaleString()}`
+      ], [17, 55, 90, 105, 120, 135, 153, 170], i);
+    });
+    if (data.length === 0) {
+      doc.setFont("Helvetica", "normal"); doc.setFontSize(9); doc.setTextColor(100, 116, 139);
+      doc.text("No pipe/casing entries found for the selected period.", 20, curY + 6);
+    }
+  }
+
+  // ── SERVICE REPORT ────────────────────────────────────────────────────────
+  if (reportType === "service") {
+    const data = filterByDate(services) as ServiceRecord[];
+    doc.setFillColor(248, 250, 252);
+    doc.rect(15, curY, 180, 14, "F");
+    doc.setDrawColor(226, 232, 240); doc.rect(15, curY, 180, 14);
+    doc.setFont("Helvetica", "bold"); doc.setFontSize(8.5); doc.setTextColor(71, 85, 105);
+    doc.text("SUMMARY", 20, curY + 5);
+    doc.setFont("Helvetica", "normal"); doc.setFontSize(8); doc.setTextColor(15, 23, 42);
+    doc.text(`Total Services: ${data.length}`, 20, curY + 10);
+    doc.text(`Total Cost: ₹${data.reduce((s, sv) => s + (sv.cost || 0), 0).toLocaleString()}`, 70, curY + 10);
+    curY += 18;
+    drawTableHeader(doc, curY, ["#", "Vehicle ID", "Date", "Service Type", "Spare Parts", "Cost (₹)", "Remarks"],
+      [17, 25, 58, 84, 115, 150, 168], [30, 64, 99]);
+    curY += 8;
+    data.forEach((sv, i) => {
+      checkPage();
+      curY = drawRow(doc, curY, [
+        String(i + 1), sv.vehicleId, sv.date, sv.serviceType,
+        sv.spareParts ?? "-", `₹${(sv.cost || 0).toLocaleString()}`, sv.remarks ?? "-"
+      ], [17, 25, 58, 84, 115, 150, 168], i);
+    });
+    if (data.length === 0) {
+      doc.setFont("Helvetica", "normal"); doc.setFontSize(9); doc.setTextColor(100, 116, 139);
+      doc.text("No service entries found for the selected period.", 20, curY + 6);
+    }
+  }
+
+  // ── FUEL REPORT ───────────────────────────────────────────────────────────
+  if (reportType === "fuel") {
+    const data = (mode === "overall" ? fuelEntries : fuelEntries.filter(f => {
+      const d = f.dateTime ?? f.date ?? "";
+      return d.startsWith(monthPrefix);
+    }));
+    doc.setFillColor(248, 250, 252);
+    doc.rect(15, curY, 180, 14, "F");
+    doc.setDrawColor(226, 232, 240); doc.rect(15, curY, 180, 14);
+    doc.setFont("Helvetica", "bold"); doc.setFontSize(8.5); doc.setTextColor(71, 85, 105);
+    doc.text("SUMMARY", 20, curY + 5);
+    doc.setFont("Helvetica", "normal"); doc.setFontSize(8); doc.setTextColor(15, 23, 42);
+    const totalLiters = data.reduce((s, f) => s + (f.liters ?? 0), 0);
+    const totalAmount = data.reduce((s, f) => s + (f.totalAmount ?? f.cost ?? 0), 0);
+    doc.text(`Total Entries: ${data.length}`, 20, curY + 10);
+    doc.text(`Total Liters: ${totalLiters.toFixed(1)} L`, 70, curY + 10);
+    doc.text(`Total Spend: ₹${totalAmount.toLocaleString()}`, 130, curY + 10);
+    curY += 18;
+    drawTableHeader(doc, curY, ["#", "Vehicle", "Date/Time", "Fuel Type", "Liters", "Rate/L", "Total (₹)"],
+      [17, 25, 60, 105, 130, 150, 168], [30, 64, 99]);
+    curY += 8;
+    data.forEach((f, i) => {
+      checkPage();
+      curY = drawRow(doc, curY, [
+        String(i + 1), f.vehicleName ?? f.vehicleId ?? "-",
+        (f.dateTime ?? f.date ?? "-").slice(0, 16),
+        f.fuelType ?? "-", String(f.liters ?? "-"),
+        `₹${(f.perLiterCost ?? 0).toFixed(2)}`, `₹${(f.totalAmount ?? f.cost ?? 0).toLocaleString()}`
+      ], [17, 25, 60, 105, 130, 150, 168], i);
+    });
+    if (data.length === 0) {
+      doc.setFont("Helvetica", "normal"); doc.setFontSize(9); doc.setTextColor(100, 116, 139);
+      doc.text("No fuel entries found for the selected period.", 20, curY + 6);
+    }
+  }
+
+  // ── MATERIAL REPORT ───────────────────────────────────────────────────────
+  if (reportType === "material") {
+    const data = filterByDate(materials) as MaterialPurchase[];
+    doc.setFillColor(248, 250, 252);
+    doc.rect(15, curY, 180, 14, "F");
+    doc.setDrawColor(226, 232, 240); doc.rect(15, curY, 180, 14);
+    doc.setFont("Helvetica", "bold"); doc.setFontSize(8.5); doc.setTextColor(71, 85, 105);
+    doc.text("SUMMARY", 20, curY + 5);
+    doc.setFont("Helvetica", "normal"); doc.setFontSize(8); doc.setTextColor(15, 23, 42);
+    doc.text(`Total Purchases: ${data.length}`, 20, curY + 10);
+    doc.text(`Total Spend: ₹${data.reduce((s, m) => s + (m.totalAmount || 0), 0).toLocaleString()}`, 70, curY + 10);
+    curY += 18;
+    drawTableHeader(doc, curY, ["#", "Material Name", "Date", "Qty", "Unit", "Rate", "Total", "Vendor"],
+      [17, 25, 75, 99, 111, 125, 145, 165], [30, 64, 99]);
+    curY += 8;
+    data.forEach((m, i) => {
+      checkPage();
+      curY = drawRow(doc, curY, [
+        String(i + 1), m.materialName, m.date,
+        String(m.quantity), m.unit,
+        `₹${(m.rate || 0).toLocaleString()}`, `₹${(m.totalAmount || 0).toLocaleString()}`,
+        m.vendorName ?? "-"
+      ], [17, 25, 75, 99, 111, 125, 145, 165], i);
+    });
+    if (data.length === 0) {
+      doc.setFont("Helvetica", "normal"); doc.setFontSize(9); doc.setTextColor(100, 116, 139);
+      doc.text("No material purchases found for the selected period.", 20, curY + 6);
+    }
+  }
+
+  // ── BILL / INVOICE REPORT ─────────────────────────────────────────────────
+  if (reportType === "bill") {
+    const data = mode === "overall"
+      ? businessBills
+      : businessBills.filter(b => b.billDate.startsWith(monthPrefix));
+    const totalBilled = data.reduce((s, b) => s + (b.amount || 0), 0);
+    const totalPaid = data.filter(b => b.status === "Paid").reduce((s, b) => s + (b.amount || 0), 0);
+    const totalPending = data.filter(b => b.status === "Pending").reduce((s, b) => s + (b.amount || 0), 0);
+    doc.setFillColor(248, 250, 252);
+    doc.rect(15, curY, 180, 18, "F");
+    doc.setDrawColor(226, 232, 240); doc.rect(15, curY, 180, 18);
+    doc.setFont("Helvetica", "bold"); doc.setFontSize(8.5); doc.setTextColor(71, 85, 105);
+    doc.text("FINANCIAL SUMMARY", 20, curY + 5);
+    doc.setFont("Helvetica", "normal"); doc.setFontSize(8); doc.setTextColor(15, 23, 42);
+    doc.text(`Total Bills: ${data.length}`, 20, curY + 10);
+    doc.text(`Total Billed: ₹${totalBilled.toLocaleString()}`, 60, curY + 10);
+    doc.text(`Total Paid: ₹${totalPaid.toLocaleString()}`, 110, curY + 10);
+    doc.text(`Pending: ₹${totalPending.toLocaleString()}`, 160, curY + 10);
+    doc.text(`Paid Bills: ${data.filter(b => b.status === "Paid").length}`, 20, curY + 14);
+    doc.text(`Pending Bills: ${data.filter(b => b.status === "Pending").length}`, 60, curY + 14);
+    curY += 22;
+    drawTableHeader(doc, curY, ["Invoice No", "Client", "Location", "Date", "Depth(ft)", "Amount", "Status"],
+      [17, 47, 85, 118, 140, 158, 176], [30, 64, 99]);
+    curY += 8;
+    data.forEach((b, i) => {
+      checkPage();
+      const statusTxt = b.status === "Paid" ? "PAID" : "PENDING";
+      curY = drawRow(doc, curY, [
+        b.invoiceNo, b.clientName, b.location ?? "-",
+        b.billDate, String(b.finalDepth ?? "-"),
+        `₹${(b.amount || 0).toLocaleString()}`, statusTxt
+      ], [17, 47, 85, 118, 140, 158, 176], i);
+      // Color the status text
+      doc.setFont("Helvetica", "bold");
+      doc.setFontSize(7.5);
+      if (b.status === "Paid") { doc.setTextColor(6, 95, 70); } else { doc.setTextColor(185, 28, 28); }
+      doc.text(statusTxt, 176, curY - 2.8);
+    });
+    if (data.length === 0) {
+      doc.setFont("Helvetica", "normal"); doc.setFontSize(9); doc.setTextColor(100, 116, 139);
+      doc.text("No bill/invoice entries found for the selected period.", 20, curY + 6);
+    }
+  }
+
+  // Footer
+  const sigY = Math.min(curY + 14, 268);
+  doc.setDrawColor(15, 23, 42);
+  doc.setLineWidth(0.4);
+  doc.line(15, sigY, 75, sigY);
+  doc.line(140, sigY, 195, sigY);
+  doc.setFont("Helvetica", "bold"); doc.setFontSize(7.5); doc.setTextColor(71, 85, 105);
+  doc.text("Authorized Controller", 15, sigY + 4);
+  doc.text("Registry Auditor", 140, sigY + 4);
+  doc.setTextColor(150, 150, 150); doc.setFont("Helvetica", "normal"); doc.setFontSize(6.5);
+  doc.text("Generated via SRS Business Management System. Data is accurate as of generation timestamp.", 15, 278);
+
+  const periodSuffix = mode === "monthly" ? `${monthNames[month]}_${year}` : "Overall";
+  doc.save(`SRS_${reportType.toUpperCase()}_Report_${periodSuffix}.pdf`);
 }
