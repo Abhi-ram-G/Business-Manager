@@ -117,7 +117,7 @@ p, span:not(.sr-only), label, button, input, select, textarea, li, td, th, a, op
 [class*="text-sm"],
 [class*="text-md"],
 [class*="text-base"],
-[class*="text-["] {
+[class*="text-\\["] {
   font-size: 16px !important;
   line-height: 22px !important;
 }
