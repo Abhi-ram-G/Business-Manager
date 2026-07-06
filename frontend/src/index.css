@@ -215,6 +215,25 @@ svg {
   color: inherit !important;
 }
 
+/* Custom dashboard utility classes to override greedy background class overrides */
+[class*="bg-slate-"] .text-custom-blue,
+.text-custom-blue {
+  color: #2563eb !important;
+}
+[class*="bg-slate-"] .text-custom-light-green,
+.text-custom-light-green {
+  color: #10b981 !important;
+}
+[class*="bg-slate-"] .text-custom-copper,
+.text-custom-copper {
+  color: #b45309 !important;
+}
+[class*="bg-slate-"] .text-custom-violet,
+.text-custom-violet {
+  color: #7c3aed !important;
+}
+
+
 /* ============================================================
    RESPONSIVE DESIGN — Global base rules
    ============================================================ */
