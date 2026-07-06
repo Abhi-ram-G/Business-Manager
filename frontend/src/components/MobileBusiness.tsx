@@ -4172,23 +4172,33 @@ export default function MobileBusiness({
                               )}
                               <p className={`text-[8.5px] font-mono mt-0.5 font-bold ${bit.isPaid ? "text-green-600" : "text-indigo-400"}`}>Usage: {totalFeetUsed} ft used</p>
                             </div>
-                            <div className="flex items-center gap-1.5 shrink-0 flex-wrap justify-end">
-                              <button
-                                type="button"
-                                onClick={() => handleOpenEditBit(bit)}
-                                className="p-1 bg-slate-950 text-slate-400 hover:text-white border border-slate-800 rounded"
-                                title="Edit bit"
-                              >
-                                <Edit className="w-3 h-3" />
-                              </button>
-                              <button
-                                type="button"
-                                onClick={() => handleDeleteBit(bit.id, bit.bitNo)}
-                                className="p-1 bg-rose-950/40 text-rose-450 border border-rose-900/40 rounded"
-                                title="Delete bit"
-                              >
-                                <Trash2 className="w-3 h-3" />
-                              </button>
+                            <div className="flex flex-col items-end gap-1 shrink-0 justify-start">
+                              <span className="text-[11.5px] font-black text-black block">
+                                Total: ₹{Number(bit.rate || 0).toLocaleString()}
+                              </span>
+                              {!bit.isPaid && (
+                                <span className="text-[9.5px] font-black text-orange-500 block">
+                                  Pending: ₹{Math.max(0, bit.rate - (bit.payments || []).reduce((s, p) => s + p.amount, 0)).toLocaleString()}
+                                </span>
+                              )}
+                              <div className="flex items-center gap-1.5 mt-1.5">
+                                <button
+                                  type="button"
+                                  onClick={() => handleOpenEditBit(bit)}
+                                  className="p-1 bg-slate-950 text-slate-400 hover:text-white border border-slate-800 rounded"
+                                  title="Edit bit"
+                                >
+                                  <Edit className="w-3 h-3" />
+                                </button>
+                                <button
+                                  type="button"
+                                  onClick={() => handleDeleteBit(bit.id, bit.bitNo)}
+                                  className="p-1 bg-rose-950/40 text-rose-450 border border-rose-900/40 rounded"
+                                  title="Delete bit"
+                                >
+                                  <Trash2 className="w-3 h-3" />
+                                </button>
+                              </div>
                             </div>
                           </div>
 
@@ -4444,8 +4454,16 @@ export default function MobileBusiness({
                               </p>
                             </div>
 
-                            <div className="flex flex-col items-end gap-1.5 shrink-0">
-                              <div className="flex items-center gap-1">
+                            <div className="flex flex-col items-end gap-1 shrink-0 justify-start">
+                              <span className="text-[11.5px] font-black text-black block">
+                                Total: ₹{Number(hammer.rate || 0).toLocaleString()}
+                              </span>
+                              {!hammer.isPaid && (
+                                <span className="text-[9.5px] font-black text-orange-500 block">
+                                  Pending: ₹{Math.max(0, hammer.rate - (hammer.payments || []).reduce((s, p) => s + p.amount, 0)).toLocaleString()}
+                                </span>
+                              )}
+                              <div className="flex items-center gap-1 mt-1">
                                 <button
                                   type="button"
                                   onClick={() => handleOpenEditHammer(hammer)}
@@ -4467,7 +4485,7 @@ export default function MobileBusiness({
                               <button
                                 type="button"
                                 onClick={() => setSelectedHammerForHistory(selectedHammerForHistory === hammer.id ? null : hammer.id)}
-                                className="bg-slate-950 text-[8.5px] px-2 py-0.5 rounded border border-slate-800 text-indigo-400 hover:text-indigo-300 font-bold transition font-mono uppercase"
+                                className="bg-slate-950 text-[8.5px] px-2 py-0.5 rounded border border-slate-800 text-indigo-400 hover:text-indigo-300 font-bold transition font-mono uppercase mt-1"
                               >
                                 {selectedHammerForHistory === hammer.id ? "Hide History" : "Feet History"}
                               </button>
@@ -6344,14 +6362,16 @@ export default function MobileBusiness({
                               )}
                             </div>
                             
-                            <div className="text-right shrink-0 flex flex-col items-end justify-between h-full gap-2 pl-2">
-                              <span className={`font-black text-[10.5px] ${s.isPaid ? "text-green-700" : "text-amber-500"}`}>₹{s.cost.toLocaleString()}</span>
+                            <div className="text-right shrink-0 flex flex-col items-end justify-start gap-1 pl-2">
+                              <span className="text-[11.5px] font-black text-black block">
+                                Total: ₹{s.cost.toLocaleString()}
+                              </span>
                               {!s.isPaid && (
-                                <span className="text-[8px] text-rose-455 font-black block mt-0.5">
+                                <span className="text-[9.5px] font-black text-orange-500 block">
                                   Pending: ₹{Math.max(0, s.cost - (s.payments || []).reduce((sum, p) => sum + p.amount, 0)).toLocaleString()}
                                 </span>
                               )}
-                              <div className="flex gap-1.5 mt-2">
+                              <div className="flex gap-1.5 mt-1.5">
                                 <button type="button" onClick={() => handleOpenEditService(s)} className="p-1 px-1.5 bg-slate-900 border border-slate-800 text-slate-400 hover:text-white rounded">
                                   <Edit className="w-2.5 h-2.5" />
                                 </button>
@@ -6535,31 +6555,33 @@ export default function MobileBusiness({
                               {f.isPaid ? "Paid" : "Pending"}
                             </span>
                           </div>
-                          <div className="flex items-center gap-2 shrink-0 flex-wrap justify-end">
-                            <div className="text-right">
-                              <span className={`font-black text-[10.5px] ${f.isPaid ? "text-green-700" : "text-rose-450"}`}>₹{displayAmount.toLocaleString()}</span>
-                              {!f.isPaid && (
-                                <span className="text-[8px] text-rose-455 font-black block mt-0.5">
-                                  Pending: ₹{Math.max(0, displayAmount - (f.payments || []).reduce((sum, p) => sum + p.amount, 0)).toLocaleString()}
-                                </span>
-                              )}
+                          <div className="flex flex-col items-end gap-1 shrink-0 justify-start">
+                            <span className="text-[11.5px] font-black text-black block">
+                              Total: ₹{displayAmount.toLocaleString()}
+                            </span>
+                            {!f.isPaid && (
+                              <span className="text-[9.5px] font-black text-orange-500 block">
+                                Pending: ₹{Math.max(0, displayAmount - (f.payments || []).reduce((sum, p) => sum + p.amount, 0)).toLocaleString()}
+                              </span>
+                            )}
+                            <div className="flex items-center gap-1.5 mt-1.5">
+                              <button
+                                type="button"
+                                onClick={() => handleOpenEditFuel(f)}
+                                className="p-1 rounded bg-slate-900 border border-slate-800 text-slate-400 hover:text-white hover:bg-slate-800"
+                                title="Edit fuel entry"
+                              >
+                                <Edit className="w-3 h-3" />
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() => handleDeleteFuel(f)}
+                                className="p-1 rounded bg-rose-950/40 border border-rose-900/40 text-rose-400 hover:text-rose-300"
+                                title="Delete fuel entry"
+                              >
+                                <Trash2 className="w-3 h-3" />
+                              </button>
                             </div>
-                            <button
-                              type="button"
-                              onClick={() => handleOpenEditFuel(f)}
-                              className="p-1 rounded bg-slate-900 border border-slate-800 text-slate-400 hover:text-white hover:bg-slate-800"
-                              title="Edit fuel entry"
-                            >
-                              <Edit className="w-3 h-3" />
-                            </button>
-                            <button
-                              type="button"
-                              onClick={() => handleDeleteFuel(f)}
-                              className="p-1 rounded bg-rose-950/40 border border-rose-900/40 text-rose-400 hover:text-rose-300"
-                              title="Delete fuel entry"
-                            >
-                              <Trash2 className="w-3 h-3" />
-                            </button>
                           </div>
                         </div>
 
@@ -6817,14 +6839,16 @@ export default function MobileBusiness({
                               )}
                             </div>
 
-                            <div className="text-right shrink-0 flex flex-col items-end justify-between h-full gap-2 pl-2">
-                              <span className={`font-black text-[10.5px] ${m.isPaid ? "text-green-700" : "text-teal-450"}`}>₹{m.totalAmount.toLocaleString()}</span>
+                            <div className="text-right shrink-0 flex flex-col items-end justify-start gap-1 pl-2">
+                              <span className="text-[11.5px] font-black text-black block">
+                                Total: ₹{m.totalAmount.toLocaleString()}
+                              </span>
                               {!m.isPaid && (
-                                <span className="text-[8px] text-rose-455 font-black block mt-0.5">
+                                <span className="text-[9.5px] font-black text-orange-500 block">
                                   Pending: ₹{Math.max(0, m.totalAmount - (m.payments || []).reduce((sum, p) => sum + p.amount, 0)).toLocaleString()}
                                 </span>
                               )}
-                              <div className="flex gap-1.5 mt-2">
+                              <div className="flex gap-1.5 mt-1.5">
                                 <button type="button" onClick={() => handleOpenEditMaterial(m)} className="p-1 px-1.5 bg-slate-900 border border-slate-800 text-slate-400 hover:text-white rounded">
                                   <Edit className="w-2.5 h-2.5" />
                                 </button>
