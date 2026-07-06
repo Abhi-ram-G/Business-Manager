@@ -398,27 +398,29 @@ html, body {
   letter-spacing: 0.05em !important;
 }
 
-.stock-card-number {
+/* Stock card number — high specificity to beat global span rule */
+span.stock-card-number {
   font-size: 32px !important;
   line-height: 38px !important;
   font-weight: 800 !important;
 }
 
-.stock-card-number-blue {
-  color: #1e40af !important;
+span.stock-card-number.stock-card-number-blue {
+  color: #1e40af !important; /* Dark Blue — Total Stock */
 }
 
-.stock-card-number-green {
-  color: #10b981 !important;
+span.stock-card-number.stock-card-number-green {
+  color: #059669 !important; /* Emerald Green — 7" QLT */
 }
 
-.stock-card-number-orange {
-  color: #f97316 !important;
+span.stock-card-number.stock-card-number-orange {
+  color: #c2410c !important; /* Deep Copper — 10" QLT */
 }
 
-.stock-card-unit {
-  font-size: 12px !important;
-  line-height: 16px !important;
+/* "pipes" unit label */
+span.stock-card-unit {
+  font-size: 18px !important;
+  line-height: 24px !important;
   font-weight: 600 !important;
   color: #475569 !important;
   margin-left: 4px !important;
