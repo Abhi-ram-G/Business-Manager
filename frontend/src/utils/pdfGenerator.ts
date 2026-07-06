@@ -1010,7 +1010,7 @@ export function downloadBusinessReportPDF(options: {
 
   const periodLabel = mode === "monthly"
     ? `Period: ${monthNames[month].toUpperCase()} ${year}`
-    : `Period: ALL TIME (OVERALL)`;
+    : `Period: ALL MONTHS OF ${year}`;
 
   drawReportHeader(doc, typeLabel[reportType], periodLabel);
 
@@ -1020,7 +1020,7 @@ export function downloadBusinessReportPDF(options: {
   doc.setFontSize(11);
   const fullTitle = mode === "monthly"
     ? `${typeLabel[reportType]} — ${monthNames[month].toUpperCase()} ${year}`
-    : `${typeLabel[reportType]} — OVERALL SUMMARY`;
+    : `${typeLabel[reportType]} — ${year} OVERALL SUMMARY`;
   doc.text(fullTitle, 15, 44);
   doc.setDrawColor(79, 70, 229);
   doc.setLineWidth(1);
@@ -1039,17 +1039,23 @@ export function downloadBusinessReportPDF(options: {
     }
   }
 
-  function filterByDate<T extends { date?: string; billDate?: string; dateEntry?: string }>(arr: T[]) {
-    if (mode === "overall") return arr;
+  function filterByDate<T extends { date?: string; billDate?: string; dateEntry?: string; dateTime?: string }>(arr: T[]) {
+    if (mode === "overall") {
+      const yearStr = String(year);
+      return arr.filter(item => {
+        const d = item.date ?? item.billDate ?? item.dateEntry ?? item.dateTime ?? "";
+        return d.startsWith(yearStr + "-");
+      });
+    }
     return arr.filter(item => {
-      const d = item.date ?? item.billDate ?? item.dateEntry ?? "";
+      const d = item.date ?? item.billDate ?? item.dateEntry ?? item.dateTime ?? "";
       return d.startsWith(monthPrefix);
     });
   }
 
   // ── BIT REPORT ────────────────────────────────────────────────────────────
   if (reportType === "bit") {
-    const data = mode === "overall" ? bitEntries : bitEntries.filter(b => (b.dateEntry ?? "").startsWith(monthPrefix));
+    const data = filterByDate(bitEntries);
     // Summary box
     doc.setFillColor(248, 250, 252);
     doc.rect(15, curY, 180, 14, "F");
@@ -1063,16 +1069,16 @@ export function downloadBusinessReportPDF(options: {
     doc.setFontSize(8);
     doc.setTextColor(15, 23, 42);
     doc.text(`Total Bits: ${data.length}`, 20, curY + 10);
-    doc.text(`Total Value: ₹${data.reduce((s, b) => s + (b.rate || 0), 0).toLocaleString()}`, 70, curY + 10);
+    doc.text(`Total Value: Rs. ${data.reduce((s, b) => s + (b.rate || 0), 0).toLocaleString()}`, 80, curY + 10);
     curY += 18;
-    drawTableHeader(doc, curY, ["#", "Bit No", "Brand", "Size (mm)", "Button Size", "Date Entry", "Rate (₹)"],
+    drawTableHeader(doc, curY, ["#", "Bit No", "Brand", "Size (mm)", "Button Size", "Date Entry", "Rate (Rs.)"],
       [17, 25, 55, 90, 115, 140, 168], [30, 64, 99]);
     curY += 8;
     data.forEach((b, i) => {
       checkPage();
       curY = drawRow(doc, curY, [
         String(i + 1), b.bitNo, b.brand, String(b.sizeMm),
-        String(b.buttonSizeMm ?? "-"), b.dateEntry ?? "-", `₹${(b.rate || 0).toLocaleString()}`
+        String(b.buttonSizeMm ?? "-"), b.dateEntry ?? "-", `Rs. ${(b.rate || 0).toLocaleString()}`
       ], [17, 25, 55, 90, 115, 140, 168], i);
     });
     if (data.length === 0) {
@@ -1083,7 +1089,7 @@ export function downloadBusinessReportPDF(options: {
 
   // ── HAMMER REPORT ─────────────────────────────────────────────────────────
   if (reportType === "hammer") {
-    const data = mode === "overall" ? hammerEntries : hammerEntries.filter(h => h.dateEntry.startsWith(monthPrefix));
+    const data = filterByDate(hammerEntries);
     doc.setFillColor(248, 250, 252);
     doc.rect(15, curY, 180, 14, "F");
     doc.setDrawColor(226, 232, 240); doc.rect(15, curY, 180, 14);
@@ -1091,16 +1097,16 @@ export function downloadBusinessReportPDF(options: {
     doc.text("SUMMARY", 20, curY + 5);
     doc.setFont("Helvetica", "normal"); doc.setFontSize(8); doc.setTextColor(15, 23, 42);
     doc.text(`Total Hammers: ${data.length}`, 20, curY + 10);
-    doc.text(`Total Feet Capacity: ${data.reduce((s, h) => s + (h.capableFeetDepth || 0), 0)} ft`, 70, curY + 10);
+    doc.text(`Total Feet Capacity: ${data.reduce((s, h) => s + (h.capableFeetDepth || 0), 0)} ft`, 80, curY + 10);
     curY += 18;
-    drawTableHeader(doc, curY, ["#", "Hammer No", "Brand", "Cap. Feet", "Casing Type", "Date Entry", "Rate (₹)", "Paid"],
+    drawTableHeader(doc, curY, ["#", "Hammer No", "Brand", "Cap. Feet", "Casing Type", "Date Entry", "Rate (Rs.)", "Paid"],
       [17, 25, 60, 90, 112, 140, 160, 178], [30, 64, 99]);
     curY += 8;
     data.forEach((h, i) => {
       checkPage();
       curY = drawRow(doc, curY, [
         String(i + 1), h.hammerNo, h.brand, `${h.capableFeetDepth}ft`,
-        h.casingType ?? "-", h.dateEntry, `₹${(h.rate || 0).toLocaleString()}`, h.isPaid ? "Yes" : "No"
+        h.casingType ?? "-", h.dateEntry, `Rs. ${(h.rate || 0).toLocaleString()}`, h.isPaid ? "Yes" : "No"
       ], [17, 25, 60, 90, 112, 140, 160, 178], i);
     });
     if (data.length === 0) {
@@ -1111,7 +1117,7 @@ export function downloadBusinessReportPDF(options: {
 
   // ── PIPE REPORT ───────────────────────────────────────────────────────────
   if (reportType === "pipe") {
-    const data = mode === "overall" ? pipeEntries : pipeEntries.filter(p => (p.dateEntry ?? "").startsWith(monthPrefix));
+    const data = filterByDate(pipeEntries);
     doc.setFillColor(248, 250, 252);
     doc.rect(15, curY, 180, 14, "F");
     doc.setDrawColor(226, 232, 240); doc.rect(15, curY, 180, 14);
@@ -1119,9 +1125,9 @@ export function downloadBusinessReportPDF(options: {
     doc.text("SUMMARY", 20, curY + 5);
     doc.setFont("Helvetica", "normal"); doc.setFontSize(8); doc.setTextColor(15, 23, 42);
     doc.text(`Total Suppliers: ${data.length}`, 20, curY + 10);
-    doc.text(`Total Spend: ₹${data.reduce((s, p) => s + (p.grandPrice || 0), 0).toLocaleString()}`, 70, curY + 10);
+    doc.text(`Total Spend: Rs. ${data.reduce((s, p) => s + (p.grandPrice || 0), 0).toLocaleString()}`, 80, curY + 10);
     curY += 18;
-    drawTableHeader(doc, curY, ["Company", "Location", "7\"H", "7\"M", "10\"H", "10\"M", "Total", "Price"],
+    drawTableHeader(doc, curY, ["Company", "Location", "7\"H", "7\"M", "10\"H", "10\"M", "Total", "Price (Rs.)"],
       [17, 55, 90, 105, 120, 135, 153, 170], [30, 64, 99]);
     curY += 8;
     data.forEach((p, i) => {
@@ -1130,7 +1136,7 @@ export function downloadBusinessReportPDF(options: {
         p.companyName, p.location ?? "-",
         String(p.pipe7HighCount), String(p.pipe7MediumCount),
         String(p.pipe10HighCount), String(p.pipe10MediumCount),
-        `₹${(p.grandTotal || 0).toLocaleString()}`, `₹${(p.grandPrice || 0).toLocaleString()}`
+        `Rs. ${(p.grandTotal || 0).toLocaleString()}`, `Rs. ${(p.grandPrice || 0).toLocaleString()}`
       ], [17, 55, 90, 105, 120, 135, 153, 170], i);
     });
     if (data.length === 0) {
@@ -1149,16 +1155,16 @@ export function downloadBusinessReportPDF(options: {
     doc.text("SUMMARY", 20, curY + 5);
     doc.setFont("Helvetica", "normal"); doc.setFontSize(8); doc.setTextColor(15, 23, 42);
     doc.text(`Total Services: ${data.length}`, 20, curY + 10);
-    doc.text(`Total Cost: ₹${data.reduce((s, sv) => s + (sv.cost || 0), 0).toLocaleString()}`, 70, curY + 10);
+    doc.text(`Total Cost: Rs. ${data.reduce((s, sv) => s + (sv.cost || 0), 0).toLocaleString()}`, 80, curY + 10);
     curY += 18;
-    drawTableHeader(doc, curY, ["#", "Vehicle ID", "Date", "Service Type", "Spare Parts", "Cost (₹)", "Remarks"],
+    drawTableHeader(doc, curY, ["#", "Vehicle ID", "Date", "Service Type", "Spare Parts", "Cost (Rs.)", "Remarks"],
       [17, 25, 58, 84, 115, 150, 168], [30, 64, 99]);
     curY += 8;
     data.forEach((sv, i) => {
       checkPage();
       curY = drawRow(doc, curY, [
         String(i + 1), sv.vehicleId, sv.date, sv.serviceType,
-        sv.spareParts ?? "-", `₹${(sv.cost || 0).toLocaleString()}`, sv.remarks ?? "-"
+        sv.spareParts ?? "-", `Rs. ${(sv.cost || 0).toLocaleString()}`, sv.remarks ?? "-"
       ], [17, 25, 58, 84, 115, 150, 168], i);
     });
     if (data.length === 0) {
@@ -1169,10 +1175,7 @@ export function downloadBusinessReportPDF(options: {
 
   // ── FUEL REPORT ───────────────────────────────────────────────────────────
   if (reportType === "fuel") {
-    const data = (mode === "overall" ? fuelEntries : fuelEntries.filter(f => {
-      const d = f.dateTime ?? f.date ?? "";
-      return d.startsWith(monthPrefix);
-    }));
+    const data = filterByDate(fuelEntries);
     doc.setFillColor(248, 250, 252);
     doc.rect(15, curY, 180, 14, "F");
     doc.setDrawColor(226, 232, 240); doc.rect(15, curY, 180, 14);
@@ -1182,10 +1185,10 @@ export function downloadBusinessReportPDF(options: {
     const totalLiters = data.reduce((s, f) => s + (f.liters ?? 0), 0);
     const totalAmount = data.reduce((s, f) => s + (f.totalAmount ?? f.cost ?? 0), 0);
     doc.text(`Total Entries: ${data.length}`, 20, curY + 10);
-    doc.text(`Total Liters: ${totalLiters.toFixed(1)} L`, 70, curY + 10);
-    doc.text(`Total Spend: ₹${totalAmount.toLocaleString()}`, 130, curY + 10);
+    doc.text(`Total Liters: ${totalLiters.toFixed(1)} L`, 80, curY + 10);
+    doc.text(`Total Spend: Rs. ${totalAmount.toLocaleString()}`, 140, curY + 10);
     curY += 18;
-    drawTableHeader(doc, curY, ["#", "Vehicle", "Date/Time", "Fuel Type", "Liters", "Rate/L", "Total (₹)"],
+    drawTableHeader(doc, curY, ["#", "Vehicle", "Date/Time", "Fuel Type", "Liters", "Rate/L (Rs.)", "Total (Rs.)"],
       [17, 25, 60, 105, 130, 150, 168], [30, 64, 99]);
     curY += 8;
     data.forEach((f, i) => {
@@ -1194,7 +1197,7 @@ export function downloadBusinessReportPDF(options: {
         String(i + 1), f.vehicleName ?? f.vehicleId ?? "-",
         (f.dateTime ?? f.date ?? "-").slice(0, 16),
         f.fuelType ?? "-", String(f.liters ?? "-"),
-        `₹${(f.perLiterCost ?? 0).toFixed(2)}`, `₹${(f.totalAmount ?? f.cost ?? 0).toLocaleString()}`
+        `Rs. ${(f.perLiterCost ?? 0).toFixed(2)}`, `Rs. ${(f.totalAmount ?? f.cost ?? 0).toLocaleString()}`
       ], [17, 25, 60, 105, 130, 150, 168], i);
     });
     if (data.length === 0) {
@@ -1213,9 +1216,9 @@ export function downloadBusinessReportPDF(options: {
     doc.text("SUMMARY", 20, curY + 5);
     doc.setFont("Helvetica", "normal"); doc.setFontSize(8); doc.setTextColor(15, 23, 42);
     doc.text(`Total Purchases: ${data.length}`, 20, curY + 10);
-    doc.text(`Total Spend: ₹${data.reduce((s, m) => s + (m.totalAmount || 0), 0).toLocaleString()}`, 70, curY + 10);
+    doc.text(`Total Spend: Rs. ${data.reduce((s, m) => s + (m.totalAmount || 0), 0).toLocaleString()}`, 80, curY + 10);
     curY += 18;
-    drawTableHeader(doc, curY, ["#", "Material Name", "Date", "Qty", "Unit", "Rate", "Total", "Vendor"],
+    drawTableHeader(doc, curY, ["#", "Material Name", "Date", "Qty", "Unit", "Rate (Rs.)", "Total (Rs.)", "Vendor"],
       [17, 25, 75, 99, 111, 125, 145, 165], [30, 64, 99]);
     curY += 8;
     data.forEach((m, i) => {
@@ -1223,7 +1226,7 @@ export function downloadBusinessReportPDF(options: {
       curY = drawRow(doc, curY, [
         String(i + 1), m.materialName, m.date,
         String(m.quantity), m.unit,
-        `₹${(m.rate || 0).toLocaleString()}`, `₹${(m.totalAmount || 0).toLocaleString()}`,
+        `Rs. ${(m.rate || 0).toLocaleString()}`, `Rs. ${(m.totalAmount || 0).toLocaleString()}`,
         m.vendorName ?? "-"
       ], [17, 25, 75, 99, 111, 125, 145, 165], i);
     });
@@ -1235,26 +1238,32 @@ export function downloadBusinessReportPDF(options: {
 
   // ── BILL / INVOICE REPORT ─────────────────────────────────────────────────
   if (reportType === "bill") {
-    const data = mode === "overall"
-      ? businessBills
-      : businessBills.filter(b => b.billDate.startsWith(monthPrefix));
+    const data = filterByDate(businessBills);
     const totalBilled = data.reduce((s, b) => s + (b.amount || 0), 0);
     const totalPaid = data.filter(b => b.status === "Paid").reduce((s, b) => s + (b.amount || 0), 0);
     const totalPending = data.filter(b => b.status === "Pending").reduce((s, b) => s + (b.amount || 0), 0);
+    
+    // Set financial summary box dimensions and contents
     doc.setFillColor(248, 250, 252);
-    doc.rect(15, curY, 180, 18, "F");
-    doc.setDrawColor(226, 232, 240); doc.rect(15, curY, 180, 18);
+    doc.rect(15, curY, 180, 20, "F");
+    doc.setDrawColor(226, 232, 240); doc.rect(15, curY, 180, 20);
     doc.setFont("Helvetica", "bold"); doc.setFontSize(8.5); doc.setTextColor(71, 85, 105);
     doc.text("FINANCIAL SUMMARY", 20, curY + 5);
+    
     doc.setFont("Helvetica", "normal"); doc.setFontSize(8); doc.setTextColor(15, 23, 42);
-    doc.text(`Total Bills: ${data.length}`, 20, curY + 10);
-    doc.text(`Total Billed: ₹${totalBilled.toLocaleString()}`, 60, curY + 10);
-    doc.text(`Total Paid: ₹${totalPaid.toLocaleString()}`, 110, curY + 10);
-    doc.text(`Pending: ₹${totalPending.toLocaleString()}`, 160, curY + 10);
-    doc.text(`Paid Bills: ${data.filter(b => b.status === "Paid").length}`, 20, curY + 14);
-    doc.text(`Pending Bills: ${data.filter(b => b.status === "Pending").length}`, 60, curY + 14);
-    curY += 22;
-    drawTableHeader(doc, curY, ["Invoice No", "Client", "Location", "Date", "Depth(ft)", "Amount", "Status"],
+    
+    // Row 1 (Counts)
+    doc.text(`Total Bills: ${data.length}`, 20, curY + 11);
+    doc.text(`Paid Bills: ${data.filter(b => b.status === "Paid").length}`, 80, curY + 11);
+    doc.text(`Pending Bills: ${data.filter(b => b.status === "Pending").length}`, 140, curY + 11);
+    
+    // Row 2 (Money Amounts)
+    doc.text(`Total Billed: Rs. ${totalBilled.toLocaleString()}`, 20, curY + 16);
+    doc.text(`Total Paid: Rs. ${totalPaid.toLocaleString()}`, 80, curY + 16);
+    doc.text(`Pending: Rs. ${totalPending.toLocaleString()}`, 140, curY + 16);
+    
+    curY += 24;
+    drawTableHeader(doc, curY, ["Invoice No", "Client", "Location", "Date", "Depth(ft)", "Amount (Rs.)", "Status"],
       [17, 47, 85, 118, 140, 158, 176], [30, 64, 99]);
     curY += 8;
     data.forEach((b, i) => {
@@ -1263,7 +1272,7 @@ export function downloadBusinessReportPDF(options: {
       curY = drawRow(doc, curY, [
         b.invoiceNo, b.clientName, b.location ?? "-",
         b.billDate, String(b.finalDepth ?? "-"),
-        `₹${(b.amount || 0).toLocaleString()}`, statusTxt
+        `Rs. ${(b.amount || 0).toLocaleString()}`, statusTxt
       ], [17, 47, 85, 118, 140, 158, 176], i);
       // Color the status text
       doc.setFont("Helvetica", "bold");
@@ -1289,6 +1298,6 @@ export function downloadBusinessReportPDF(options: {
   doc.setTextColor(150, 150, 150); doc.setFont("Helvetica", "normal"); doc.setFontSize(6.5);
   doc.text("Generated via SRS Business Management System. Data is accurate as of generation timestamp.", 15, 278);
 
-  const periodSuffix = mode === "monthly" ? `${monthNames[month]}_${year}` : "Overall";
+  const periodSuffix = mode === "monthly" ? `${monthNames[month]}_${year}` : `Year_${year}`;
   doc.save(`SRS_${reportType.toUpperCase()}_Report_${periodSuffix}.pdf`);
 }
