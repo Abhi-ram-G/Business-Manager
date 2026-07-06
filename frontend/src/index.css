@@ -112,7 +112,7 @@ h4, h5,
 }
 
 /* 3. ANY OTHER TEXT: 16px */
-p, span:not(.sr-only), label, button, input, select, textarea, li, td, th, a, option,
+p, span:not(.sr-only):not(.stock-card-number):not(.stock-card-unit), label, button, input, select, textarea, li, td, th, a, option,
 [class*="text-xs"],
 [class*="text-sm"],
 [class*="text-md"],
@@ -132,7 +132,9 @@ input, select, textarea {
 }
 
 /* On light background pages, default all typography elements to dark user-friendly colors */
-body h1, body h2, body h3, body h4, body h5, body h6, body p, body span, body div, body label, body li, body td, body th, body a {
+body h1, body h2, body h3, body h4, body h5, body h6, body p,
+body span:not(.stock-card-number):not(.stock-card-number-blue):not(.stock-card-number-green):not(.stock-card-number-orange):not(.stock-card-unit),
+body div, body label, body li, body td, body th, body a {
   color: #111827; /* Deep charcoal */
 }
 
