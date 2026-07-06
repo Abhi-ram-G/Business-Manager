@@ -386,93 +386,95 @@ export default function MobileDashboard({
               <h3 className="text-xs font-bold text-slate-300 uppercase tracking-wider font-mono">Casing Stock Available</h3>
             </div>
 
-            <div className="grid grid-cols-2 lg:grid-cols-5 gap-3">
+            <div className="overflow-x-auto tab-bar-scroll pb-1">
+              <div className="grid grid-cols-5 gap-3 min-w-[700px] lg:min-w-0">
 
-              {/* Total Stock Available */}
-              <div className="col-span-2 lg:col-span-1 bg-slate-900/40 p-3 rounded-2xl border border-cyan-500/25 hover:border-cyan-500/50 transition-all duration-300 shadow-sm relative overflow-hidden group">
-                <div className="absolute -right-3 -bottom-3 w-10 h-10 bg-cyan-500/5 rounded-full blur-md group-hover:scale-150 transition-transform duration-500" />
-                <div className="flex justify-between items-start">
-                  <div>
-                    <span className="text-[9px] font-mono text-slate-400 uppercase tracking-wider font-bold block font-bold">Total Stock Available</span>
-                    <div className="text-lg font-black font-mono mt-1 flex items-baseline gap-1">
-                      <span className="text-custom-blue text-custom-number">{Math.round(totalAvail)}</span>
-                      <span className="text-[9px] text-slate-500 font-bold font-mono ml-1">pipes</span>
+                {/* Total Stock Available */}
+                <div className="stock-card-blue p-3 rounded-2xl border transition-all duration-300 shadow-sm relative overflow-hidden group">
+                  <div className="absolute -right-3 -bottom-3 w-10 h-10 bg-blue-500/5 rounded-full blur-md group-hover:scale-150 transition-transform duration-500" />
+                  <div className="flex justify-between items-start">
+                    <div>
+                      <span className="stock-card-label block uppercase">Total Stock Available</span>
+                      <div className="mt-1 flex items-baseline gap-1">
+                        <span className="stock-card-number text-[#2563eb]">{Math.round(totalAvail)}</span>
+                        <span className="stock-card-unit">pipes</span>
+                      </div>
+                    </div>
+                    <div className="p-2 bg-[#294d5a] rounded-xl text-white">
+                      <Package className="w-4 h-4" />
                     </div>
                   </div>
-                  <div className="p-2 bg-cyan-950/80 rounded-xl text-cyan-400 border border-cyan-800/40">
-                    <Package className="w-4 h-4" />
-                  </div>
                 </div>
-              </div>
 
-              {/* 7" High QLT */}
-              <div className="bg-slate-900/40 p-3 rounded-2xl border border-emerald-500/25 hover:border-emerald-500/50 transition-all duration-300 shadow-sm relative overflow-hidden group">
-                <div className="absolute -right-3 -bottom-3 w-10 h-10 bg-emerald-500/5 rounded-full blur-md group-hover:scale-150 transition-transform duration-500" />
-                <div className="flex justify-between items-start">
-                  <div>
-                    <span className="text-[9px] font-mono text-slate-400 uppercase tracking-wider font-bold block font-bold">7" H QLT</span>
-                    <div className="text-lg font-black font-mono mt-1 flex items-baseline gap-1">
-                      <span className="text-custom-light-green text-custom-number">{Math.round(avail7High)}</span>
-                      <span className="text-[9px] text-slate-500 font-bold font-mono ml-1">pipes</span>
+                {/* 7" High QLT */}
+                <div className="stock-card-green p-3 rounded-2xl border transition-all duration-300 shadow-sm relative overflow-hidden group">
+                  <div className="absolute -right-3 -bottom-3 w-10 h-10 bg-emerald-500/5 rounded-full blur-md group-hover:scale-150 transition-transform duration-500" />
+                  <div className="flex justify-between items-start">
+                    <div>
+                      <span className="stock-card-label block uppercase">7" H QLT</span>
+                      <div className="mt-1 flex items-baseline gap-1">
+                        <span className="stock-card-number text-[#10b981]">{Math.round(avail7High)}</span>
+                        <span className="stock-card-unit">pipes</span>
+                      </div>
+                    </div>
+                    <div className="p-2 bg-[#2d5443] rounded-xl text-white">
+                      <PackageCheck className="w-4 h-4" />
                     </div>
                   </div>
-                  <div className="p-2 bg-emerald-950/80 rounded-xl text-emerald-400 border border-emerald-800/40">
-                    <PackageCheck className="w-3.5 h-3.5" />
-                  </div>
                 </div>
-              </div>
 
-              {/* 7" Medium QLT */}
-              <div className="bg-slate-900/40 p-3 rounded-2xl border border-teal-500/25 hover:border-teal-500/50 transition-all duration-300 shadow-sm relative overflow-hidden group">
-                <div className="absolute -right-3 -bottom-3 w-10 h-10 bg-teal-500/5 rounded-full blur-md group-hover:scale-150 transition-transform duration-500" />
-                <div className="flex justify-between items-start">
-                  <div>
-                    <span className="text-[9px] font-mono text-slate-400 uppercase tracking-wider font-bold block font-bold">7" M QLT</span>
-                    <div className="text-lg font-black font-mono mt-1 flex items-baseline gap-1">
-                      <span className="text-custom-light-green text-custom-number">{Math.round(avail7Medium)}</span>
-                      <span className="text-[9px] text-slate-500 font-bold font-mono ml-1">pipes</span>
+                {/* 7" Medium QLT */}
+                <div className="stock-card-green p-3 rounded-2xl border transition-all duration-300 shadow-sm relative overflow-hidden group">
+                  <div className="absolute -right-3 -bottom-3 w-10 h-10 bg-teal-500/5 rounded-full blur-md group-hover:scale-150 transition-transform duration-500" />
+                  <div className="flex justify-between items-start">
+                    <div>
+                      <span className="stock-card-label block uppercase">7" M QLT</span>
+                      <div className="mt-1 flex items-baseline gap-1">
+                        <span className="stock-card-number text-[#10b981]">{Math.round(avail7Medium)}</span>
+                        <span className="stock-card-unit">pipes</span>
+                      </div>
+                    </div>
+                    <div className="p-2 bg-[#2d5443] rounded-xl text-white">
+                      <PackageCheck className="w-4 h-4" />
                     </div>
                   </div>
-                  <div className="p-2 bg-teal-950/80 rounded-xl text-teal-400 border border-teal-800/40">
-                    <PackageCheck className="w-3.5 h-3.5" />
-                  </div>
                 </div>
-              </div>
 
-              {/* 10" High QLT */}
-              <div className="bg-slate-900/40 p-3 rounded-2xl border border-orange-500/25 hover:border-orange-500/50 transition-all duration-300 shadow-sm relative overflow-hidden group">
-                <div className="absolute -right-3 -bottom-3 w-10 h-10 bg-orange-500/5 rounded-full blur-md group-hover:scale-150 transition-transform duration-500" />
-                <div className="flex justify-between items-start">
-                  <div>
-                    <span className="text-[9px] font-mono text-slate-400 uppercase tracking-wider font-bold block font-bold">10" H QLT</span>
-                    <div className="text-lg font-black font-mono mt-1 flex items-baseline gap-1">
-                      <span className="text-custom-copper text-custom-number">{Math.round(avail10High)}</span>
-                      <span className="text-[9px] text-slate-500 font-bold font-mono ml-1">pipes</span>
+                {/* 10" High QLT */}
+                <div className="stock-card-orange p-3 rounded-2xl border transition-all duration-300 shadow-sm relative overflow-hidden group">
+                  <div className="absolute -right-3 -bottom-3 w-10 h-10 bg-orange-500/5 rounded-full blur-md group-hover:scale-150 transition-transform duration-500" />
+                  <div className="flex justify-between items-start">
+                    <div>
+                      <span className="stock-card-label block uppercase">10" H QLT</span>
+                      <div className="mt-1 flex items-baseline gap-1">
+                        <span className="stock-card-number text-[#ea580c]">{Math.round(avail10High)}</span>
+                        <span className="stock-card-unit">pipes</span>
+                      </div>
+                    </div>
+                    <div className="p-2 bg-[#643b27] rounded-xl text-white">
+                      <PackageCheck className="w-4 h-4" />
                     </div>
                   </div>
-                  <div className="p-2 bg-orange-950/80 rounded-xl text-orange-400 border border-orange-800/40">
-                    <PackageCheck className="w-3.5 h-3.5" />
-                  </div>
                 </div>
-              </div>
 
-              {/* 10" Medium QLT */}
-              <div className="bg-slate-900/40 p-3 rounded-2xl border border-amber-500/25 hover:border-amber-500/50 transition-all duration-300 shadow-sm relative overflow-hidden group">
-                <div className="absolute -right-3 -bottom-3 w-10 h-10 bg-amber-500/5 rounded-full blur-md group-hover:scale-150 transition-transform duration-500" />
-                <div className="flex justify-between items-start">
-                  <div>
-                    <span className="text-[9px] font-mono text-slate-400 uppercase tracking-wider font-bold block font-bold">10" M QLT</span>
-                    <div className="text-lg font-black font-mono mt-1 flex items-baseline gap-1">
-                      <span className="text-custom-copper text-custom-number">{Math.round(avail10Medium)}</span>
-                      <span className="text-[9px] text-slate-500 font-bold font-mono ml-1">pipes</span>
+                {/* 10" Medium QLT */}
+                <div className="stock-card-orange p-3 rounded-2xl border transition-all duration-300 shadow-sm relative overflow-hidden group">
+                  <div className="absolute -right-3 -bottom-3 w-10 h-10 bg-amber-500/5 rounded-full blur-md group-hover:scale-150 transition-transform duration-500" />
+                  <div className="flex justify-between items-start">
+                    <div>
+                      <span className="stock-card-label block uppercase">10" M QLT</span>
+                      <div className="mt-1 flex items-baseline gap-1">
+                        <span className="stock-card-number text-[#ea580c]">{Math.round(avail10Medium)}</span>
+                        <span className="stock-card-unit">pipes</span>
+                      </div>
+                    </div>
+                    <div className="p-2 bg-[#643b27] rounded-xl text-white">
+                      <PackageCheck className="w-4 h-4" />
                     </div>
                   </div>
-                  <div className="p-2 bg-amber-950/80 rounded-xl text-amber-400 border border-amber-800/40">
-                    <PackageCheck className="w-3.5 h-3.5" />
-                  </div>
                 </div>
-              </div>
 
+              </div>
             </div>
           </div>
         );

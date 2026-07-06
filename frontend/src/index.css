@@ -366,6 +366,57 @@ html, body {
   gap: 0.75rem;
 }
 
+/* Stock Availability Cards Specific Overrides to match design */
+.stock-card-blue {
+  background: linear-gradient(135deg, #FAF5F6 0%, #EFF4FF 100%) !important;
+  border-color: #e0e7ff !important;
+}
+.stock-card-blue:hover {
+  border-color: #c7d2fe !important;
+}
+
+.stock-card-green {
+  background: linear-gradient(135deg, #f2faf5 0%, #eaf6f0 100%) !important;
+  border-color: #d1fae5 !important;
+}
+.stock-card-green:hover {
+  border-color: #a7f3d0 !important;
+}
+
+.stock-card-orange {
+  background: linear-gradient(135deg, #fff8f5 0%, #fff1e6 100%) !important;
+  border-color: #fed7aa !important;
+}
+.stock-card-orange:hover {
+  border-color: #fdbb74 !important;
+}
+
+.stock-card-label {
+  font-family: "Outfit", "Inter", system-ui, sans-serif !important;
+  font-size: 11px !important;
+  line-height: 14px !important;
+  font-weight: 700 !important;
+  color: #1e293b !important;
+  letter-spacing: 0.05em !important;
+}
+
+.stock-card-number {
+  font-family: "Outfit", "Inter", system-ui, sans-serif !important;
+  font-size: 28px !important;
+  line-height: 34px !important;
+  font-weight: 800 !important;
+}
+
+.stock-card-unit {
+  font-family: "Outfit", "Inter", system-ui, sans-serif !important;
+  font-size: 13px !important;
+  line-height: 18px !important;
+  font-weight: 600 !important;
+  color: #475569 !important;
+  margin-left: 4px !important;
+}
+
+
 
 
 
