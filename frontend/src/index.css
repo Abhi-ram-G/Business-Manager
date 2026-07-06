@@ -400,13 +400,13 @@ html, body {
 }
 
 .stock-card-number {
-  font-size: 26px !important;
-  line-height: 32px !important;
+  font-size: 16px !important;
+  line-height: 22px !important;
   font-weight: 800 !important;
 }
 
 .stock-card-number-blue {
-  color: #2563eb !important;
+  color: #1e40af !important;
 }
 
 .stock-card-number-green {
@@ -414,7 +414,7 @@ html, body {
 }
 
 .stock-card-number-orange {
-  color: #ea580c !important;
+  color: #f97316 !important;
 }
 
 .stock-card-unit {
