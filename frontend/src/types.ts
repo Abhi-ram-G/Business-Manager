@@ -111,6 +111,7 @@ export interface BitEntry {
   buttonSizeMm?: number;
   dateEntry?: string;
   rate: number;
+  isPaid?: boolean;
 }
 
 export interface HammerUsageRecord {
@@ -163,6 +164,7 @@ export interface PipeEntry {
   grandTotal: number;
   discountAmount: number;
   grandPrice: number;
+  isPaid?: boolean;
 }
 
 
@@ -230,6 +232,7 @@ export interface FuelEntry {
   date?: string;
   cost?: number;
   currentOdometer?: number;
+  isPaid?: boolean;
 }
 
 export interface MaintenanceRecord {

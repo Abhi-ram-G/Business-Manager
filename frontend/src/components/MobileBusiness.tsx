@@ -69,6 +69,7 @@ export interface ServiceRecord {
   cost: number;
   spareParts: string;
   remarks?: string;
+  isPaid?: boolean;
 }
 
 export interface MaterialPurchase {
@@ -82,6 +83,7 @@ export interface MaterialPurchase {
   totalAmount: number;
   vendorName?: string;
   remarks?: string;
+  isPaid?: boolean;
 }
 
 const isLegacyDemoServiceEntry = (service: ServiceRecord) =>
@@ -3928,20 +3930,34 @@ export default function MobileBusiness({
                       const totalFeetUsed = usageRecords.reduce((sum, r) => sum + r.calculatedFeet, 0);
 
                       return (
-                        <div key={bit.id} className="bg-slate-900 border border-slate-850 rounded-2xl p-3.5 space-y-3">
+                        <div key={bit.id} className={`border rounded-2xl p-3.5 space-y-3 transition-colors duration-300 ${bit.isPaid ? "bg-green-50 border-green-300" : "bg-slate-900 border-slate-850"}`}>
                           <div className="flex items-center justify-between gap-3">
                             <div className="min-w-0">
                               <div className="flex flex-wrap items-center gap-1.5">
-                                <span className="text-[8px] uppercase tracking-wider font-bold text-indigo-400 font-mono">{bit.bitNo}</span>
-                                <span className="text-[8px] uppercase tracking-wider font-bold text-slate-500 font-mono">Size: {bit.sizeMm} mm</span>
-                                <span className="text-[8px] uppercase tracking-wider font-bold text-slate-500 font-mono">Button: {bit.buttonSizeMm ?? "-"} mm</span>
+                                <span className={`text-[8px] uppercase tracking-wider font-bold font-mono ${bit.isPaid ? "text-green-700" : "text-indigo-400"}`}>{bit.bitNo}</span>
+                                <span className={`text-[8px] uppercase tracking-wider font-bold font-mono ${bit.isPaid ? "text-green-600" : "text-slate-500"}`}>Size: {bit.sizeMm} mm</span>
+                                <span className={`text-[8px] uppercase tracking-wider font-bold font-mono ${bit.isPaid ? "text-green-600" : "text-slate-500"}`}>Button: {bit.buttonSizeMm ?? "-"} mm</span>
+                                <span className={`text-[8px] font-bold px-1.5 py-0.5 rounded ${bit.isPaid ? "bg-green-200 text-green-800" : "bg-rose-950 text-rose-400"}`}>{bit.isPaid ? "Paid" : "Pending"}</span>
                               </div>
                               <h4 className="text-xs font-bold text-red-500 truncate mt-0.5">{bit.brand}</h4>
-                              <p className="text-[8.5px] text-slate-500 font-mono mt-1">Date: {bit.dateEntry || "-"}</p>
-                              <p className="text-[8.5px] text-slate-500 font-mono mt-0.5">Rate: ₹{Number(bit.rate || 0).toLocaleString()}</p>
-                              <p className="text-[8.5px] text-indigo-400 font-mono mt-0.5 font-bold">Usage: {totalFeetUsed} ft used</p>
+                              <p className={`text-[8.5px] font-mono mt-1 ${bit.isPaid ? "text-green-700" : "text-slate-500"}`}>Date: {bit.dateEntry || "-"}</p>
+                              <p className={`text-[8.5px] font-mono mt-0.5 ${bit.isPaid ? "text-green-700" : "text-slate-500"}`}>Rate: ₹{Number(bit.rate || 0).toLocaleString()}</p>
+                              <p className={`text-[8.5px] font-mono mt-0.5 font-bold ${bit.isPaid ? "text-green-600" : "text-indigo-400"}`}>Usage: {totalFeetUsed} ft used</p>
                             </div>
-                            <div className="flex items-center gap-1.5 shrink-0">
+                            <div className="flex items-center gap-1.5 shrink-0 flex-wrap justify-end">
+                              {/* Paid / Pending toggle */}
+                              <div className="flex gap-1">
+                                <button
+                                  type="button"
+                                  onClick={() => setBitEntries(prev => prev.map(b => b.id === bit.id ? { ...b, isPaid: true } : b))}
+                                  className={`text-[8px] font-bold px-2 py-0.5 rounded border cursor-pointer transition ${bit.isPaid ? "bg-green-500 text-white border-green-600 shadow-sm" : "bg-slate-950 text-slate-400 border-slate-700 hover:bg-green-100 hover:text-green-700 hover:border-green-400"}`}
+                                >Paid</button>
+                                <button
+                                  type="button"
+                                  onClick={() => setBitEntries(prev => prev.map(b => b.id === bit.id ? { ...b, isPaid: false } : b))}
+                                  className={`text-[8px] font-bold px-2 py-0.5 rounded border cursor-pointer transition ${!bit.isPaid ? "bg-rose-500 text-white border-rose-600 shadow-sm" : "bg-slate-950 text-slate-400 border-slate-700 hover:bg-rose-100 hover:text-rose-700 hover:border-rose-400"}`}
+                                >Pending</button>
+                              </div>
                               <button
                                 type="button"
                                 onClick={() => handleOpenEditBit(bit)}
@@ -4142,27 +4158,38 @@ export default function MobileBusiness({
                       const hasCasingType = !!hammer.casingType;
 
                       return (
-                        <div key={hammer.id} className="bg-slate-900 border border-slate-850 rounded-2xl p-3 space-y-2">
+                        <div key={hammer.id} className={`border rounded-2xl p-3 space-y-2 transition-colors duration-300 ${hammer.isPaid ? "bg-green-50 border-green-300" : "bg-slate-900 border-slate-850"}`}>
                           <div className="flex items-center justify-between gap-3">
                             <div className="min-w-0">
                               <div className="flex flex-wrap items-center gap-1.5">
-                                <span className="text-[8px] uppercase tracking-wider font-bold text-indigo-400 font-mono">{hammer.hammerNo}</span>
-                                <span className="text-[8px] uppercase tracking-wider font-bold text-slate-550 font-mono">Cap: {hammer.capableFeetDepth} ft</span>
-                                <span className={`text-[8.5px] font-bold px-1.5 py-0.2 rounded ${
-                                  hammer.isPaid ? "bg-emerald-950 text-emerald-400" : "bg-rose-950 text-rose-450"
-                                }`}>
-                                  {hammer.isPaid ? "Paid" : "Due"}
+                                <span className={`text-[8px] uppercase tracking-wider font-bold font-mono ${hammer.isPaid ? "text-green-700" : "text-indigo-400"}`}>{hammer.hammerNo}</span>
+                                <span className={`text-[8px] uppercase tracking-wider font-bold font-mono ${hammer.isPaid ? "text-green-600" : "text-slate-550"}`}>Cap: {hammer.capableFeetDepth} ft</span>
+                                <span className={`text-[8.5px] font-bold px-1.5 py-0.5 rounded ${hammer.isPaid ? "bg-green-200 text-green-800" : "bg-rose-950 text-rose-450"}`}>
+                                  {hammer.isPaid ? "Paid" : "Pending"}
                                 </span>
                               </div>
                               <h4 className="text-xs font-bold text-red-500 truncate mt-0.5">{hammer.brand}</h4>
-                              <p className="text-[8.5px] text-slate-500 font-mono">Purchased: {hammer.dateEntry || "-"}</p>
-                              <p className="text-[8.5px] text-slate-500 font-mono">Rate: ₹{Number(hammer.rate || 0).toLocaleString()}</p>
-                              <p className="text-[8.5px] text-indigo-400 font-mono font-bold mt-1">
+                              <p className={`text-[8.5px] font-mono ${hammer.isPaid ? "text-green-700" : "text-slate-500"}`}>Purchased: {hammer.dateEntry || "-"}</p>
+                              <p className={`text-[8.5px] font-mono ${hammer.isPaid ? "text-green-700" : "text-slate-500"}`}>Rate: ₹{Number(hammer.rate || 0).toLocaleString()}</p>
+                              <p className={`text-[8.5px] font-mono font-bold mt-1 ${hammer.isPaid ? "text-green-600" : "text-indigo-400"}`}>
                                 Usage: {totalFeetUsed} / {hammer.capableFeetDepth} ft used
                               </p>
                             </div>
 
                             <div className="flex flex-col items-end gap-1.5 shrink-0">
+                              {/* Paid / Pending toggle */}
+                              <div className="flex gap-1">
+                                <button
+                                  type="button"
+                                  onClick={() => setHammerEntries(prev => prev.map(h => h.id === hammer.id ? { ...h, isPaid: true } : h))}
+                                  className={`text-[8px] font-bold px-2 py-0.5 rounded border cursor-pointer transition ${hammer.isPaid ? "bg-green-500 text-white border-green-600 shadow-sm" : "bg-slate-950 text-slate-400 border-slate-700 hover:bg-green-100 hover:text-green-700 hover:border-green-400"}`}
+                                >Paid</button>
+                                <button
+                                  type="button"
+                                  onClick={() => setHammerEntries(prev => prev.map(h => h.id === hammer.id ? { ...h, isPaid: false } : h))}
+                                  className={`text-[8px] font-bold px-2 py-0.5 rounded border cursor-pointer transition ${!hammer.isPaid ? "bg-rose-500 text-white border-rose-600 shadow-sm" : "bg-slate-950 text-slate-400 border-slate-700 hover:bg-rose-100 hover:text-rose-700 hover:border-rose-400"}`}
+                                >Pending</button>
+                              </div>
                               <div className="flex items-center gap-1">
                                 <button
                                   type="button"
@@ -4686,57 +4713,79 @@ export default function MobileBusiness({
                       const totalPending = pending7High + pending7Medium + pending10High + pending10Medium;
 
                       return (
-                        <div key={supplier.id} className="bg-slate-900 border border-slate-850 rounded-2xl p-3.5 space-y-3">
+                        <div key={supplier.id} className={`border rounded-2xl p-3.5 space-y-3 transition-colors duration-300 ${supplier.isPaid ? "bg-green-50 border-green-300" : "bg-slate-900 border-slate-850"}`}>
                           {/* Supplier Header */}
                           <div className="flex justify-between items-start">
                             <div>
-                              <h4 className="text-sm font-black text-white">{supplier.companyName}</h4>
-                              <p className="text-[9px] text-indigo-400 font-mono mt-0.5">Location: {supplier.location}</p>
+                              <h4 className={`text-sm font-black ${supplier.isPaid ? "text-green-800" : "text-white"}`}>{supplier.companyName}</h4>
+                              <p className={`text-[9px] font-mono mt-0.5 ${supplier.isPaid ? "text-green-700" : "text-indigo-400"}`}>Location: {supplier.location}</p>
                               {supplier.dateEntry && (
-                                <p className="text-[8px] text-slate-500 font-mono">Date Purchased: {supplier.dateEntry}</p>
+                                <p className={`text-[8px] font-mono ${supplier.isPaid ? "text-green-700" : "text-slate-500"}`}>Date Purchased: {supplier.dateEntry}</p>
                               )}
+                              {/* Total Amount */}
+                              <p className={`text-[9px] font-mono font-black mt-1 ${supplier.isPaid ? "text-green-700" : "text-emerald-400"}`}>
+                                Total Amount: ₹{Number(supplier.grandPrice || supplier.grandTotal || 0).toLocaleString()}
+                              </p>
+                              <span className={`inline-block text-[8px] font-bold px-1.5 py-0.5 rounded mt-1 ${supplier.isPaid ? "bg-green-200 text-green-800" : "bg-rose-950 text-rose-400"}`}>
+                                {supplier.isPaid ? "Paid" : "Pending"}
+                              </span>
                             </div>
-                            <div className="flex items-center gap-1.5">
-                              <button
-                                type="button"
-                                onClick={() => handleEditPipe(supplier)}
-                                className="p-1 bg-slate-950 text-slate-400 hover:text-white border border-slate-850 rounded"
-                                title="Edit Supplier"
-                              >
-                                <Edit className="w-3 h-3" />
-                              </button>
-                              <button
-                                type="button"
-                                onClick={() => handleDeletePipe(supplier.id, supplier.companyName)}
-                                className="p-1 bg-rose-950/40 text-rose-450 border border-rose-900/40 rounded"
-                                title="Delete Supplier"
-                              >
-                                <Trash2 className="w-3 h-3" />
-                              </button>
+                            <div className="flex flex-col items-end gap-1.5">
+                              {/* Paid / Pending toggle */}
+                              <div className="flex gap-1">
+                                <button
+                                  type="button"
+                                  onClick={() => setPipeEntries(prev => prev.map(p => p.id === supplier.id ? { ...p, isPaid: true } : p))}
+                                  className={`text-[8px] font-bold px-2 py-0.5 rounded border cursor-pointer transition ${supplier.isPaid ? "bg-green-500 text-white border-green-600 shadow-sm" : "bg-slate-950 text-slate-400 border-slate-700 hover:bg-green-100 hover:text-green-700 hover:border-green-400"}`}
+                                >Paid</button>
+                                <button
+                                  type="button"
+                                  onClick={() => setPipeEntries(prev => prev.map(p => p.id === supplier.id ? { ...p, isPaid: false } : p))}
+                                  className={`text-[8px] font-bold px-2 py-0.5 rounded border cursor-pointer transition ${!supplier.isPaid ? "bg-rose-500 text-white border-rose-600 shadow-sm" : "bg-slate-950 text-slate-400 border-slate-700 hover:bg-rose-100 hover:text-rose-700 hover:border-rose-400"}`}
+                                >Pending</button>
+                              </div>
+                              <div className="flex items-center gap-1.5">
+                                <button
+                                  type="button"
+                                  onClick={() => handleEditPipe(supplier)}
+                                  className="p-1 bg-slate-950 text-slate-400 hover:text-white border border-slate-850 rounded"
+                                  title="Edit Supplier"
+                                >
+                                  <Edit className="w-3 h-3" />
+                                </button>
+                                <button
+                                  type="button"
+                                  onClick={() => handleDeletePipe(supplier.id, supplier.companyName)}
+                                  className="p-1 bg-rose-950/40 text-rose-450 border border-rose-900/40 rounded"
+                                  title="Delete Supplier"
+                                >
+                                  <Trash2 className="w-3 h-3" />
+                                </button>
+                              </div>
                             </div>
                           </div>
 
                           {/* Horizontal Supplier Profile counts in a single row */}
-                          <div className="grid grid-cols-5 gap-1.5 text-[9px] font-mono bg-slate-950 p-2 rounded-xl text-center">
+                          <div className={`grid grid-cols-5 gap-1.5 text-[9px] font-mono p-2 rounded-xl text-center ${supplier.isPaid ? "bg-green-100" : "bg-slate-950"}`}>
                             <div>
-                              <span className="text-[7.5px] text-slate-500 block">7" H Qty</span>
-                              <span className="font-extrabold text-slate-350">{supplier.pipe7HighCount}</span>
+                              <span className={`text-[7.5px] block ${supplier.isPaid ? "text-green-700" : "text-slate-500"}`}>7" H Qty</span>
+                              <span className={`font-extrabold ${supplier.isPaid ? "text-green-800" : "text-slate-350"}`}>{supplier.pipe7HighCount}</span>
                             </div>
                             <div>
-                              <span className="text-[7.5px] text-slate-500 block">7" M Qty</span>
-                              <span className="font-extrabold text-slate-350">{supplier.pipe7MediumCount}</span>
+                              <span className={`text-[7.5px] block ${supplier.isPaid ? "text-green-700" : "text-slate-500"}`}>7" M Qty</span>
+                              <span className={`font-extrabold ${supplier.isPaid ? "text-green-800" : "text-slate-350"}`}>{supplier.pipe7MediumCount}</span>
                             </div>
                             <div>
-                              <span className="text-[7.5px] text-slate-500 block">10" H Qty</span>
-                              <span className="font-extrabold text-slate-350">{supplier.pipe10HighCount}</span>
+                              <span className={`text-[7.5px] block ${supplier.isPaid ? "text-green-700" : "text-slate-500"}`}>10" H Qty</span>
+                              <span className={`font-extrabold ${supplier.isPaid ? "text-green-800" : "text-slate-350"}`}>{supplier.pipe10HighCount}</span>
                             </div>
                             <div>
-                              <span className="text-[7.5px] text-slate-500 block">10" M Qty</span>
-                              <span className="font-extrabold text-slate-350">{supplier.pipe10MediumCount}</span>
+                              <span className={`text-[7.5px] block ${supplier.isPaid ? "text-green-700" : "text-slate-500"}`}>10" M Qty</span>
+                              <span className={`font-extrabold ${supplier.isPaid ? "text-green-800" : "text-slate-350"}`}>{supplier.pipe10MediumCount}</span>
                             </div>
-                            <div className="border-l border-slate-850">
-                              <span className="text-[7.5px] text-indigo-400 block font-bold">Total Pipes</span>
-                              <span className="font-black text-indigo-350">{totalRegistered}</span>
+                            <div className={`border-l ${supplier.isPaid ? "border-green-300" : "border-slate-850"}`}>
+                              <span className={`text-[7.5px] block font-bold ${supplier.isPaid ? "text-green-700" : "text-indigo-400"}`}>Total Pipes</span>
+                              <span className={`font-black ${supplier.isPaid ? "text-green-800" : "text-indigo-350"}`}>{totalRegistered}</span>
                             </div>
                           </div>
                         </div>
@@ -5921,39 +5970,59 @@ export default function MobileBusiness({
                     services.map(s => {
                       const associatedVehicle = vehicles.find(v => v.id === s.vehicleId);
                       return (
-                        <div key={s.id} className="bg-slate-950 p-2.5 rounded-xl text-[10px] font-mono border border-slate-850/50 relative">
+                        <div key={s.id} className={`p-2.5 rounded-xl text-[10px] font-mono border transition-colors duration-300 relative ${
+                          s.isPaid ? "bg-green-50 border-green-300" : "bg-slate-950 border-slate-850/50"
+                        }`}>
                           <div className="flex justify-between items-start">
                             <div className="min-w-0 flex-1 pr-4">
                               <div className="flex items-center gap-1.5 flex-wrap">
-                                <span className="vehicle-number-badge text-[8.5px] bg-indigo-950 text-indigo-400 px-1.5 py-0.2 rounded font-bold uppercase">{s.vehicleId}</span>
+                                <span className={`vehicle-number-badge text-[8.5px] px-1.5 py-0.2 rounded font-bold uppercase ${
+                                  s.isPaid ? "bg-green-200 text-green-800" : "bg-indigo-950 text-indigo-400"
+                                }`}>{s.vehicleId}</span>
                                 {associatedVehicle && (
-                                  <span className="text-[8.5px] text-slate-400 font-semibold truncate max-w-[100px]">({associatedVehicle.vehicleName})</span>
+                                  <span className={`text-[8.5px] font-semibold truncate max-w-[100px] ${s.isPaid ? "text-green-700" : "text-slate-400"}`}>({associatedVehicle.vehicleName})</span>
                                 )}
-                                <span className="text-slate-500 text-[8.5px]">{s.date}</span>
+                                <span className={`text-[8.5px] ${s.isPaid ? "text-green-600" : "text-slate-500"}`}>{s.date}</span>
+                                <span className={`text-[8px] font-bold px-1.5 py-0.2 rounded ${s.isPaid ? "bg-green-200 text-green-800" : "bg-rose-950 text-rose-455"}`}>
+                                  {s.isPaid ? "Paid" : "Pending"}
+                                </span>
                               </div>
-                              <h4 className="font-bold text-slate-200 mt-1 flex items-center gap-1">
-                                <Wrench className="w-3 h-3 text-indigo-400 shrink-0" />
+                              <h4 className={`font-bold mt-1 flex items-center gap-1 ${s.isPaid ? "text-green-800" : "text-slate-200"}`}>
+                                <Wrench className={`w-3 h-3 shrink-0 ${s.isPaid ? "text-green-600" : "text-indigo-400"}`} />
                                 {s.serviceType}
                               </h4>
                               {s.spareParts && (
-                                <p className="text-[8px] text-slate-400 mt-1">
-                                  <span className="text-slate-500">Parts:</span> {s.spareParts}
+                                <p className={`text-[8px] mt-1 ${s.isPaid ? "text-green-700" : "text-slate-400"}`}>
+                                  <span className={s.isPaid ? "text-green-600" : "text-slate-500"}>Parts:</span> {s.spareParts}
                                 </p>
                               )}
                               {s.remarks && (
-                                <p className="text-[8px] text-slate-500 italic mt-0.5">
+                                <p className={`text-[8px] italic mt-0.5 ${s.isPaid ? "text-green-600" : "text-slate-500"}`}>
                                   "{s.remarks}"
                                 </p>
                               )}
                             </div>
                             
                             <div className="text-right shrink-0 flex flex-col items-end justify-between h-full gap-2 pl-2">
-                              <span className="font-black text-amber-500 text-[10.5px]">₹{s.cost.toLocaleString()}</span>
+                              <span className={`font-black text-[10.5px] ${s.isPaid ? "text-green-700" : "text-amber-500"}`}>₹{s.cost.toLocaleString()}</span>
+                              {/* Paid / Pending toggle buttons */}
+                              <div className="flex gap-1 mt-1">
+                                <button
+                                  type="button"
+                                  onClick={() => setServices(prev => prev.map(item => item.id === s.id ? { ...item, isPaid: true } : item))}
+                                  className={`text-[8px] font-bold px-2 py-0.5 rounded border cursor-pointer transition ${s.isPaid ? "bg-green-500 text-white border-green-600 shadow-sm" : "bg-slate-950 text-slate-400 border-slate-700 hover:bg-green-105 hover:text-green-750"}`}
+                                >Paid</button>
+                                <button
+                                  type="button"
+                                  onClick={() => setServices(prev => prev.map(item => item.id === s.id ? { ...item, isPaid: false } : item))}
+                                  className={`text-[8px] font-bold px-2 py-0.5 rounded border cursor-pointer transition ${!s.isPaid ? "bg-rose-500 text-white border-rose-600 shadow-sm" : "bg-slate-950 text-slate-400 border-slate-700 hover:bg-rose-105 hover:text-rose-750"}`}
+                                >Pending</button>
+                              </div>
                               <div className="flex gap-1.5 mt-2">
                                 <button type="button" onClick={() => handleOpenEditService(s)} className="p-1 px-1.5 bg-slate-900 border border-slate-800 text-slate-400 hover:text-white rounded">
                                   <Edit className="w-2.5 h-2.5" />
                                 </button>
-                                <button type="button" onClick={() => handleDeleteService(s.id)} className="p-1 px-1.5 bg-rose-950/40 border border-rose-900/40 text-rose-450 rounded">
+                                <button type="button" onClick={() => handleDeleteService(s.id)} className="p-1 px-1.5 bg-rose-950/40 border border-rose-900/40 text-rose-455 rounded">
                                   <Trash2 className="w-2.5 h-2.5" />
                                 </button>
                               </div>
@@ -6070,17 +6139,35 @@ export default function MobileBusiness({
                   {fuelEntries.map(f => {
                     const displayAmount = Number(f.totalAmount ?? f.cost ?? ((f.liters ?? 0) * (f.perLiterCost ?? 0)));
                     return (
-                      <div key={f.id} className="bg-slate-950 p-2 rounded-xl text-[10px] font-mono flex justify-between items-center gap-2">
+                      <div key={f.id} className={`p-2 rounded-xl text-[10px] font-mono border transition-colors duration-300 flex justify-between items-center gap-2 ${
+                        f.isPaid ? "bg-green-50 border-green-300" : "bg-slate-950 border-slate-850/50"
+                      }`}>
                         <div className="min-w-0">
-                          <span className="text-[8.5px] text-slate-500 block truncate flex items-center gap-1">
+                          <span className={`text-[8.5px] block truncate flex items-center gap-1 ${f.isPaid ? "text-green-700" : "text-slate-500"}`}>
                             <span>{f.dateTime}</span>
-                            <Car className="w-3 h-3 text-emerald-500 shrink-0" />
+                            <Car className={`w-3 h-3 shrink-0 ${f.isPaid ? "text-green-600" : "text-emerald-500"}`} />
                             <span className="truncate">{f.vehicleName}</span>
                           </span>
-                          <span className="font-bold text-slate-350 block truncate">{f.fuelType} ₹ {f.liters} Liters ({f.perLiterCost}/L)</span>
+                          <span className={`font-bold block truncate ${f.isPaid ? "text-green-800" : "text-slate-350"}`}>{f.fuelType} ₹ {f.liters} Liters ({f.perLiterCost}/L)</span>
+                          <span className={`inline-block text-[8px] font-bold px-1.5 py-0.2 rounded mt-0.5 ${f.isPaid ? "bg-green-200 text-green-800" : "bg-rose-950 text-rose-455"}`}>
+                            {f.isPaid ? "Paid" : "Pending"}
+                          </span>
                         </div>
-                        <div className="flex items-center gap-2 shrink-0">
-                          <span className="font-black text-rose-450 text-[10.5px]">₹{displayAmount.toLocaleString()}</span>
+                        <div className="flex items-center gap-2 shrink-0 flex-wrap justify-end">
+                          <span className={`font-black text-[10.5px] ${f.isPaid ? "text-green-700" : "text-rose-450"}`}>₹{displayAmount.toLocaleString()}</span>
+                          {/* Paid / Pending toggle */}
+                          <div className="flex gap-1">
+                            <button
+                              type="button"
+                              onClick={() => setFuelEntries(prev => prev.map(item => item.id === f.id ? { ...item, isPaid: true } : item))}
+                              className={`text-[8px] font-bold px-1.5 py-0.2 rounded border cursor-pointer transition ${f.isPaid ? "bg-green-500 text-white border-green-600 shadow-sm" : "bg-slate-950 text-slate-400 border-slate-700 hover:bg-green-105 hover:text-green-755"}`}
+                            >Paid</button>
+                            <button
+                              type="button"
+                              onClick={() => setFuelEntries(prev => prev.map(item => item.id === f.id ? { ...item, isPaid: false } : item))}
+                              className={`text-[8px] font-bold px-1.5 py-0.2 rounded border cursor-pointer transition ${!f.isPaid ? "bg-rose-500 text-white border-rose-600 shadow-sm" : "bg-slate-950 text-slate-400 border-slate-700 hover:bg-rose-105 hover:text-rose-755"}`}
+                            >Pending</button>
+                          </div>
                           <button
                             type="button"
                             onClick={() => handleOpenEditFuel(f)}
@@ -6267,46 +6354,64 @@ export default function MobileBusiness({
                     materials.map(m => {
                       const associatedVehicle = vehicles.find(v => v.id === m.vehicleId);
                       return (
-                        <div key={m.id} className="bg-slate-950 p-2.5 rounded-xl text-[10px] font-mono border border-slate-850/50 relative">
+                        <div key={m.id} className={`p-2.5 rounded-xl text-[10px] font-mono border transition-colors duration-300 relative ${
+                          m.isPaid ? "bg-green-50 border-green-300" : "bg-slate-950 border-slate-850/50"
+                        }`}>
                           <div className="flex justify-between items-start">
                             <div className="min-w-0 flex-1 pr-4">
                               <div className="flex items-center gap-1.5 flex-wrap">
                                 <span className={`vehicle-number-badge text-[8.5px] px-1.5 py-0.2 rounded font-bold uppercase ${
-                                  m.vehicleId === "All" ? "bg-teal-950 text-teal-400" : "bg-indigo-950 text-indigo-400"
+                                  m.isPaid ? "bg-green-200 text-green-800" : (m.vehicleId === "All" ? "bg-teal-950 text-teal-400" : "bg-indigo-950 text-indigo-400")
                                 }`}>
                                   {m.vehicleId === "All" ? "GENERAL" : `${m.vehicleId}`}
                                 </span>
                                 {associatedVehicle && (
-                                  <span className="text-[8.5px] text-slate-400 font-semibold truncate max-w-[100px]">({associatedVehicle.vehicleName})</span>
+                                  <span className={`text-[8.5px] font-semibold truncate max-w-[100px] ${m.isPaid ? "text-green-700" : "text-slate-400"}`}>({associatedVehicle.vehicleName})</span>
                                 )}
-                                <span className="text-slate-500 text-[8.5px]">{m.date}</span>
+                                <span className={`text-[8.5px] ${m.isPaid ? "text-green-600" : "text-slate-500"}`}>{m.date}</span>
+                                <span className={`text-[8px] font-bold px-1.5 py-0.2 rounded ${m.isPaid ? "bg-green-200 text-green-800" : "bg-rose-950 text-rose-455"}`}>
+                                  {m.isPaid ? "Paid" : "Pending"}
+                                </span>
                               </div>
-                              <h4 className="font-bold text-slate-200 mt-1 flex items-center gap-1">
-                                <Package className="w-3 h-3 text-teal-400 shrink-0" />
+                              <h4 className={`font-bold mt-1 flex items-center gap-1 ${m.isPaid ? "text-green-800" : "text-slate-200"}`}>
+                                <Package className={`w-3 h-3 shrink-0 ${m.isPaid ? "text-green-600" : "text-teal-450"}`} />
                                 {m.materialName}
                               </h4>
-                              <p className="text-[8px] text-slate-400 mt-1">
-                                <span className="text-slate-500">Logistics:</span> {m.quantity} {m.unit} × ₹{m.rate}/unit
+                              <p className={`text-[8px] mt-1 ${m.isPaid ? "text-green-700" : "text-slate-400"}`}>
+                                <span className={m.isPaid ? "text-green-600" : "text-slate-500"}>Logistics:</span> {m.quantity} {m.unit} × ₹{m.rate}/unit
                               </p>
                               {m.vendorName && (
-                                <p className="text-[8px] text-slate-450">
-                                  <span className="text-slate-500">Vendor:</span> {m.vendorName}
+                                <p className={`text-[8px] ${m.isPaid ? "text-green-600" : "text-slate-450"}`}>
+                                  <span className={m.isPaid ? "text-green-600" : "text-slate-550"}>Vendor:</span> {m.vendorName}
                                 </p>
                               )}
                               {m.remarks && (
-                                <p className="text-[8px] text-slate-500 italic mt-0.5">
+                                <p className={`text-[8px] italic mt-0.5 ${m.isPaid ? "text-green-600" : "text-slate-500"}`}>
                                   "{m.remarks}"
                                 </p>
                               )}
                             </div>
 
                             <div className="text-right shrink-0 flex flex-col items-end justify-between h-full gap-2 pl-2">
-                              <span className="font-black text-teal-450 text-[10.5px]">₹{m.totalAmount.toLocaleString()}</span>
+                              <span className={`font-black text-[10.5px] ${m.isPaid ? "text-green-700" : "text-teal-450"}`}>₹{m.totalAmount.toLocaleString()}</span>
+                              {/* Paid / Pending toggle buttons */}
+                              <div className="flex gap-1 mt-1">
+                                <button
+                                  type="button"
+                                  onClick={() => setMaterials(prev => prev.map(item => item.id === m.id ? { ...item, isPaid: true } : item))}
+                                  className={`text-[8px] font-bold px-2 py-0.5 rounded border cursor-pointer transition ${m.isPaid ? "bg-green-500 text-white border-green-600 shadow-sm" : "bg-slate-950 text-slate-400 border-slate-700 hover:bg-green-105 hover:text-green-755"}`}
+                                >Paid</button>
+                                <button
+                                  type="button"
+                                  onClick={() => setMaterials(prev => prev.map(item => item.id === m.id ? { ...item, isPaid: false } : item))}
+                                  className={`text-[8px] font-bold px-2 py-0.5 rounded border cursor-pointer transition ${!m.isPaid ? "bg-rose-500 text-white border-rose-600 shadow-sm" : "bg-slate-950 text-slate-400 border-slate-700 hover:bg-rose-105 hover:text-rose-755"}`}
+                                >Pending</button>
+                              </div>
                               <div className="flex gap-1.5 mt-2">
                                 <button type="button" onClick={() => handleOpenEditMaterial(m)} className="p-1 px-1.5 bg-slate-900 border border-slate-800 text-slate-400 hover:text-white rounded">
                                   <Edit className="w-2.5 h-2.5" />
                                 </button>
-                                <button type="button" onClick={() => handleDeleteMaterial(m.id)} className="p-1 px-1.5 bg-rose-950/40 border border-rose-900/40 text-rose-450 rounded">
+                                <button type="button" onClick={() => handleDeleteMaterial(m.id)} className="p-1 px-1.5 bg-rose-950/40 border border-rose-900/40 text-rose-455 rounded">
                                   <Trash2 className="w-2.5 h-2.5" />
                                 </button>
                               </div>
@@ -7402,20 +7507,24 @@ export default function MobileBusiness({
                 const isCustomItem = b.isCustomBill || bMode === "Customize";
 
                 return (
-                  <div key={b.id} className="bg-slate-900 border border-slate-850 p-3.5 rounded-2xl space-y-3 shadow-md">
+                  <div key={b.id} className={`p-3.5 rounded-2xl space-y-3 shadow-md border transition-colors duration-300 ${
+                    b.status === "Paid" ? "bg-green-50 border-green-300" : "bg-slate-900 border-slate-850"
+                  }`}>
                     <div className="flex justify-between items-start">
                       <div>
                         <div className="flex items-center gap-1.5">
-                          <span className="text-[8px] bg-slate-950 font-mono text-indigo-400 px-1.5 py-0.5 rounded border border-indigo-900 font-extrabold uppercase tracking-widest">
+                          <span className={`text-[8px] font-mono px-1.5 py-0.5 rounded border font-extrabold uppercase tracking-widest ${
+                            b.status === "Paid" ? "bg-green-200 text-green-800 border-green-300" : "bg-slate-950 text-indigo-400 border-indigo-900"
+                          }`}>
                             {b.invoiceNo}
                           </span>
                           <h4 className="text-xs font-black text-red-500 truncate max-w-[170px]">{b.clientName}</h4>
                         </div>
-                        <p className="text-[8px] font-mono text-slate-500 mt-1">Date: {formatDateToDMY(b.billDate)} | Due: {formatDateToDMY(b.dueDate)}</p>
+                        <p className={`text-[8px] font-mono mt-1 ${b.status === "Paid" ? "text-green-750" : "text-slate-500"}`}>Date: {formatDateToDMY(b.billDate)} | Due: {formatDateToDMY(b.dueDate)}</p>
                       </div>
 
                       <span className={`text-[8.5px] font-mono font-bold uppercase px-2 py-0.5 rounded border ${
-                        b.status === "Paid" ? "bg-emerald-950 text-emerald-400 border-emerald-900" : "bg-rose-950 text-rose-400 border-rose-900"
+                        b.status === "Paid" ? "bg-green-200 text-green-800 border-green-300" : "bg-rose-950 text-rose-450 border-rose-900"
                       }`}>
                         {b.status || "Pending"}
                       </span>
@@ -7731,56 +7840,78 @@ export default function MobileBusiness({
 
           {/* REPORTS LISTING */}
           <div className="grid grid-cols-1 gap-3.5">
+            {/* ── BUSINESS DATA REPORTS ── */}
             {[
               {
                 id: "bit",
                 name: "Bit Details",
                 description: "Bit inventory rates, sizes, buttons, and purchase log",
-                icon: Package
+                icon: Package,
+                type: "business"
               },
               {
                 id: "hammer",
                 name: "Hammer Details",
                 description: "Hammer inventory, depth capacity, rates, and usage logs",
-                icon: Wrench
+                icon: Wrench,
+                type: "business"
               },
               {
                 id: "pipe",
                 name: "Pipe / Casing Details",
                 description: "Registered & used stock ledger for 7\" & 10\" casing pipes",
-                icon: Layers
+                icon: Layers,
+                type: "business"
               },
               {
                 id: "service",
                 name: "Service Entries",
                 description: "Vehicle maintenance schedules, spare parts cost, and servicing history",
-                icon: Activity
+                icon: Activity,
+                type: "business"
               },
               {
                 id: "fuel",
                 name: "Fuel Entries",
                 description: "Fuel logs, consumption stats, and total billing metrics by vehicle",
-                icon: Fuel
+                icon: Fuel,
+                type: "business"
               },
               {
                 id: "material",
                 name: "Materials Purchased",
                 description: "General material purchases, grease buckets, and tools procurement",
-                icon: Upload
+                icon: Upload,
+                type: "business"
               },
               {
                 id: "bill",
                 name: "Bill / Invoices",
                 description: "Complete borewell drilling customer invoices, paid vs pending registry",
-                icon: FileText
+                icon: FileText,
+                type: "business"
+              },
+              {
+                id: "attendance",
+                name: "Attendance Report",
+                description: "Monthly attendance log for all labours — present, absent, and half-day records",
+                icon: Calendar,
+                type: "attendance"
+              },
+              {
+                id: "salary",
+                name: "Salary Report",
+                description: "Labour salary slips with advance deductions, bonus, and net paid summary",
+                icon: DollarSign,
+                type: "salary"
               }
             ].map((report) => {
               const Icon = report.icon;
               return (
                 <div key={report.id} className="bg-slate-900 border border-slate-850 p-4 rounded-2xl space-y-3.5 shadow-md hover:border-slate-800 transition">
                   <div className="flex items-start gap-3">
-                    <div className="p-2.5 rounded-xl bg-slate-950 border border-slate-800">
-                      <Icon className="w-5 h-5 text-indigo-400" />
+                    <div className="p-2.5 rounded-xl bg-white border border-gray-200">
+                      <Icon className="w-5 h-5 text-black" />
                     </div>
                     <div className="flex-1 min-w-0">
                       <h4 className="text-xs font-black text-slate-200 uppercase tracking-wider">{report.name}</h4>
@@ -7789,42 +7920,112 @@ export default function MobileBusiness({
                   </div>
 
                   <div className="grid grid-cols-2 gap-2 pt-1 font-mono text-[9px] uppercase tracking-wider font-extrabold">
-                    <button
-                      onClick={() => downloadBusinessReportPDF({
-                        reportType: report.id as any,
-                        mode: "monthly",
-                        month: reportMonth,
-                        year: reportYear,
-                        bitEntries,
-                        hammerEntries,
-                        pipeEntries,
-                        businessBills,
-                        fuelEntries,
-                        services,
-                        materials
-                      })}
-                      className="bg-indigo-600 hover:bg-indigo-550 active:bg-indigo-700 text-white border border-indigo-500/20 py-2 px-3 rounded-xl flex items-center justify-center gap-1.5 cursor-pointer shadow-md shadow-indigo-950/45 transition uppercase tracking-widest text-[8px]"
-                    >
-                      <Calendar className="w-3.5 h-3.5" /> Download Monthly
-                    </button>
-                    <button
-                      onClick={() => downloadBusinessReportPDF({
-                        reportType: report.id as any,
-                        mode: "overall",
-                        month: reportMonth,
-                        year: reportYear,
-                        bitEntries,
-                        hammerEntries,
-                        pipeEntries,
-                        businessBills,
-                        fuelEntries,
-                        services,
-                        materials
-                      })}
-                      className="bg-emerald-600 hover:bg-emerald-550 active:bg-emerald-700 text-white border border-emerald-500/20 py-2 px-3 rounded-xl flex items-center justify-center gap-1.5 cursor-pointer shadow-md shadow-emerald-950/45 transition uppercase tracking-widest text-[8px]"
-                    >
-                      <History className="w-3.5 h-3.5" /> Download Overall
-                    </button>
+                    {report.type === "attendance" ? (
+                      <>
+                        {/* Monthly attendance download */}
+                        <button
+                          onClick={() => {
+                            downloadAttendanceReportPDF(labours, attendance || [], reportMonth, reportYear);
+                            triggerOnlineSync(`Downloaded Monthly Attendance Report – ${reportMonth + 1}/${reportYear}`);
+                          }}
+                          className="bg-indigo-600 hover:bg-indigo-550 active:bg-indigo-700 text-white border border-indigo-500/20 py-2 px-3 rounded-xl flex items-center justify-center gap-1.5 cursor-pointer shadow-md shadow-indigo-950/45 transition uppercase tracking-widest text-[8px]"
+                        >
+                          <Calendar className="w-3.5 h-3.5" /> Download Monthly
+                        </button>
+                        {/* Overall attendance (current year, all months) — reuse same function per month but wrap label */}
+                        <button
+                          onClick={() => {
+                            // Download overall = loop all 12 months consolidated into one report for the selected year
+                            for (let m = 0; m < 12; m++) {
+                              downloadAttendanceReportPDF(labours, attendance || [], m, reportYear);
+                            }
+                            triggerOnlineSync(`Downloaded Overall Attendance Report – ${reportYear}`);
+                          }}
+                          className="bg-emerald-600 hover:bg-emerald-550 active:bg-emerald-700 text-white border border-emerald-500/20 py-2 px-3 rounded-xl flex items-center justify-center gap-1.5 cursor-pointer shadow-md shadow-emerald-950/45 transition uppercase tracking-widest text-[8px]"
+                        >
+                          <History className="w-3.5 h-3.5" /> Download Overall
+                        </button>
+                      </>
+                    ) : report.type === "salary" ? (
+                      <>
+                        {/* Download salary slips for all labours that have a payment in the selected month */}
+                        <button
+                          onClick={() => {
+                            const monthStr = String(reportMonth + 1).padStart(2, "0");
+                            const prefix = `${reportYear}-${monthStr}`;
+                            labours.forEach((lab) => {
+                              const payment = salaryPayments.find(p =>
+                                p.labourId === lab.id && p.date && p.date.startsWith(prefix)
+                              );
+                              downloadSalarySlipPDF(lab, payment);
+                            });
+                            triggerOnlineSync(`Downloaded Salary Slips – ${reportMonth + 1}/${reportYear}`);
+                          }}
+                          className="bg-indigo-600 hover:bg-indigo-550 active:bg-indigo-700 text-white border border-indigo-500/20 py-2 px-3 rounded-xl flex items-center justify-center gap-1.5 cursor-pointer shadow-md shadow-indigo-950/45 transition uppercase tracking-widest text-[8px]"
+                        >
+                          <Calendar className="w-3.5 h-3.5" /> Download Monthly
+                        </button>
+                        {/* Overall salary: download all payments for the year */}
+                        <button
+                          onClick={() => {
+                            const yearStr = String(reportYear);
+                            labours.forEach((lab) => {
+                              const payments = salaryPayments.filter(p =>
+                                p.labourId === lab.id && p.date && p.date.startsWith(yearStr)
+                              );
+                              if (payments.length > 0) {
+                                payments.forEach(p => downloadSalarySlipPDF(lab, p));
+                              } else {
+                                downloadSalarySlipPDF(lab, undefined);
+                              }
+                            });
+                            triggerOnlineSync(`Downloaded Overall Salary Slips – ${reportYear}`);
+                          }}
+                          className="bg-emerald-600 hover:bg-emerald-550 active:bg-emerald-700 text-white border border-emerald-500/20 py-2 px-3 rounded-xl flex items-center justify-center gap-1.5 cursor-pointer shadow-md shadow-emerald-950/45 transition uppercase tracking-widest text-[8px]"
+                        >
+                          <History className="w-3.5 h-3.5" /> Download Overall
+                        </button>
+                      </>
+                    ) : (
+                      <>
+                        <button
+                          onClick={() => downloadBusinessReportPDF({
+                            reportType: report.id as any,
+                            mode: "monthly",
+                            month: reportMonth,
+                            year: reportYear,
+                            bitEntries,
+                            hammerEntries,
+                            pipeEntries,
+                            businessBills,
+                            fuelEntries,
+                            services,
+                            materials
+                          })}
+                          className="bg-indigo-600 hover:bg-indigo-550 active:bg-indigo-700 text-white border border-indigo-500/20 py-2 px-3 rounded-xl flex items-center justify-center gap-1.5 cursor-pointer shadow-md shadow-indigo-950/45 transition uppercase tracking-widest text-[8px]"
+                        >
+                          <Calendar className="w-3.5 h-3.5" /> Download Monthly
+                        </button>
+                        <button
+                          onClick={() => downloadBusinessReportPDF({
+                            reportType: report.id as any,
+                            mode: "overall",
+                            month: reportMonth,
+                            year: reportYear,
+                            bitEntries,
+                            hammerEntries,
+                            pipeEntries,
+                            businessBills,
+                            fuelEntries,
+                            services,
+                            materials
+                          })}
+                          className="bg-emerald-600 hover:bg-emerald-550 active:bg-emerald-700 text-white border border-emerald-500/20 py-2 px-3 rounded-xl flex items-center justify-center gap-1.5 cursor-pointer shadow-md shadow-emerald-950/45 transition uppercase tracking-widest text-[8px]"
+                        >
+                          <History className="w-3.5 h-3.5" /> Download Overall
+                        </button>
+                      </>
+                    )}
                   </div>
                 </div>
               );
