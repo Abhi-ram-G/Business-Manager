@@ -327,7 +327,7 @@ export default function MobileDashboard({
           <div className="flex justify-between items-start">
             <div>
               <span className="text-[9.5px] font-mono text-slate-400 uppercase tracking-wider font-bold">{localT("bill_count")}</span>
-              <div className="text-lg font-black font-mono mt-1" style={{ color: "#9333ea" }}>
+              <div className="text-lg font-black font-mono mt-1" style={{ color: "#3b0764" }}>
                 {businessBills.length}
               </div>
             </div>
@@ -393,9 +393,11 @@ export default function MobileDashboard({
                 <div className="absolute -right-3 -bottom-3 w-10 h-10 bg-cyan-500/5 rounded-full blur-md group-hover:scale-150 transition-transform duration-500" />
                 <div className="flex justify-between items-start">
                   <div>
-                    <span className="text-[9px] font-mono text-slate-400 uppercase tracking-wider font-bold block">Total Stock Available</span>
-                    <div className="text-lg font-black font-mono mt-1 text-blue-700">{Math.round(totalAvail)}</div>
-                    <span className="text-[8px] text-slate-500 font-mono">pipes</span>
+                    <span className="text-[9px] font-mono text-slate-400 uppercase tracking-wider font-bold block font-bold">Total Stock Available</span>
+                    <div className="flex items-baseline gap-1 mt-1">
+                      <span className="text-lg font-black font-mono" style={{ color: "#1e3a8a" }}>{Math.round(totalAvail)}</span>
+                      <span className="text-[9px] text-slate-500 font-bold font-mono">pipes</span>
+                    </div>
                   </div>
                   <div className="p-2 bg-cyan-950/80 rounded-xl text-cyan-400 border border-cyan-800/40">
                     <Package className="w-4 h-4" />
@@ -408,9 +410,11 @@ export default function MobileDashboard({
                 <div className="absolute -right-3 -bottom-3 w-10 h-10 bg-emerald-500/5 rounded-full blur-md group-hover:scale-150 transition-transform duration-500" />
                 <div className="flex justify-between items-start">
                   <div>
-                    <span className="text-[9px] font-mono text-slate-400 uppercase tracking-wider font-bold block">7" H QLT</span>
-                    <div className="text-lg font-black font-mono mt-1 text-emerald-700">{Math.round(avail7High)}</div>
-                    <span className="text-[8px] text-slate-500 font-mono">pipes</span>
+                    <span className="text-[9px] font-mono text-slate-400 uppercase tracking-wider font-bold block font-bold">7" H QLT</span>
+                    <div className="flex items-baseline gap-1 mt-1">
+                      <span className="text-lg font-black font-mono" style={{ color: "#10b981" }}>{Math.round(avail7High)}</span>
+                      <span className="text-[9px] text-slate-500 font-bold font-mono">pipes</span>
+                    </div>
                   </div>
                   <div className="p-2 bg-emerald-950/80 rounded-xl text-emerald-400 border border-emerald-800/40">
                     <PackageCheck className="w-3.5 h-3.5" />
@@ -423,9 +427,11 @@ export default function MobileDashboard({
                 <div className="absolute -right-3 -bottom-3 w-10 h-10 bg-teal-500/5 rounded-full blur-md group-hover:scale-150 transition-transform duration-500" />
                 <div className="flex justify-between items-start">
                   <div>
-                    <span className="text-[9px] font-mono text-slate-400 uppercase tracking-wider font-bold block">7" M QLT</span>
-                    <div className="text-lg font-black font-mono mt-1 text-green-600">{Math.round(avail7Medium)}</div>
-                    <span className="text-[8px] text-slate-500 font-mono">pipes</span>
+                    <span className="text-[9px] font-mono text-slate-400 uppercase tracking-wider font-bold block font-bold">7" M QLT</span>
+                    <div className="flex items-baseline gap-1 mt-1">
+                      <span className="text-lg font-black font-mono" style={{ color: "#10b981" }}>{Math.round(avail7Medium)}</span>
+                      <span className="text-[9px] text-slate-500 font-bold font-mono">pipes</span>
+                    </div>
                   </div>
                   <div className="p-2 bg-teal-950/80 rounded-xl text-teal-400 border border-teal-800/40">
                     <PackageCheck className="w-3.5 h-3.5" />
@@ -438,9 +444,11 @@ export default function MobileDashboard({
                 <div className="absolute -right-3 -bottom-3 w-10 h-10 bg-orange-500/5 rounded-full blur-md group-hover:scale-150 transition-transform duration-500" />
                 <div className="flex justify-between items-start">
                   <div>
-                    <span className="text-[9px] font-mono text-slate-400 uppercase tracking-wider font-bold block">10" H QLT</span>
-                    <div className="text-lg font-black font-mono mt-1 text-orange-700">{Math.round(avail10High)}</div>
-                    <span className="text-[8px] text-slate-500 font-mono">pipes</span>
+                    <span className="text-[9px] font-mono text-slate-400 uppercase tracking-wider font-bold block font-bold">10" H QLT</span>
+                    <div className="flex items-baseline gap-1 mt-1">
+                      <span className="text-lg font-black font-mono" style={{ color: "#c2410c" }}>{Math.round(avail10High)}</span>
+                      <span className="text-[9px] text-slate-500 font-bold font-mono">pipes</span>
+                    </div>
                   </div>
                   <div className="p-2 bg-orange-950/80 rounded-xl text-orange-400 border border-orange-800/40">
                     <PackageCheck className="w-3.5 h-3.5" />
@@ -453,9 +461,11 @@ export default function MobileDashboard({
                 <div className="absolute -right-3 -bottom-3 w-10 h-10 bg-amber-500/5 rounded-full blur-md group-hover:scale-150 transition-transform duration-500" />
                 <div className="flex justify-between items-start">
                   <div>
-                    <span className="text-[9px] font-mono text-slate-400 uppercase tracking-wider font-bold block">10" M QLT</span>
-                    <div className="text-lg font-black font-mono mt-1 text-amber-700">{Math.round(avail10Medium)}</div>
-                    <span className="text-[8px] text-slate-500 font-mono">pipes</span>
+                    <span className="text-[9px] font-mono text-slate-400 uppercase tracking-wider font-bold block font-bold">10" M QLT</span>
+                    <div className="flex items-baseline gap-1 mt-1">
+                      <span className="text-lg font-black font-mono" style={{ color: "#b45309" }}>{Math.round(avail10Medium)}</span>
+                      <span className="text-[9px] text-slate-500 font-bold font-mono">pipes</span>
+                    </div>
                   </div>
                   <div className="p-2 bg-amber-950/80 rounded-xl text-amber-400 border border-amber-800/40">
                     <PackageCheck className="w-3.5 h-3.5" />
