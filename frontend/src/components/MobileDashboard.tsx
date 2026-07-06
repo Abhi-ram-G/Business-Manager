@@ -327,7 +327,7 @@ export default function MobileDashboard({
           <div className="flex justify-between items-start">
             <div>
               <span className="text-[9.5px] font-mono text-slate-400 uppercase tracking-wider font-bold">{localT("bill_count")}</span>
-              <div className="text-lg font-black font-mono mt-1" style={{ color: "#3b0764" }}>
+              <div className="text-lg font-black font-mono mt-1" style={{ color: "#7c3aed" }}>
                 {businessBills.length}
               </div>
             </div>
@@ -394,9 +394,9 @@ export default function MobileDashboard({
                 <div className="flex justify-between items-start">
                   <div>
                     <span className="text-[9px] font-mono text-slate-400 uppercase tracking-wider font-bold block font-bold">Total Stock Available</span>
-                    <div className="flex items-baseline gap-1 mt-1">
-                      <span className="text-lg font-black font-mono" style={{ color: "#1e3a8a" }}>{Math.round(totalAvail)}</span>
-                      <span className="text-[9px] text-slate-500 font-bold font-mono">pipes</span>
+                    <div className="text-lg font-black font-mono mt-1 flex items-baseline gap-1">
+                      <span style={{ color: "#2563eb" }}>{Math.round(totalAvail)}</span>
+                      <span className="text-[9px] text-slate-500 font-bold font-mono ml-1">pipes</span>
                     </div>
                   </div>
                   <div className="p-2 bg-cyan-950/80 rounded-xl text-cyan-400 border border-cyan-800/40">
@@ -411,9 +411,9 @@ export default function MobileDashboard({
                 <div className="flex justify-between items-start">
                   <div>
                     <span className="text-[9px] font-mono text-slate-400 uppercase tracking-wider font-bold block font-bold">7" H QLT</span>
-                    <div className="flex items-baseline gap-1 mt-1">
-                      <span className="text-lg font-black font-mono" style={{ color: "#10b981" }}>{Math.round(avail7High)}</span>
-                      <span className="text-[9px] text-slate-500 font-bold font-mono">pipes</span>
+                    <div className="text-lg font-black font-mono mt-1 flex items-baseline gap-1">
+                      <span style={{ color: "#10b981" }}>{Math.round(avail7High)}</span>
+                      <span className="text-[9px] text-slate-500 font-bold font-mono ml-1">pipes</span>
                     </div>
                   </div>
                   <div className="p-2 bg-emerald-950/80 rounded-xl text-emerald-400 border border-emerald-800/40">
@@ -428,9 +428,9 @@ export default function MobileDashboard({
                 <div className="flex justify-between items-start">
                   <div>
                     <span className="text-[9px] font-mono text-slate-400 uppercase tracking-wider font-bold block font-bold">7" M QLT</span>
-                    <div className="flex items-baseline gap-1 mt-1">
-                      <span className="text-lg font-black font-mono" style={{ color: "#10b981" }}>{Math.round(avail7Medium)}</span>
-                      <span className="text-[9px] text-slate-500 font-bold font-mono">pipes</span>
+                    <div className="text-lg font-black font-mono mt-1 flex items-baseline gap-1">
+                      <span style={{ color: "#10b981" }}>{Math.round(avail7Medium)}</span>
+                      <span className="text-[9px] text-slate-500 font-bold font-mono ml-1">pipes</span>
                     </div>
                   </div>
                   <div className="p-2 bg-teal-950/80 rounded-xl text-teal-400 border border-teal-800/40">
@@ -445,9 +445,9 @@ export default function MobileDashboard({
                 <div className="flex justify-between items-start">
                   <div>
                     <span className="text-[9px] font-mono text-slate-400 uppercase tracking-wider font-bold block font-bold">10" H QLT</span>
-                    <div className="flex items-baseline gap-1 mt-1">
-                      <span className="text-lg font-black font-mono" style={{ color: "#c2410c" }}>{Math.round(avail10High)}</span>
-                      <span className="text-[9px] text-slate-500 font-bold font-mono">pipes</span>
+                    <div className="text-lg font-black font-mono mt-1 flex items-baseline gap-1">
+                      <span style={{ color: "#b45309" }}>{Math.round(avail10High)}</span>
+                      <span className="text-[9px] text-slate-500 font-bold font-mono ml-1">pipes</span>
                     </div>
                   </div>
                   <div className="p-2 bg-orange-950/80 rounded-xl text-orange-400 border border-orange-800/40">
@@ -462,9 +462,9 @@ export default function MobileDashboard({
                 <div className="flex justify-between items-start">
                   <div>
                     <span className="text-[9px] font-mono text-slate-400 uppercase tracking-wider font-bold block font-bold">10" M QLT</span>
-                    <div className="flex items-baseline gap-1 mt-1">
-                      <span className="text-lg font-black font-mono" style={{ color: "#b45309" }}>{Math.round(avail10Medium)}</span>
-                      <span className="text-[9px] text-slate-500 font-bold font-mono">pipes</span>
+                    <div className="text-lg font-black font-mono mt-1 flex items-baseline gap-1">
+                      <span style={{ color: "#b45309" }}>{Math.round(avail10Medium)}</span>
+                      <span className="text-[9px] text-slate-500 font-bold font-mono ml-1">pipes</span>
                     </div>
                   </div>
                   <div className="p-2 bg-amber-950/80 rounded-xl text-amber-400 border border-amber-800/40">
