@@ -395,7 +395,7 @@ export default function MobileDashboard({
                   <div>
                     <span className="text-[9px] font-mono text-slate-400 uppercase tracking-wider font-bold block font-bold">Total Stock Available</span>
                     <div className="text-lg font-black font-mono mt-1 flex items-baseline gap-1">
-                      <span className="text-custom-blue">{Math.round(totalAvail)}</span>
+                      <span className="text-custom-blue text-custom-number">{Math.round(totalAvail)}</span>
                       <span className="text-[9px] text-slate-500 font-bold font-mono ml-1">pipes</span>
                     </div>
                   </div>
@@ -412,7 +412,7 @@ export default function MobileDashboard({
                   <div>
                     <span className="text-[9px] font-mono text-slate-400 uppercase tracking-wider font-bold block font-bold">7" H QLT</span>
                     <div className="text-lg font-black font-mono mt-1 flex items-baseline gap-1">
-                      <span className="text-custom-light-green">{Math.round(avail7High)}</span>
+                      <span className="text-custom-light-green text-custom-number">{Math.round(avail7High)}</span>
                       <span className="text-[9px] text-slate-500 font-bold font-mono ml-1">pipes</span>
                     </div>
                   </div>
@@ -429,7 +429,7 @@ export default function MobileDashboard({
                   <div>
                     <span className="text-[9px] font-mono text-slate-400 uppercase tracking-wider font-bold block font-bold">7" M QLT</span>
                     <div className="text-lg font-black font-mono mt-1 flex items-baseline gap-1">
-                      <span className="text-custom-light-green">{Math.round(avail7Medium)}</span>
+                      <span className="text-custom-light-green text-custom-number">{Math.round(avail7Medium)}</span>
                       <span className="text-[9px] text-slate-500 font-bold font-mono ml-1">pipes</span>
                     </div>
                   </div>
@@ -446,7 +446,7 @@ export default function MobileDashboard({
                   <div>
                     <span className="text-[9px] font-mono text-slate-400 uppercase tracking-wider font-bold block font-bold">10" H QLT</span>
                     <div className="text-lg font-black font-mono mt-1 flex items-baseline gap-1">
-                      <span className="text-custom-copper">{Math.round(avail10High)}</span>
+                      <span className="text-custom-copper text-custom-number">{Math.round(avail10High)}</span>
                       <span className="text-[9px] text-slate-500 font-bold font-mono ml-1">pipes</span>
                     </div>
                   </div>
@@ -463,7 +463,7 @@ export default function MobileDashboard({
                   <div>
                     <span className="text-[9px] font-mono text-slate-400 uppercase tracking-wider font-bold block font-bold">10" M QLT</span>
                     <div className="text-lg font-black font-mono mt-1 flex items-baseline gap-1">
-                      <span className="text-custom-copper">{Math.round(avail10Medium)}</span>
+                      <span className="text-custom-copper text-custom-number">{Math.round(avail10Medium)}</span>
                       <span className="text-[9px] text-slate-500 font-bold font-mono ml-1">pipes</span>
                     </div>
                   </div>
