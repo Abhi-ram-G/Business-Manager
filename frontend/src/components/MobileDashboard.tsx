@@ -759,9 +759,9 @@ export default function MobileDashboard({
                   <XAxis dataKey="name" tick={{ fill: "#64748b", fontSize: 8 }} />
                   <YAxis tick={{ fill: "#64748b", fontSize: 8 }} />
                   <Tooltip 
-                    contentStyle={{ backgroundColor: "#0b0f19", border: "1px solid #334155", fontSize: 10 }} 
-                    labelStyle={{ color: "#ffffff", fontWeight: "bold" }}
-                    itemStyle={{ color: "#ffffff" }}
+                    contentStyle={{ backgroundColor: "#ffffff", border: "1px solid #cbd5e1", borderRadius: "8px", fontSize: 10, boxShadow: "0 4px 6px -1px rgb(0 0 0 / 0.1)" }} 
+                    labelStyle={{ color: "#0f172a", fontWeight: "bold" }}
+                    itemStyle={{ color: "#334155" }}
                   />
                   <Bar dataKey="Inflow" fill="#10b981" radius={[4, 4, 0, 0]} />
                   <Bar dataKey="Outflow" fill="#f43f5e" radius={[4, 4, 0, 0]} />
@@ -783,9 +783,9 @@ export default function MobileDashboard({
                   <XAxis dataKey="name" tick={{ fill: "#64748b", fontSize: 8 }} />
                   <YAxis tick={{ fill: "#64748b", fontSize: 8 }} />
                   <Tooltip 
-                    contentStyle={{ backgroundColor: "#0b0f19", border: "1px solid #334155", fontSize: 10 }} 
-                    labelStyle={{ color: "#ffffff", fontWeight: "bold" }}
-                    itemStyle={{ color: "#ffffff" }}
+                    contentStyle={{ backgroundColor: "#ffffff", border: "1px solid #cbd5e1", borderRadius: "8px", fontSize: 10, boxShadow: "0 4px 6px -1px rgb(0 0 0 / 0.1)" }} 
+                    labelStyle={{ color: "#0f172a", fontWeight: "bold" }}
+                    itemStyle={{ color: "#334155" }}
                   />
                   <Area type="monotone" dataKey="Inflow" stroke="#10b981" strokeWidth={2} fillOpacity={1} fill="url(#colorInflow)" />
                   <Area type="monotone" dataKey="Outflow" stroke="#f43f5e" strokeWidth={2} fillOpacity={1} fill="url(#colorOutflow)" />
@@ -809,9 +809,9 @@ export default function MobileDashboard({
                     <XAxis type="number" tick={{ fill: "#64748b", fontSize: 8 }} />
                     <YAxis dataKey="name" type="category" tick={{ fill: "#94a3b8", fontSize: 8 }} width={60} />
                     <Tooltip 
-                      contentStyle={{ backgroundColor: "#0b0f19", border: "1px solid #334155", fontSize: 9 }} 
-                      labelStyle={{ color: "#ffffff", fontWeight: "bold" }}
-                      itemStyle={{ color: "#ffffff" }}
+                      contentStyle={{ backgroundColor: "#ffffff", border: "1px solid #cbd5e1", borderRadius: "8px", fontSize: 9, boxShadow: "0 4px 6px -1px rgb(0 0 0 / 0.1)" }} 
+                      labelStyle={{ color: "#0f172a", fontWeight: "bold" }}
+                      itemStyle={{ color: "#334155" }}
                     />
                     <Bar dataKey="Amount" fill="#3b82f6" radius={[0, 4, 4, 0]}>
                       {expenseBreakdownData.map((entry, index) => (
@@ -845,9 +845,9 @@ export default function MobileDashboard({
                           ))}
                         </Pie>
                         <Tooltip 
-                          contentStyle={{ backgroundColor: "#0b0f19", border: "1px solid #334155", fontSize: 9 }} 
-                          labelStyle={{ color: "#ffffff", fontWeight: "bold" }}
-                          itemStyle={{ color: "#ffffff" }}
+                          contentStyle={{ backgroundColor: "#ffffff", border: "1px solid #cbd5e1", borderRadius: "8px", fontSize: 9, boxShadow: "0 4px 6px -1px rgb(0 0 0 / 0.1)" }} 
+                          labelStyle={{ color: "#0f172a", fontWeight: "bold" }}
+                          itemStyle={{ color: "#334155" }}
                         />
                       </PieChart>
                     </ResponsiveContainer>
