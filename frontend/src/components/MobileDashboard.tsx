@@ -412,12 +412,296 @@ export default function MobileDashboard({
     ].filter(p => p.value > 0);
   }, [expSalaryPaid, expFuel, expFamily, expTools, expPipes, outLent]);
 
+  // Unfiltered/All-time values for top summary sections
+  const overallActiveLabour = labours.filter(l => l.isActive).length;
+  const overallPendingBills = businessBills.filter(b => b.status === "Pending").reduce((sum, b) => sum + (b.amount || 0), 0);
+
+  const overallReg7High = pipeEntries.reduce((s, p) => s + Number(p.pipe7HighCount || 0), 0);
+  const overallReg7Medium = pipeEntries.reduce((s, p) => s + Number(p.pipe7MediumCount || 0), 0);
+  const overallReg10High = pipeEntries.reduce((s, p) => s + Number(p.pipe10HighCount || 0), 0);
+  const overallReg10Medium = pipeEntries.reduce((s, p) => s + Number(p.pipe10MediumCount || 0), 0);
+
+  const overallUsed7High = businessBills.reduce((s, b) => s + Number(b.casing7HighFeet || 0), 0) / 20;
+  const overallUsed7Medium = businessBills.reduce((s, b) => s + Number(b.casing7MediumFeet || 0), 0) / 20;
+  const overallUsed10High = businessBills.reduce((s, b) => s + Number(b.casing10HighFeet || 0), 0) / 20;
+  const overallUsed10Medium = businessBills.reduce((s, b) => s + Number(b.casing10MediumFeet || 0), 0) / 20;
+
+  const overallAvail7High = Math.round(Math.max(0, overallReg7High - overallUsed7High));
+  const overallAvail7Medium = Math.round(Math.max(0, overallReg7Medium - overallUsed7Medium));
+  const overallAvail10High = Math.round(Math.max(0, overallReg10High - overallUsed10High));
+  const overallAvail10Medium = Math.round(Math.max(0, overallReg10Medium - overallUsed10Medium));
+  const overallTotalAvail = Math.round(overallAvail7High + overallAvail7Medium + overallAvail10High + overallAvail10Medium);
+
   // Months labels dictionary
   const monthsDict = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
 
   return (
     <div id="mobile-dashboard-scroll" className="space-y-5 pb-6 text-slate-100 bg-[#0b0f19] min-h-screen">
       
+      {/* 0. ACCUMULATED ALL-TIME SUMMARY SECTION */}
+      <div className="space-y-4">
+        
+        {/* Real-time Accumulated Data Metrics Grid */}
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3.5">
+          
+          {/* Card 1: Labour Count */}
+          <div className="bg-slate-900/40 p-3.5 rounded-2xl border border-indigo-500/20 hover:border-indigo-500/40 transition-all duration-300 shadow-sm relative overflow-hidden group">
+            <div className="absolute -right-4 -bottom-4 w-12 h-12 bg-indigo-500/5 rounded-full blur-md group-hover:scale-150 transition-transform duration-500" />
+            <div className="flex justify-between items-start">
+              <div>
+                <span className="text-[9.5px] font-mono text-slate-400 uppercase tracking-wider font-bold">{localT("labour_count")}</span>
+                <div className="text-lg font-black font-mono mt-1 text-indigo-300 flex items-baseline gap-1.5">
+                  <span>{overallActiveLabour}</span>
+                  <span className="text-[10px] text-yellow-400 font-bold bg-yellow-950/40 px-1.5 py-0.5 rounded border border-yellow-900/30">{localT("active")}</span>
+                </div>
+              </div>
+              <div className="p-2 bg-indigo-950/80 rounded-xl text-indigo-400 border border-indigo-800/40">
+                <Users className="w-4 h-4" />
+              </div>
+            </div>
+          </div>
+
+          {/* Card 2: Lent Portfolio */}
+          <div className="bg-slate-900/40 p-3.5 rounded-2xl border border-emerald-500/20 hover:border-emerald-500/40 transition-all duration-300 shadow-sm relative overflow-hidden group">
+            <div className="absolute -right-4 -bottom-4 w-12 h-12 bg-emerald-500/5 rounded-full blur-md group-hover:scale-150 transition-transform duration-500" />
+            <div className="flex justify-between items-start">
+              <div>
+                <span className="text-[9.5px] font-mono text-slate-400 uppercase tracking-wider font-bold">{localT("lent_portfolio")}</span>
+                <div className="text-lg font-black font-mono mt-1 text-emerald-450">
+                  ₹{totalOutstandingLoanAmount.toLocaleString()}
+                </div>
+              </div>
+              <div className="p-2 bg-emerald-950/80 rounded-xl text-emerald-400 border border-emerald-800/40">
+                <TrendingUp className="w-4 h-4" />
+              </div>
+            </div>
+          </div>
+
+          {/* Card 3: Family Expenses */}
+          <div className="bg-slate-900/40 p-3.5 rounded-2xl border border-rose-500/20 hover:border-rose-500/40 transition-all duration-300 shadow-sm relative overflow-hidden group">
+            <div className="absolute -right-4 -bottom-4 w-12 h-12 bg-rose-500/5 rounded-full blur-md group-hover:scale-150 transition-transform duration-500" />
+            <div className="flex justify-between items-start">
+              <div>
+                <span className="text-[9.5px] font-mono text-slate-400 uppercase tracking-wider font-bold">{localT("family_expenses")}</span>
+                <div className="text-lg font-black font-mono mt-1 text-rose-455">
+                  ₹{totalMonthlyExpense.toLocaleString()}
+                </div>
+              </div>
+              <div className="p-2 bg-rose-950/80 rounded-xl text-rose-455 border border-rose-800/40">
+                <DollarSign className="w-4 h-4" />
+              </div>
+            </div>
+          </div>
+
+          {/* Card 4: Family Savings */}
+          <div className="bg-slate-900/40 p-3.5 rounded-2xl border border-purple-500/20 hover:border-purple-500/40 transition-all duration-300 shadow-sm relative overflow-hidden group">
+            <div className="absolute -right-4 -bottom-4 w-12 h-12 bg-purple-500/5 rounded-full blur-md group-hover:scale-150 transition-transform duration-500" />
+            <div className="flex justify-between items-start">
+              <div>
+                <span className="text-[9.5px] font-mono text-slate-400 uppercase tracking-wider font-bold">{localT("family_savings")}</span>
+                <div className="text-lg font-black font-mono mt-1 text-purple-400 flex items-baseline gap-1">
+                  <span>{familySavingsRate}%</span>
+                  <span className="text-[9px] text-purple-300 font-bold">{localT("surplus")}</span>
+                </div>
+              </div>
+              <div className="p-2 bg-purple-950/80 rounded-xl text-purple-400 border border-purple-800/40">
+                <ArrowUpRight className="w-4 h-4" />
+              </div>
+            </div>
+          </div>
+
+          {/* Card 5: Bit Count */}
+          <div className="bg-slate-900/40 p-3.5 rounded-2xl border border-blue-500/20 hover:border-blue-500/40 transition-all duration-300 shadow-sm relative overflow-hidden group">
+            <div className="absolute -right-4 -bottom-4 w-12 h-12 bg-blue-500/5 rounded-full blur-md group-hover:scale-150 transition-transform duration-500" />
+            <div className="flex justify-between items-start">
+              <div>
+                <span className="text-[9.5px] font-mono text-slate-400 uppercase tracking-wider font-bold">{localT("bit_count")}</span>
+                <div className="text-lg font-black font-mono mt-1 text-blue-700">
+                  {bitEntries.length}
+                </div>
+              </div>
+              <div className="p-2 bg-blue-950/80 rounded-xl text-blue-400 border border-blue-850/60">
+                <Wrench className="w-4.5 h-4.5" />
+              </div>
+            </div>
+          </div>
+
+          {/* Card 6: Hammer Count */}
+          <div className="bg-slate-900/40 p-3.5 rounded-2xl border border-amber-500/20 hover:border-amber-500/40 transition-all duration-300 shadow-sm relative overflow-hidden group">
+            <div className="absolute -right-4 -bottom-4 w-12 h-12 bg-amber-500/5 rounded-full blur-md group-hover:scale-150 transition-transform duration-500" />
+            <div className="flex justify-between items-start">
+              <div>
+                <span className="text-[9.5px] font-mono text-slate-400 uppercase tracking-wider font-bold">{localT("hammer_count")}</span>
+                <div className="text-lg font-black font-mono mt-1 text-amber-700">
+                  {hammerEntries.length}
+                </div>
+              </div>
+              <div className="p-2 bg-amber-950/80 rounded-xl text-amber-400 border border-amber-850/60">
+                <Hammer className="w-4.5 h-4.5" />
+              </div>
+            </div>
+          </div>
+
+          {/* Card 7: Bill Count */}
+          <div className="bg-slate-900/40 p-3.5 rounded-2xl border border-teal-500/20 hover:border-teal-500/40 transition-all duration-300 shadow-sm relative overflow-hidden group">
+            <div className="absolute -right-4 -bottom-4 w-12 h-12 bg-teal-500/5 rounded-full blur-md group-hover:scale-150 transition-transform duration-500" />
+            <div className="flex justify-between items-start">
+              <div>
+                <span className="text-[9.5px] font-mono text-slate-400 uppercase tracking-wider font-bold">{localT("bill_count")}</span>
+                <div className="text-lg font-black font-mono mt-1 text-custom-violet">
+                  {businessBills.length}
+                </div>
+              </div>
+              <div className="p-2 bg-teal-950/80 rounded-xl text-teal-400 border border-teal-850/60">
+                <FileText className="w-4.5 h-4.5" />
+              </div>
+            </div>
+          </div>
+
+          {/* Card 8: Pending Bills Amount */}
+          <div className="bg-slate-900/40 p-3.5 rounded-2xl border border-rose-500/20 hover:border-rose-500/40 transition-all duration-300 shadow-sm relative overflow-hidden group">
+            <div className="absolute -right-4 -bottom-4 w-12 h-12 bg-rose-500/5 rounded-full blur-md group-hover:scale-150 transition-transform duration-500" />
+            <div className="flex justify-between items-start">
+              <div>
+                <span className="text-[9.5px] font-mono text-slate-400 uppercase tracking-wider font-bold">{localT("pending_bills_amount")}</span>
+                <div className="text-lg font-black font-mono mt-1 text-rose-700">
+                  ₹{overallPendingBills.toLocaleString()}
+                </div>
+              </div>
+              <div className="p-2 bg-rose-950/80 rounded-xl text-rose-455 border border-rose-850/60">
+                <AlertCircle className="w-4.5 h-4.5" />
+              </div>
+            </div>
+          </div>
+
+        </div>
+
+        {/* Casing Stock Row */}
+        <div className="space-y-2">
+          
+          <style>{`
+            span.stock-card-number {
+              font-size: 32px !important;
+              line-height: 38px !important;
+              font-weight: 800 !important;
+            }
+            span.stock-card-number.stock-card-number-blue {
+              color: #1e40af !important;
+            }
+            span.stock-card-number.stock-card-number-green {
+              color: #059669 !important;
+            }
+            span.stock-card-number.stock-card-number-orange {
+              color: #c2410c !important;
+            }
+            span.stock-card-unit {
+              font-size: 18px !important;
+              line-height: 24px !important;
+              font-weight: 600 !important;
+              color: #64748b !important;
+            }
+          `}</style>
+
+          {/* Section header */}
+          <div className="flex items-center gap-2 px-0.5">
+            <div className="p-1.5 bg-cyan-500/10 rounded-lg text-cyan-400 border border-cyan-500/20">
+              <Layers className="w-3.5 h-3.5" />
+            </div>
+            <h3 className="text-xs font-bold text-slate-300 uppercase tracking-wider font-mono">Casing Stock Available</h3>
+          </div>
+
+          <div className="grid grid-cols-2 lg:grid-cols-5 gap-3">
+            
+            {/* Total Stock Available */}
+            <div className="col-span-2 lg:col-span-1 stock-card-blue p-3 rounded-2xl border transition-all duration-300 shadow-sm relative overflow-hidden group">
+              <div className="absolute -right-3 -bottom-3 w-10 h-10 bg-blue-500/5 rounded-full blur-md group-hover:scale-150 transition-transform duration-500" />
+              <div className="flex justify-between items-start">
+                <div>
+                  <span className="stock-card-label block uppercase">Total Stock Available</span>
+                  <div className="mt-1 flex items-baseline gap-1">
+                    <span className="stock-card-number stock-card-number-blue">{overallTotalAvail}</span>
+                    <span className="stock-card-unit">pipes</span>
+                  </div>
+                </div>
+                <div className="p-2 bg-[#294d5a] rounded-xl text-white">
+                  <Package className="w-4 h-4" />
+                </div>
+              </div>
+            </div>
+
+            {/* 7" High QLT */}
+            <div className="col-span-1 stock-card-green p-3 rounded-2xl border transition-all duration-300 shadow-sm relative overflow-hidden group">
+              <div className="absolute -right-3 -bottom-3 w-10 h-10 bg-emerald-500/5 rounded-full blur-md group-hover:scale-150 transition-transform duration-500" />
+              <div className="flex justify-between items-start">
+                <div>
+                  <span className="stock-card-label block uppercase">7" H QLT</span>
+                  <div className="mt-1 flex items-baseline gap-1">
+                    <span className="stock-card-number stock-card-number-green">{overallAvail7High}</span>
+                    <span className="stock-card-unit">pipes</span>
+                  </div>
+                </div>
+                <div className="p-2 bg-[#2d5443] rounded-xl text-white">
+                  <Package className="w-4 h-4" />
+                </div>
+              </div>
+            </div>
+
+            {/* 7" Medium QLT */}
+            <div className="col-span-1 stock-card-green p-3 rounded-2xl border transition-all duration-300 shadow-sm relative overflow-hidden group">
+              <div className="absolute -right-3 -bottom-3 w-10 h-10 bg-teal-500/5 rounded-full blur-md group-hover:scale-150 transition-transform duration-500" />
+              <div className="flex justify-between items-start">
+                <div>
+                  <span className="stock-card-label block uppercase">7" M QLT</span>
+                  <div className="mt-1 flex items-baseline gap-1">
+                    <span className="stock-card-number stock-card-number-green">{overallAvail7Medium}</span>
+                    <span className="stock-card-unit">pipes</span>
+                  </div>
+                </div>
+                <div className="p-2 bg-[#2d5443] rounded-xl text-white">
+                  <Package className="w-4 h-4" />
+                </div>
+              </div>
+            </div>
+
+            {/* 10" High QLT */}
+            <div className="col-span-1 stock-card-orange p-3 rounded-2xl border transition-all duration-300 shadow-sm relative overflow-hidden group">
+              <div className="absolute -right-3 -bottom-3 w-10 h-10 bg-orange-500/5 rounded-full blur-md group-hover:scale-150 transition-transform duration-500" />
+              <div className="flex justify-between items-start">
+                <div>
+                  <span className="stock-card-label block uppercase">10" H QLT</span>
+                  <div className="mt-1 flex items-baseline gap-1">
+                    <span className="stock-card-number stock-card-number-orange">{overallAvail10High}</span>
+                    <span className="stock-card-unit">pipes</span>
+                  </div>
+                </div>
+                <div className="p-2 bg-[#643b27] rounded-xl text-white">
+                  <Package className="w-4 h-4" />
+                </div>
+              </div>
+            </div>
+
+            {/* 10" Medium QLT */}
+            <div className="col-span-1 stock-card-orange p-3 rounded-2xl border transition-all duration-300 shadow-sm relative overflow-hidden group">
+              <div className="absolute -right-3 -bottom-3 w-10 h-10 bg-amber-500/5 rounded-full blur-md group-hover:scale-150 transition-transform duration-500" />
+              <div className="flex justify-between items-start">
+                <div>
+                  <span className="stock-card-label block uppercase">10" M QLT</span>
+                  <div className="mt-1 flex items-baseline gap-1">
+                    <span className="stock-card-number stock-card-number-orange">{overallAvail10Medium}</span>
+                    <span className="stock-card-unit">pipes</span>
+                  </div>
+                </div>
+                <div className="p-2 bg-[#643b27] rounded-xl text-white">
+                  <Package className="w-4 h-4" />
+                </div>
+              </div>
+            </div>
+
+          </div>
+        </div>
+
+      </div>
+
       {/* 1. PREMIUM HEADER SYSTEM */}
       <div className="relative overflow-hidden bg-gradient-to-br from-slate-900 via-slate-950/80 to-[#0e1628] p-5 rounded-3xl border border-slate-800 shadow-xl shadow-[#040810]/50">
         <div className="absolute top-0 right-0 w-24 h-24 bg-sky-500/10 rounded-full blur-2xl" />
