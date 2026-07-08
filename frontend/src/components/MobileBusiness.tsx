@@ -6908,29 +6908,43 @@ export default function MobileBusiness({
                         </div>
                       </div>
 
-                      {/* Display added items list inside form */}
+                      {/* Display added items list inside form (Table Format) */}
                       {matItems.length > 0 && (
-                        <div className="bg-slate-950/40 p-2.5 rounded-lg border border-slate-850/60 space-y-1.5">
-                          <span className="text-[8.5px] text-slate-400 block uppercase font-bold tracking-wider">Added Items List:</span>
-                          <div className="space-y-1 max-h-40 overflow-y-auto pr-1">
-                            {matItems.map((item, idx) => (
-                              <div key={idx} className="flex justify-between items-center text-[10px] bg-slate-950/60 p-2 rounded border border-slate-900 font-mono">
-                                <div className="min-w-0 flex-1 pr-2">
-                                  <span className="font-bold text-slate-350 block truncate">{item.name}</span>
-                                  <span className="text-slate-550 text-[8.5px]">{item.count} count × ₹{item.rate.toLocaleString()}</span>
-                                </div>
-                                <div className="flex items-center gap-2 shrink-0">
-                                  <span className="text-emerald-450 font-bold">₹{item.cost.toLocaleString()}</span>
-                                  <button
-                                    type="button"
-                                    onClick={() => setMatItems(prev => prev.filter((_, i) => i !== idx))}
-                                    className="text-rose-450 hover:text-rose-400 font-bold text-[9px] cursor-pointer"
-                                  >
-                                    Remove
-                                  </button>
-                                </div>
-                              </div>
-                            ))}
+                        <div className="bg-slate-950/40 p-2 rounded-lg border border-slate-850/60 overflow-hidden">
+                          <span className="text-[8.5px] text-slate-400 block uppercase font-bold tracking-wider mb-1.5 px-1 font-mono">Added Items List:</span>
+                          <div className="overflow-x-auto max-h-48 overflow-y-auto">
+                            <table className="w-full text-left border-collapse text-[10px] font-mono">
+                              <thead>
+                                <tr className="border-b border-slate-800 text-[8.5px] text-slate-500 uppercase font-black">
+                                  <th className="py-1 px-2 text-center w-8">#</th>
+                                  <th className="py-1 px-2">Name</th>
+                                  <th className="py-1 px-2 text-center">Count</th>
+                                  <th className="py-1 px-2 text-right">Rate</th>
+                                  <th className="py-1 px-2 text-right">Cost</th>
+                                  <th className="py-1 px-2 text-center w-12">Action</th>
+                                </tr>
+                              </thead>
+                              <tbody>
+                                {matItems.map((item, idx) => (
+                                  <tr key={idx} className="border-b border-slate-900/50 hover:bg-slate-950/50">
+                                    <td className="py-1 px-2 text-center text-slate-500">{idx + 1}</td>
+                                    <td className="py-1 px-2 text-slate-200 font-bold truncate max-w-[120px]">{item.name}</td>
+                                    <td className="py-1 px-2 text-center text-slate-300 font-bold">{item.count}</td>
+                                    <td className="py-1 px-2 text-right text-slate-400">₹{item.rate.toLocaleString()}</td>
+                                    <td className="py-1 px-2 text-right text-emerald-450 font-bold">₹{item.cost.toLocaleString()}</td>
+                                    <td className="py-1 px-2 text-center">
+                                      <button
+                                        type="button"
+                                        onClick={() => setMatItems(prev => prev.filter((_, i) => i !== idx))}
+                                        className="text-rose-450 hover:text-rose-350 font-bold text-[9px] cursor-pointer hover:underline"
+                                      >
+                                        Remove
+                                      </button>
+                                    </td>
+                                  </tr>
+                                ))}
+                              </tbody>
+                            </table>
                           </div>
                         </div>
                       )}
@@ -7043,12 +7057,29 @@ export default function MobileBusiness({
                                     </h4>
                                     
                                     {displayItems && displayItems.length > 0 ? (
-                                      <div className="mt-1.5 space-y-0.5 pl-3 border-l-2 border-indigo-650/40">
-                                        {displayItems.map((item, idx) => (
-                                          <div key={idx} className={`text-[8px] leading-tight ${m.isPaid ? "text-green-700" : "text-slate-400"}`}>
-                                            • <span className="font-bold text-slate-350">{item.name}</span>: {item.count} count × ₹{item.rate.toLocaleString()} = <span className="font-bold text-slate-200">₹{item.cost.toLocaleString()}</span>
-                                          </div>
-                                        ))}
+                                      <div className="mt-2 border border-slate-850/50 rounded-lg overflow-hidden bg-slate-950/40">
+                                        <table className="w-full text-left border-collapse text-[8.5px] font-mono leading-tight">
+                                          <thead>
+                                            <tr className="bg-slate-950/60 border-b border-slate-850 text-slate-500 text-[7px] uppercase font-mono font-bold">
+                                              <th className="py-1 px-1.5 text-center w-6">#</th>
+                                              <th className="py-1 px-1.5">Name</th>
+                                              <th className="py-1 px-1.5 text-center">Count</th>
+                                              <th className="py-1 px-1.5 text-right">Rate</th>
+                                              <th className="py-1 px-1.5 text-right">Cost</th>
+                                            </tr>
+                                          </thead>
+                                          <tbody>
+                                            {displayItems.map((item, idx) => (
+                                              <tr key={idx} className="border-b border-slate-900 last:border-0 hover:bg-slate-950/20">
+                                                <td className="py-1 px-1.5 text-center text-slate-550">{idx + 1}</td>
+                                                <td className={`py-1 px-1.5 truncate max-w-[90px] font-bold ${m.isPaid ? "text-green-800" : "text-slate-300"}`}>{item.name}</td>
+                                                <td className={`py-1 px-1.5 text-center font-bold ${m.isPaid ? "text-green-700" : "text-slate-400"}`}>{item.count}</td>
+                                                <td className={`py-1 px-1.5 text-right ${m.isPaid ? "text-green-600" : "text-slate-500"}`}>₹{item.rate.toLocaleString()}</td>
+                                                <td className={`py-1 px-1.5 text-right font-bold ${m.isPaid ? "text-green-800" : "text-emerald-450"}`}>₹{item.cost.toLocaleString()}</td>
+                                              </tr>
+                                            ))}
+                                          </tbody>
+                                        </table>
                                       </div>
                                     ) : (
                                       <p className={`text-[8px] mt-1 ${m.isPaid ? "text-green-700" : "text-slate-400"}`}>
