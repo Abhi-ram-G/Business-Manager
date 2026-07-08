@@ -427,8 +427,34 @@ span.stock-card-unit {
   color: #475569 !important;
   margin-left: 4px !important;
 }
+/* Custom scrollbar styling for mobile tables */
+.custom-scrollbar::-webkit-scrollbar {
+  width: 4px;
+  height: 4px;
+}
+.custom-scrollbar::-webkit-scrollbar-track {
+  background: #090d16;
+}
+.custom-scrollbar::-webkit-scrollbar-thumb {
+  background: #1e293b;
+  border-radius: 4px;
+}
+.custom-scrollbar::-webkit-scrollbar-thumb:hover {
+  background: #334155;
+}
 
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(4px); }
+  to { opacity: 1; transform: translateY(0); }
+}
 
+.animate-fadeIn {
+  animation: fadeIn 0.3s ease-out forwards;
+}
 
-
-
+span.stock-card-label {
+  font-size: 8.5px !important;
+  font-weight: 700 !important;
+  color: #64748b !important;
+  letter-spacing: 0.05em !important;
+}

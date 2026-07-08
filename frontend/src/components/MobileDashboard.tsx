@@ -3,36 +3,32 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import React, { useState } from "react";
+import React, { useState, useMemo } from "react";
 import { 
   Briefcase, 
   Users, 
   Car, 
-  CreditCard, 
   Fuel, 
   TrendingUp, 
   TrendingDown, 
   DollarSign, 
-  PieChart, 
+  PieChart as PieIcon, 
   Activity, 
-  Percent, 
-  Clock, 
-  HeartHandshake, 
+  Calendar, 
   Home, 
   ArrowUpRight, 
   ArrowDownLeft,
-  ChevronDown,
-  ChevronUp,
-  Phone,
-  MapPin,
-  BadgeCheck,
-  AlertTriangle,
+  ChevronRight,
+  AlertCircle,
   Wrench,
   Hammer,
   FileText,
   Package,
-  PackageCheck,
-  Layers
+  Layers,
+  Search,
+  Filter,
+  RefreshCw,
+  Wallet
 } from "lucide-react";
 import { 
   BarChart, 
@@ -42,7 +38,12 @@ import {
   Tooltip, 
   ResponsiveContainer, 
   CartesianGrid, 
-  Legend 
+  Legend,
+  AreaChart,
+  Area,
+  PieChart,
+  Pie,
+  Cell
 } from "recharts";
 import { Labour, Vehicle, FuelEntry, SalaryPayment, LoanGiven, LoanReceived, FamilyExpense, AttendanceRecord, BitEntry, HammerEntry, BusinessBill, PipeEntry } from "../types";
 
@@ -87,10 +88,69 @@ export default function MobileDashboard({
   businessBills = [],
   pipeEntries = []
 }: MobileDashboardProps) {
-  // Local fallback translations helper if not passed from parent
+  
+  // Date Filtering States
+  const [timeGrain, setTimeGrain] = useState<"overall" | "year" | "month" | "day">("overall");
+  
+  // Extract all unique years present in any data records
+  const parseDate = (dStr?: string) => {
+    if (!dStr) return null;
+    const dateOnly = dStr.includes("T") ? dStr.split("T")[0] : dStr;
+    const parts = dateOnly.split("-");
+    if (parts.length >= 3) {
+      return {
+        year: parseInt(parts[0], 10),
+        month: parseInt(parts[1], 10),
+        day: parseInt(parts[2], 10)
+      };
+    }
+    return null;
+  };
+
+  const detectedYears = useMemo(() => {
+    const years = new Set<number>();
+    businessBills.forEach(b => { const y = parseDate(b.billDate)?.year; if (y) years.add(y); });
+    fuelEntries.forEach(f => { const y = parseDate(f.date || f.dateTime)?.year; if (y) years.add(y); });
+    familyExpenses.forEach(e => { const y = parseDate(e.date)?.year; if (y) years.add(y); });
+    salaryPayments.forEach(p => { const y = parseDate(p.date)?.year; if (y) years.add(y); });
+    loansGiven.forEach(l => { const y = parseDate(l.startDate)?.year; if (y) years.add(y); });
+    loansReceived.forEach(l => { const y = parseDate(l.startDate)?.year; if (y) years.add(y); });
+    bitEntries.forEach(b => { const y = parseDate(b.dateEntry)?.year; if (y) years.add(y); });
+    hammerEntries.forEach(h => { const y = parseDate(h.dateEntry)?.year; if (y) years.add(y); });
+    pipeEntries.forEach(p => { const y = parseDate(p.dateEntry)?.year; if (y) years.add(y); });
+    
+    const arr = Array.from(years);
+    return arr.length > 0 ? arr.sort((a, b) => b - a) : [2026, 2025, 2024];
+  }, [businessBills, fuelEntries, familyExpenses, salaryPayments, loansGiven, loansReceived, bitEntries, hammerEntries, pipeEntries]);
+
+  // Selected date points
+  const [selectedYear, setSelectedYear] = useState<number>(detectedYears[0] || 2026);
+  const [selectedMonth, setSelectedMonth] = useState<number>(6); // Default to June
+  const [selectedDay, setSelectedDay] = useState<number>(15); // Default to 15th
+  
+  // Date Picker String Sync helper for Day-wise selector
+  const selectedDateStr = useMemo(() => {
+    const mm = String(selectedMonth).padStart(2, "0");
+    const dd = String(selectedDay).padStart(2, "0");
+    return `${selectedYear}-${mm}-${dd}`;
+  }, [selectedYear, selectedMonth, selectedDay]);
+
+  const handleDateChange = (val: string) => {
+    if (!val) return;
+    const parts = val.split("-");
+    if (parts.length === 3) {
+      setSelectedYear(parseInt(parts[0], 10));
+      setSelectedMonth(parseInt(parts[1], 10));
+      setSelectedDay(parseInt(parts[2], 10));
+    }
+  };
+
+  // Tab selections
+  const [activeExplorerTab, setActiveExplorerTab] = useState<"bills" | "payroll" | "fuel" | "family" | "loans">("bills");
+
+  // Local fallbacks translations helper
   const localT = (key: string) => {
     if (t) return t(key);
-    // basic inline translations fallback
     const fallbackDict: Record<string, Record<string, string>> = {
       en: {
         active_roster: "Active June Roster",
@@ -123,750 +183,908 @@ export default function MobileDashboard({
     };
     return fallbackDict[language]?.[key] || key;
   };
-  const [activeChartTab, setActiveChartTab] = useState<"salary" | "fuel" | "finance" | "family">("salary");
 
+  // Master Filter Function
+  const filterByPeriod = (dateStr?: string) => {
+    if (!dateStr) return false;
+    const p = parseDate(dateStr);
+    if (!p) return false;
 
-  // Calculations for Business Analytics
-  const totalDrivers = labours.filter(l => l.skillType === "Driver").length;
-  const totalHelpers = labours.filter(l => l.skillType === "Helper").length;
-  const totalVehicles = vehicles.length;
+    if (timeGrain === "overall") return true;
+    if (timeGrain === "year") return p.year === selectedYear;
+    if (timeGrain === "month") return p.year === selectedYear && p.month === selectedMonth;
+    if (timeGrain === "day") return p.year === selectedYear && p.month === selectedMonth && p.day === selectedDay;
+    return false;
+  };
 
-  const totalSalaryPaid = salaryPayments
-    .filter(p => p.status === "Paid")
-    .reduce((sum, p) => sum + (Number(p.netPaid) || 0), 0);
+  // Running Stock Check up to End of Selected Period
+  const isBeforeOrEqualPeriod = (dateStr?: string) => {
+    if (!dateStr) return false;
+    const p = parseDate(dateStr);
+    if (!p) return false;
 
-  const totalSalaryPending = salaryPayments
-    .filter(p => p.status === "Pending")
-    .reduce((sum, p) => sum + (Number(p.netPaid) || 0), 0);
+    if (timeGrain === "overall") return true;
+    if (timeGrain === "year") return p.year <= selectedYear;
+    if (timeGrain === "month") {
+      if (p.year < selectedYear) return true;
+      if (p.year === selectedYear) return p.month <= selectedMonth;
+      return false;
+    }
+    if (timeGrain === "day") {
+      if (p.year < selectedYear) return true;
+      if (p.year === selectedYear) {
+        if (p.month < selectedMonth) return true;
+        if (p.month === selectedMonth) return p.day <= selectedDay;
+      }
+      return false;
+    }
+    return false;
+  };
 
-  const totalFuelExpense = fuelEntries.reduce((sum, f) => {
-    const val = f.totalAmount !== undefined ? f.totalAmount : f.cost;
-    return sum + (Number(val) || 0);
-  }, 0);
+  // Filtered Datasets
+  const filteredBills = useMemo(() => businessBills.filter(b => filterByPeriod(b.billDate)), [businessBills, timeGrain, selectedYear, selectedMonth, selectedDay]);
+  const filteredFuel = useMemo(() => fuelEntries.filter(f => filterByPeriod(f.date || f.dateTime)), [fuelEntries, timeGrain, selectedYear, selectedMonth, selectedDay]);
+  const filteredSalary = useMemo(() => salaryPayments.filter(s => filterByPeriod(s.date)), [salaryPayments, timeGrain, selectedYear, selectedMonth, selectedDay]);
+  const filteredLoansGiven = useMemo(() => loansGiven.filter(l => filterByPeriod(l.startDate)), [loansGiven, timeGrain, selectedYear, selectedMonth, selectedDay]);
+  const filteredLoansReceived = useMemo(() => loansReceived.filter(l => filterByPeriod(l.startDate)), [loansReceived, timeGrain, selectedYear, selectedMonth, selectedDay]);
+  const filteredFamily = useMemo(() => familyExpenses.filter(e => filterByPeriod(e.date)), [familyExpenses, timeGrain, selectedYear, selectedMonth, selectedDay]);
+  const filteredBits = useMemo(() => bitEntries.filter(b => filterByPeriod(b.dateEntry)), [bitEntries, timeGrain, selectedYear, selectedMonth, selectedDay]);
+  const filteredHammers = useMemo(() => hammerEntries.filter(h => filterByPeriod(h.dateEntry)), [hammerEntries, timeGrain, selectedYear, selectedMonth, selectedDay]);
+  const filteredPipes = useMemo(() => pipeEntries.filter(p => filterByPeriod(p.dateEntry)), [pipeEntries, timeGrain, selectedYear, selectedMonth, selectedDay]);
 
-  const totalFinanceGiven = loansGiven.reduce((sum, l) => {
-    const val = l.amountGiven !== undefined ? l.amountGiven : l.loanAmount;
-    return sum + (Number(val) || 0);
-  }, 0);
+  // Aggregated Financial Metrics
+  const revenueTotal = useMemo(() => filteredBills.reduce((sum, b) => sum + (b.amount || 0), 0), [filteredBills]);
+  const revenueReceived = useMemo(() => filteredBills.filter(b => b.status === "Paid").reduce((sum, b) => sum + (b.amount || 0), 0), [filteredBills]);
+  const revenuePending = useMemo(() => filteredBills.filter(b => b.status === "Pending").reduce((sum, b) => sum + (b.amount || 0), 0), [filteredBills]);
 
-  const totalFinanceReceived = loansReceived.reduce((sum, l) => {
-    const val = l.amount !== undefined ? l.amount : l.borrowedAmount;
-    return sum + (Number(val) || 0);
-  }, 0);
+  const expSalaryPaid = useMemo(() => filteredSalary.filter(s => s.status === "Paid").reduce((sum, s) => sum + (Number(s.netPaid) || 0), 0), [filteredSalary]);
+  const expSalaryPending = useMemo(() => filteredSalary.filter(s => s.status === "Pending").reduce((sum, s) => sum + (Number(s.netPaid) || 0), 0), [filteredSalary]);
 
-  // Business Profit / Loss computation
-  const rawProfitLoss = (totalFinanceReceived + 145000) - (totalSalaryPaid + totalFuelExpense + totalFinanceGiven);
-  const monthlyProfitLoss = isNaN(rawProfitLoss) ? 0 : rawProfitLoss;
-
-  // Calculations for Finance Analytics
-  const totalInterestEarned = loansGiven.reduce((sum, l) => sum + (l.interestAmount ?? 0), 0);
-  const totalInterestPaid = loansReceived.reduce((sum, l) => sum + (l.interestAmount ?? 0), 0);
+  const expFuel = useMemo(() => filteredFuel.reduce((sum, f) => sum + (Number(f.totalAmount !== undefined ? f.totalAmount : f.cost) || 0), 0), [filteredFuel]);
+  const expFamily = useMemo(() => filteredFamily.reduce((sum, e) => sum + e.amount, 0), [filteredFamily]);
   
-  const pendingCollections = loansGiven
-    .filter(l => l.collectionStatus === "Pending")
-    .reduce((sum, l) => sum + (l.amountGiven ?? l.loanAmount ?? 0) + (l.interestAmount ?? 0), 0);
-
-  const pendingPayments = loansReceived
-    .filter(l => l.interestStatus === "Pending")
-    .reduce((sum, l) => sum + (l.amount ?? l.borrowedAmount ?? 0) + (l.interestAmount ?? 0), 0);
-
-  // Calculations for Family Analytics
-  const totalFamilyExpenses = familyExpenses.reduce((sum, e) => sum + e.amount, 0);
+  const expTools = useMemo(() => {
+    const bits = filteredBits.reduce((sum, b) => sum + (b.rate || 0), 0);
+    const hammers = filteredHammers.reduce((sum, h) => sum + (h.rate || 0), 0);
+    return bits + hammers;
+  }, [filteredBits, filteredHammers]);
   
-  // Expenses Filtered for current month (June 2026)
-  const monthlyFamilyExpenses = familyExpenses
-    .filter(e => e.date.startsWith("2026-06"))
-    .reduce((sum, e) => sum + e.amount, 0);
+  const expPipes = useMemo(() => filteredPipes.reduce((sum, p) => sum + (p.grandPrice || p.grandTotal || 0), 0), [filteredPipes]);
 
-  const totalPendingBillsAmount = businessBills
-    .filter(b => b.status === "Pending")
-    .reduce((sum, b) => sum + (b.amount || 0), 0);
+  const outLent = useMemo(() => filteredLoansGiven.reduce((sum, l) => sum + (l.amountGiven ?? l.loanAmount ?? 0), 0), [filteredLoansGiven]);
+  const incBorrowed = useMemo(() => filteredLoansReceived.reduce((sum, l) => sum + (l.amount ?? l.borrowedAmount ?? 0), 0), [filteredLoansReceived]);
 
-  // Group family expenses by category for analytics
-  const categoriesList = ["Food", "Medical", "Education", "Shopping", "Travel", "House Rent", "Electricity", "Water Bill", "Internet", "Entertainment", "Other"];
-  const categoryExpenses = categoriesList.map(cat => {
-    const total = familyExpenses
-      .filter(e => e.reason === cat || (e as any).category === cat)
-      .reduce((sum, e) => sum + e.amount, 0);
-    return { name: cat, amount: total };
-  }).filter(c => c.amount > 0);
+  // Consolidated Inflow & Outflow
+  const totalInflow = revenueReceived + incBorrowed;
+  const totalOutflow = expSalaryPaid + expFuel + expFamily + expTools + expPipes + outLent;
+  const netCashFlow = totalInflow - totalOutflow;
+
+  // Running Stock calculations (based on isBeforeOrEqualPeriod)
+  const casingStockData = useMemo(() => {
+    const reg7High = pipeEntries.filter(p => isBeforeOrEqualPeriod(p.dateEntry)).reduce((s, p) => s + Number(p.pipe7HighCount || 0), 0);
+    const reg7Medium = pipeEntries.filter(p => isBeforeOrEqualPeriod(p.dateEntry)).reduce((s, p) => s + Number(p.pipe7MediumCount || 0), 0);
+    const reg10High = pipeEntries.filter(p => isBeforeOrEqualPeriod(p.dateEntry)).reduce((s, p) => s + Number(p.pipe10HighCount || 0), 0);
+    const reg10Medium = pipeEntries.filter(p => isBeforeOrEqualPeriod(p.dateEntry)).reduce((s, p) => s + Number(p.pipe10MediumCount || 0), 0);
+
+    const used7High = businessBills.filter(b => isBeforeOrEqualPeriod(b.billDate)).reduce((s, b) => s + Number(b.casing7HighFeet || 0), 0) / 20;
+    const used7Medium = businessBills.filter(b => isBeforeOrEqualPeriod(b.billDate)).reduce((s, b) => s + Number(b.casing7MediumFeet || 0), 0) / 20;
+    const used10High = businessBills.filter(b => isBeforeOrEqualPeriod(b.billDate)).reduce((s, b) => s + Number(b.casing10HighFeet || 0), 0) / 20;
+    const used10Medium = businessBills.filter(b => isBeforeOrEqualPeriod(b.billDate)).reduce((s, b) => s + Number(b.casing10MediumFeet || 0), 0) / 20;
+
+    const avail7High = Math.max(0, reg7High - used7High);
+    const avail7Medium = Math.max(0, reg7Medium - used7Medium);
+    const avail10High = Math.max(0, reg10High - used10High);
+    const avail10Medium = Math.max(0, reg10Medium - used10Medium);
+    
+    return {
+      avail7High: Math.round(avail7High),
+      avail7Medium: Math.round(avail7Medium),
+      avail10High: Math.round(avail10High),
+      avail10Medium: Math.round(avail10Medium),
+      totalAvail: Math.round(avail7High + avail7Medium + avail10High + avail10Medium)
+    };
+  }, [pipeEntries, businessBills, timeGrain, selectedYear, selectedMonth, selectedDay]);
+
+  // Chart 1: Time Series Cash Flow (AreaChart)
+  const timeSeriesTrendData = useMemo(() => {
+    if (timeGrain === "overall") {
+      // Group by year
+      const years = [...detectedYears].reverse();
+      if (years.length === 0) years.push(2026);
+      return years.map(yr => {
+        const bills = businessBills.filter(b => parseDate(b.billDate)?.year === yr);
+        const loansRec = loansReceived.filter(l => parseDate(l.startDate)?.year === yr);
+        const sal = salaryPayments.filter(s => parseDate(s.date)?.year === yr);
+        const fuel = fuelEntries.filter(f => parseDate(f.date || f.dateTime)?.year === yr);
+        const fam = familyExpenses.filter(e => parseDate(e.date)?.year === yr);
+        const lGiven = loansGiven.filter(l => parseDate(l.startDate)?.year === yr);
+        const bits = bitEntries.filter(b => parseDate(b.dateEntry)?.year === yr);
+        const hams = hammerEntries.filter(h => parseDate(h.dateEntry)?.year === yr);
+        const pipes = pipeEntries.filter(p => parseDate(p.dateEntry)?.year === yr);
+
+        const inc = bills.filter(b => b.status === "Paid").reduce((sum, b) => sum + (b.amount || 0), 0) +
+                    loansRec.reduce((sum, l) => sum + (l.amount ?? l.borrowedAmount ?? 0), 0);
+
+        const exp = sal.filter(s => s.status === "Paid").reduce((sum, s) => sum + (Number(s.netPaid) || 0), 0) +
+                    fuel.reduce((sum, f) => sum + (Number(f.totalAmount !== undefined ? f.totalAmount : f.cost) || 0), 0) +
+                    fam.reduce((sum, e) => sum + e.amount, 0) +
+                    lGiven.reduce((sum, l) => sum + (l.amountGiven ?? l.loanAmount ?? 0), 0) +
+                    bits.reduce((sum, b) => sum + (b.rate || 0), 0) +
+                    hams.reduce((sum, h) => sum + (h.rate || 0), 0) +
+                    pipes.reduce((sum, p) => sum + (p.grandPrice || p.grandTotal || 0), 0);
+
+        return { name: String(yr), Inflow: inc, Outflow: exp, Net: inc - exp };
+      });
+    }
+
+    if (timeGrain === "year") {
+      // Group by months (Jan - Dec)
+      const months = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+      return months.map((mName, index) => {
+        const mNum = index + 1;
+        const bills = businessBills.filter(b => { const p = parseDate(b.billDate); return p?.year === selectedYear && p?.month === mNum; });
+        const loansRec = loansReceived.filter(l => { const p = parseDate(l.startDate); return p?.year === selectedYear && p?.month === mNum; });
+        const sal = salaryPayments.filter(s => { const p = parseDate(s.date); return p?.year === selectedYear && p?.month === mNum; });
+        const fuel = fuelEntries.filter(f => { const p = parseDate(f.date || f.dateTime); return p?.year === selectedYear && p?.month === mNum; });
+        const fam = familyExpenses.filter(e => { const p = parseDate(e.date); return p?.year === selectedYear && p?.month === mNum; });
+        const lGiven = loansGiven.filter(l => { const p = parseDate(l.startDate); return p?.year === selectedYear && p?.month === mNum; });
+        const bits = bitEntries.filter(b => { const p = parseDate(b.dateEntry); return p?.year === selectedYear && p?.month === mNum; });
+        const hams = hammerEntries.filter(h => { const p = parseDate(h.dateEntry); return p?.year === selectedYear && p?.month === mNum; });
+        const pipes = pipeEntries.filter(p => { const pt = parseDate(p.dateEntry); return pt?.year === selectedYear && pt?.month === mNum; });
+
+        const inc = bills.filter(b => b.status === "Paid").reduce((sum, b) => sum + (b.amount || 0), 0) +
+                    loansRec.reduce((sum, l) => sum + (l.amount ?? l.borrowedAmount ?? 0), 0);
+
+        const exp = sal.filter(s => s.status === "Paid").reduce((sum, s) => sum + (Number(s.netPaid) || 0), 0) +
+                    fuel.reduce((sum, f) => sum + (Number(f.totalAmount !== undefined ? f.totalAmount : f.cost) || 0), 0) +
+                    fam.reduce((sum, e) => sum + e.amount, 0) +
+                    lGiven.reduce((sum, l) => sum + (l.amountGiven ?? l.loanAmount ?? 0), 0) +
+                    bits.reduce((sum, b) => sum + (b.rate || 0), 0) +
+                    hams.reduce((sum, h) => sum + (h.rate || 0), 0) +
+                    pipes.reduce((sum, p) => sum + (p.grandPrice || p.grandTotal || 0), 0);
+
+        return { name: mName, Inflow: inc, Outflow: exp, Net: inc - exp };
+      });
+    }
+
+    if (timeGrain === "month") {
+      // Group by days in selected month (at 5-day intervals to fit compact mobile view cleanly)
+      const daysInMonth = new Date(selectedYear, selectedMonth, 0).getDate();
+      const nodes = [];
+      for (let i = 1; i <= daysInMonth; i++) {
+        const label = i % 5 === 0 || i === 1 || i === daysInMonth ? `${selectedMonth}/${i}` : "";
+        const bills = businessBills.filter(b => { const p = parseDate(b.billDate); return p?.year === selectedYear && p?.month === selectedMonth && p?.day === i; });
+        const loansRec = loansReceived.filter(l => { const p = parseDate(l.startDate); return p?.year === selectedYear && p?.month === selectedMonth && p?.day === i; });
+        const sal = salaryPayments.filter(s => { const p = parseDate(s.date); return p?.year === selectedYear && p?.month === selectedMonth && p?.day === i; });
+        const fuel = fuelEntries.filter(f => { const p = parseDate(f.date || f.dateTime); return p?.year === selectedYear && p?.month === selectedMonth && p?.day === i; });
+        const fam = familyExpenses.filter(e => { const p = parseDate(e.date); return p?.year === selectedYear && p?.month === selectedMonth && p?.day === i; });
+        const lGiven = loansGiven.filter(l => { const p = parseDate(l.startDate); return p?.year === selectedYear && p?.month === selectedMonth && p?.day === i; });
+        const bits = bitEntries.filter(b => { const p = parseDate(b.dateEntry); return p?.year === selectedYear && p?.month === selectedMonth && p?.day === i; });
+        const hams = hammerEntries.filter(h => { const p = parseDate(h.dateEntry); return p?.year === selectedYear && p?.month === selectedMonth && p?.day === i; });
+        const pipes = pipeEntries.filter(p => { const pt = parseDate(p.dateEntry); return pt?.year === selectedYear && pt?.month === selectedMonth && pt?.day === i; });
+
+        const inc = bills.filter(b => b.status === "Paid").reduce((sum, b) => sum + (b.amount || 0), 0) +
+                    loansRec.reduce((sum, l) => sum + (l.amount ?? l.borrowedAmount ?? 0), 0);
+
+        const exp = sal.filter(s => s.status === "Paid").reduce((sum, s) => sum + (Number(s.netPaid) || 0), 0) +
+                    fuel.reduce((sum, f) => sum + (Number(f.totalAmount !== undefined ? f.totalAmount : f.cost) || 0), 0) +
+                    fam.reduce((sum, e) => sum + e.amount, 0) +
+                    lGiven.reduce((sum, l) => sum + (l.amountGiven ?? l.loanAmount ?? 0), 0) +
+                    bits.reduce((sum, b) => sum + (b.rate || 0), 0) +
+                    hams.reduce((sum, h) => sum + (h.rate || 0), 0) +
+                    pipes.reduce((sum, p) => sum + (p.grandPrice || p.grandTotal || 0), 0);
+
+        nodes.push({ name: label || String(i), Inflow: inc, Outflow: exp, Net: inc - exp });
+      }
+      return nodes;
+    }
+
+    // Day-wise comparison (shows items breakdown of that day directly)
+    return [
+      { name: "Bills Rec.", Inflow: revenueReceived, Outflow: 0 },
+      { name: "Salary Wages", Inflow: 0, Outflow: expSalaryPaid },
+      { name: "Fleet Diesel", Inflow: 0, Outflow: expFuel },
+      { name: "Family Expenses", Inflow: 0, Outflow: expFamily },
+      { name: "Tools / Spares", Inflow: 0, Outflow: expTools + expPipes },
+      { name: "Lent Outflow", Inflow: 0, Outflow: outLent },
+      { name: "Borrowed In", Inflow: incBorrowed, Outflow: 0 }
+    ];
+  }, [timeGrain, detectedYears, selectedYear, selectedMonth, selectedDay, businessBills, fuelEntries, familyExpenses, salaryPayments, loansGiven, loansReceived, bitEntries, hammerEntries, pipeEntries, revenueReceived, expSalaryPaid, expFuel, expFamily, expTools, expPipes, outLent, incBorrowed]);
+
+  // Chart 2: Expense Breakdown Mix (BarChart)
+  const expenseBreakdownData = useMemo(() => {
+    return [
+      { name: "Payroll", Amount: expSalaryPaid, color: "#6366f1" },
+      { name: "Fuel", Amount: expFuel, color: "#f59e0b" },
+      { name: "Family Exp", Amount: expFamily, color: "#ec4899" },
+      { name: "Tools & Spares", Amount: expTools, color: "#3b82f6" },
+      { name: "Casing Pipes", Amount: expPipes, color: "#10b981" },
+      { name: "Loans Lent", Amount: outLent, color: "#8b5cf6" }
+    ].filter(item => item.Amount > 0);
+  }, [expSalaryPaid, expFuel, expFamily, expTools, expPipes, outLent]);
+
+  // Chart 3: Pie Chart data for budget allocation
+  const pieDistributionData = useMemo(() => {
+    return [
+      { name: "Business Operations", value: expSalaryPaid + expFuel + expTools + expPipes, color: "#0ea5e9" },
+      { name: "Lent Portfolios", value: outLent, color: "#a855f7" },
+      { name: "Domestic Expense", value: expFamily, color: "#f43f5e" }
+    ].filter(p => p.value > 0);
+  }, [expSalaryPaid, expFuel, expFamily, expTools, expPipes, outLent]);
+
+  // Months labels dictionary
+  const monthsDict = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
 
   return (
-    <div id="mobile-dashboard-scroll" className="space-y-4 pb-4">
-      {/* KPI WELCOME CARD */}
-      <div className="bg-gradient-to-br from-slate-900 via-indigo-950/20 to-slate-950 p-4 rounded-2xl border border-indigo-500/20 relative overflow-hidden shadow-lg shadow-indigo-950/20">
-        <div className="absolute -right-8 -top-8 w-24 h-24 bg-indigo-500/10 rounded-full blur-xl" />
-        <div className="absolute top-0 right-0 p-3 bg-indigo-500/10 rounded-bl-2xl">
-          <Activity className="w-5 h-5 text-indigo-400 animate-pulse" />
-        </div>
-        <span id="brand-header-label" className="inline-block font-mono font-bold uppercase tracking-widest bg-slate-900/95 px-3 py-1.5 rounded-lg border border-sky-400/30">
-          Smart Business & Family ERP
-        </span>
-        <h2 className="text-base font-black text-slate-100 mt-2 tracking-tight">{localT("operations_analytics")}</h2>
-        <p className="text-[10px] text-slate-400 mt-0.5">{localT("ops_subtitle")}</p>
+    <div id="mobile-dashboard-scroll" className="space-y-5 pb-6 text-slate-100 bg-[#0b0f19] min-h-screen">
+      
+      {/* 1. PREMIUM HEADER SYSTEM */}
+      <div className="relative overflow-hidden bg-gradient-to-br from-slate-900 via-slate-950/80 to-[#0e1628] p-5 rounded-3xl border border-slate-800 shadow-xl shadow-[#040810]/50">
+        <div className="absolute top-0 right-0 w-24 h-24 bg-sky-500/10 rounded-full blur-2xl" />
+        <div className="absolute bottom-0 left-0 w-32 h-32 bg-indigo-500/5 rounded-full blur-3xl" />
         
-        <div className="flex flex-wrap items-center gap-2 mt-3.5">
-          <span id="net-cash-flow-badge" className={`text-[10px] font-mono font-extrabold px-2.5 py-1 rounded-xl flex items-center gap-1 border ${
-            monthlyProfitLoss >= 0 
-              ? "bg-emerald-950/80 text-emerald-400 border-emerald-500/30 shadow-[0_0_8px_rgba(16,185,129,0.1)]" 
-              : "bg-rose-950/80 text-rose-400 border-rose-500/30 shadow-[0_0_8px_rgba(244,63,94,0.1)]"
-          }`}>
-            {monthlyProfitLoss >= 0 ? <TrendingUp className="w-3 h-3 text-emerald-400" /> : <TrendingDown className="w-3 h-3 text-rose-400" />}
-            {localT("net_cash_flow")}: ₹{monthlyProfitLoss.toLocaleString()}
-          </span>
-          <span className="text-[10px] text-slate-400 font-medium bg-slate-950/60 px-2 py-1 rounded-lg border border-slate-800/60">
-            {localT("active_roster")}
-          </span>
+        {/* Core title badge */}
+        <div className="flex justify-between items-start">
+          <div className="flex items-center gap-2">
+            <span className="h-2 w-2 rounded-full bg-emerald-500 animate-pulse" />
+            <span className="text-[10px] font-bold font-mono tracking-widest text-sky-400 bg-sky-950/40 px-2 py-0.5 rounded border border-sky-800/30">
+              SMART ERP CORE v3.1
+            </span>
+          </div>
+          <Activity className="w-5 h-5 text-indigo-400/80 animate-pulse" />
+        </div>
+
+        <h2 className="text-xl font-extrabold mt-3 tracking-tight bg-gradient-to-r from-slate-100 to-slate-300 bg-clip-text text-transparent">
+          Financial Control Desk
+        </h2>
+        <p className="text-[10.5px] text-slate-400 mt-1 font-mono">
+          Consolidated operations, ledger tracking & pipeline analytics
+        </p>
+
+        {/* Date Filter & Control System */}
+        <div className="mt-5 space-y-3.5 border-t border-slate-800/60 pt-4">
+          
+          {/* Main Time Grain Pill Selection */}
+          <div className="grid grid-cols-4 gap-1 p-1 bg-slate-950/80 rounded-xl border border-slate-800/60">
+            {(["overall", "year", "month", "day"] as const).map(grain => (
+              <button
+                key={grain}
+                type="button"
+                onClick={() => setTimeGrain(grain)}
+                className={`py-2 text-[10px] font-bold font-mono uppercase tracking-wider rounded-lg transition-all duration-300 ${
+                  timeGrain === grain
+                    ? "bg-gradient-to-r from-sky-500 to-indigo-600 text-white shadow-md shadow-sky-950/50"
+                    : "text-slate-400 hover:text-slate-200"
+                }`}
+              >
+                {grain.replace("-wise", "")}
+              </button>
+            ))}
+          </div>
+
+          {/* Conditional Sub-selectors depending on the grain */}
+          {timeGrain !== "overall" && (
+            <div className="flex flex-wrap items-center gap-2.5 animate-fadeIn">
+              
+              {/* Year Selector */}
+              <div className="flex-1 min-w-[80px]">
+                <label className="block text-[8.5px] font-mono text-slate-500 uppercase mb-1">Select Year</label>
+                <div className="relative">
+                  <select
+                    value={selectedYear}
+                    onChange={(e) => setSelectedYear(parseInt(e.target.value, 10))}
+                    className="w-full bg-slate-950 border border-slate-800 rounded-lg py-1.5 px-2.5 text-xs text-slate-200 focus:outline-none focus:border-sky-500 font-mono appearance-none"
+                  >
+                    {detectedYears.map(yr => (
+                      <option key={yr} value={yr}>{yr}</option>
+                    ))}
+                  </select>
+                  <ChevronRight className="w-3.5 h-3.5 text-slate-500 absolute right-2.5 top-2.5 rotate-90 pointer-events-none" />
+                </div>
+              </div>
+
+              {/* Month Selector */}
+              {(timeGrain === "month" || timeGrain === "day") && (
+                <div className="flex-1 min-w-[100px]">
+                  <label className="block text-[8.5px] font-mono text-slate-500 uppercase mb-1">Select Month</label>
+                  <div className="relative">
+                    <select
+                      value={selectedMonth}
+                      onChange={(e) => setSelectedMonth(parseInt(e.target.value, 10))}
+                      className="w-full bg-slate-950 border border-slate-800 rounded-lg py-1.5 px-2.5 text-xs text-slate-200 focus:outline-none focus:border-sky-500 font-mono appearance-none"
+                    >
+                      {monthsDict.map((mName, index) => (
+                        <option key={mName} value={index + 1}>{mName}</option>
+                      ))}
+                    </select>
+                    <ChevronRight className="w-3.5 h-3.5 text-slate-500 absolute right-2.5 top-2.5 rotate-90 pointer-events-none" />
+                  </div>
+                </div>
+              )}
+
+              {/* Day Selector (Date Picker representation) */}
+              {timeGrain === "day" && (
+                <div className="flex-1 min-w-[120px]">
+                  <label className="block text-[8.5px] font-mono text-slate-500 uppercase mb-1">Select Day</label>
+                  <div className="relative">
+                    <input
+                      type="date"
+                      value={selectedDateStr}
+                      onChange={(e) => handleDateChange(e.target.value)}
+                      className="w-full bg-slate-950 border border-slate-800 rounded-lg py-1.5 px-2.5 text-xs text-slate-200 focus:outline-none focus:border-sky-500 font-mono appearance-none"
+                    />
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* Quick Active Label Display */}
+          <div className="flex justify-between items-center text-[10px] text-slate-500 font-mono bg-slate-950/40 p-2 rounded-lg border border-slate-900">
+            <span className="flex items-center gap-1">
+              <Filter className="w-3 h-3 text-sky-400" />
+              Viewing Data Grains:
+            </span>
+            <span className="text-slate-300 font-bold uppercase tracking-wider">
+              {timeGrain === "overall" && "ALL-TIME ACCUMULATED RECORDS"}
+              {timeGrain === "year" && `YEAR ${selectedYear}`}
+              {timeGrain === "month" && `${monthsDict[selectedMonth - 1]} ${selectedYear}`}
+              {timeGrain === "day" && `${selectedDateStr}`}
+            </span>
+          </div>
+
         </div>
       </div>
 
-      {/* Real-time Accumulated Data Metrics Grid with distinct color identities */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3.5">
+      {/* 2. CONSOLIDATED BALANCE SHEET HERO PANEL */}
+      <div className="relative overflow-hidden bg-gradient-to-br from-indigo-950/20 via-slate-900 to-slate-950 p-5 rounded-3xl border border-indigo-500/10 shadow-lg">
         
-        {/* Card 1: Labour Count (Indigo Theme) */}
-        <div className="bg-slate-900/40 p-3.5 rounded-2xl border border-indigo-500/20 hover:border-indigo-500/40 transition-all duration-300 shadow-sm relative overflow-hidden group">
-          <div className="absolute -right-4 -bottom-4 w-12 h-12 bg-indigo-500/5 rounded-full blur-md group-hover:scale-150 transition-transform duration-500" />
-          <div className="flex justify-between items-start">
-            <div>
-              <span className="text-[9.5px] font-mono text-slate-400 uppercase tracking-wider font-bold">{localT("labour_count")}</span>
-              <div className="text-lg font-black font-mono mt-1 text-indigo-300 flex items-baseline gap-1.5">
-                <span>{activeLabourCount}</span>
-                <span className="text-[10px] text-yellow-400 font-bold bg-yellow-950/40 px-1.5 py-0.5 rounded border border-yellow-900/30">{localT("active")}</span>
-              </div>
-            </div>
-            <div className="p-2 bg-indigo-950/80 rounded-xl text-indigo-400 border border-indigo-800/40">
-              <Users className="w-4 h-4" />
-            </div>
+        {/* Glowing aura */}
+        <div className={`absolute -right-16 -top-16 w-36 h-36 rounded-full blur-3xl opacity-20 transition-all ${
+          netCashFlow >= 0 ? "bg-emerald-500" : "bg-rose-500"
+        }`} />
+
+        <div className="flex justify-between items-start">
+          <div>
+            <span className="text-[10px] font-mono text-slate-400 uppercase tracking-widest block font-bold">NET PERIODIC SURPLUS</span>
+            <h1 className={`text-2xl font-black font-mono mt-1.5 flex items-center gap-1.5 leading-none ${
+              netCashFlow >= 0 ? "text-emerald-400" : "text-rose-400"
+            }`}>
+              ₹{netCashFlow.toLocaleString()}
+            </h1>
+          </div>
+          <span className={`p-2.5 rounded-xl border flex items-center justify-center ${
+            netCashFlow >= 0 
+              ? "bg-emerald-950/40 text-emerald-400 border-emerald-500/20" 
+              : "bg-rose-950/40 text-rose-400 border-rose-500/20"
+          }`}>
+            {netCashFlow >= 0 ? <TrendingUp className="w-4.5 h-4.5" /> : <TrendingDown className="w-4.5 h-4.5" />}
+          </span>
+        </div>
+
+        {/* Breakdown bar */}
+        <div className="mt-6 space-y-2">
+          <div className="flex justify-between text-[9px] font-mono text-slate-400">
+            <span>Period Inflow (₹{totalInflow.toLocaleString()})</span>
+            <span>Period Outflow (₹{totalOutflow.toLocaleString()})</span>
+          </div>
+          <div className="h-2 w-full bg-slate-950 rounded-full overflow-hidden flex border border-slate-900">
+            <div className="bg-emerald-500 h-full rounded-l" style={{ width: `${(totalInflow / (totalInflow + totalOutflow || 1)) * 100}%` }} />
+            <div className="bg-rose-500 h-full rounded-r" style={{ width: `${(totalOutflow / (totalInflow + totalOutflow || 1)) * 100}%` }} />
           </div>
         </div>
 
-        {/* Card 2: Lent Portfolio (Emerald Theme) */}
-        <div className="bg-slate-900/40 p-3.5 rounded-2xl border border-emerald-500/20 hover:border-emerald-500/40 transition-all duration-300 shadow-sm relative overflow-hidden group">
-          <div className="absolute -right-4 -bottom-4 w-12 h-12 bg-emerald-500/5 rounded-full blur-md group-hover:scale-150 transition-transform duration-500" />
-          <div className="flex justify-between items-start">
-            <div>
-              <span className="text-[9.5px] font-mono text-slate-400 uppercase tracking-wider font-bold">{localT("lent_portfolio")}</span>
-              <div className="text-lg font-black font-mono mt-1 text-emerald-400">
-                ₹{totalOutstandingLoanAmount.toLocaleString()}
-              </div>
-            </div>
-            <div className="p-2 bg-emerald-950/80 rounded-xl text-emerald-400 border border-emerald-800/40">
-              <TrendingUp className="w-4 h-4" />
-            </div>
-          </div>
-        </div>
+        {/* Dynamic subtext helper */}
+        <p className="text-[9.5px] text-slate-500 font-mono mt-3 text-center">
+          Inflow includes paid bills & loans received. Outflow includes salary, fuel, family expenses, tools, pipes & loans lent.
+        </p>
+      </div>
 
-        {/* Card 3: Family Expenses (Rose Theme) */}
-        <div className="bg-slate-900/40 p-3.5 rounded-2xl border border-rose-500/20 hover:border-rose-500/40 transition-all duration-300 shadow-sm relative overflow-hidden group">
-          <div className="absolute -right-4 -bottom-4 w-12 h-12 bg-rose-500/5 rounded-full blur-md group-hover:scale-150 transition-transform duration-500" />
+      {/* 3. DYNAMIC METRIC KPI CARDS GRID */}
+      <div className="grid grid-cols-2 gap-3.5">
+        
+        {/* KPI Card 1: Total Invoice Billing */}
+        <div className="bg-slate-900/60 p-4 rounded-2xl border border-slate-800/80 hover:border-slate-700 transition-all duration-300 shadow-sm relative overflow-hidden group">
           <div className="flex justify-between items-start">
             <div>
-              <span className="text-[9.5px] font-mono text-slate-400 uppercase tracking-wider font-bold">{localT("family_expenses")}</span>
-              <div className="text-lg font-black font-mono mt-1 text-rose-400">
-                ₹{totalMonthlyExpense.toLocaleString()}
+              <span className="text-[9px] font-mono text-slate-400 uppercase tracking-wider block font-bold">TOTAL BILLING</span>
+              <div className="text-sm font-black font-mono text-slate-200 mt-1.5">
+                ₹{revenueTotal.toLocaleString()}
               </div>
             </div>
-            <div className="p-2 bg-rose-950/80 rounded-xl text-rose-400 border border-rose-800/40">
-              <DollarSign className="w-4 h-4" />
-            </div>
-          </div>
-        </div>
-
-        {/* Card 4: Family Savings (Purple Theme) */}
-        <div className="bg-slate-900/40 p-3.5 rounded-2xl border border-purple-500/20 hover:border-purple-500/40 transition-all duration-300 shadow-sm relative overflow-hidden group">
-          <div className="absolute -right-4 -bottom-4 w-12 h-12 bg-purple-500/5 rounded-full blur-md group-hover:scale-150 transition-transform duration-500" />
-          <div className="flex justify-between items-start">
-            <div>
-              <span className="text-[9.5px] font-mono text-slate-400 uppercase tracking-wider font-bold">{localT("family_savings")}</span>
-              <div className="text-lg font-black font-mono mt-1 text-purple-400 flex items-baseline gap-1">
-                <span>{familySavingsRate}%</span>
-                <span className="text-[9px] text-purple-300 font-bold">{localT("surplus")}</span>
-              </div>
-            </div>
-            <div className="p-2 bg-purple-950/80 rounded-xl text-purple-400 border border-purple-800/40">
-              <ArrowUpRight className="w-4 h-4" />
-            </div>
-          </div>
-        </div>
-
-        {/* Card 5: Bit Count (Blue Theme) */}
-        <div className="bg-slate-900/40 p-3.5 rounded-2xl border border-blue-500/20 hover:border-blue-500/40 transition-all duration-300 shadow-sm relative overflow-hidden group">
-          <div className="absolute -right-4 -bottom-4 w-12 h-12 bg-blue-500/5 rounded-full blur-md group-hover:scale-150 transition-transform duration-500" />
-          <div className="flex justify-between items-start">
-            <div>
-              <span className="text-[9.5px] font-mono text-slate-400 uppercase tracking-wider font-bold">{localT("bit_count")}</span>
-              <div className="text-lg font-black font-mono mt-1 text-blue-700">
-                {bitEntries.length}
-              </div>
-            </div>
-            <div className="p-2 bg-blue-950/80 rounded-xl text-blue-400 border border-blue-800/40">
-              <Wrench className="w-4 h-4" />
-            </div>
-          </div>
-        </div>
-
-        {/* Card 6: Hammer Count (Amber Theme) */}
-        <div className="bg-slate-900/40 p-3.5 rounded-2xl border border-amber-500/20 hover:border-amber-500/40 transition-all duration-300 shadow-sm relative overflow-hidden group">
-          <div className="absolute -right-4 -bottom-4 w-12 h-12 bg-amber-500/5 rounded-full blur-md group-hover:scale-150 transition-transform duration-500" />
-          <div className="flex justify-between items-start">
-            <div>
-              <span className="text-[9.5px] font-mono text-slate-400 uppercase tracking-wider font-bold">{localT("hammer_count")}</span>
-              <div className="text-lg font-black font-mono mt-1 text-amber-700">
-                {hammerEntries.length}
-              </div>
-            </div>
-            <div className="p-2 bg-amber-950/80 rounded-xl text-amber-400 border border-amber-800/40">
-              <Hammer className="w-4 h-4" />
-            </div>
-          </div>
-        </div>
-
-        {/* Card 7: Number of Bill Count (Teal Theme) */}
-        <div className="bg-slate-900/40 p-3.5 rounded-2xl border border-teal-500/20 hover:border-teal-500/40 transition-all duration-300 shadow-sm relative overflow-hidden group">
-          <div className="absolute -right-4 -bottom-4 w-12 h-12 bg-teal-500/5 rounded-full blur-md group-hover:scale-150 transition-transform duration-500" />
-          <div className="flex justify-between items-start">
-            <div>
-              <span className="text-[9.5px] font-mono text-slate-400 uppercase tracking-wider font-bold">{localT("bill_count")}</span>
-              <div className="text-lg font-black font-mono mt-1 text-custom-violet">
-                {businessBills.length}
-              </div>
-            </div>
-            <div className="p-2 bg-teal-950/80 rounded-xl text-teal-400 border border-teal-800/40">
+            <div className="p-2 bg-indigo-950/40 rounded-xl text-indigo-400 border border-indigo-900/20">
               <FileText className="w-4 h-4" />
             </div>
           </div>
+          
+          <div className="mt-3.5 pt-3.5 border-t border-slate-850 space-y-1.5">
+            <div className="flex justify-between text-[8px] font-mono text-slate-400 leading-none">
+              <span>Paid: ₹{revenueReceived.toLocaleString()}</span>
+              <span className="text-amber-500">Pend: ₹{revenuePending.toLocaleString()}</span>
+            </div>
+            <div className="h-1 w-full bg-slate-950 rounded-full overflow-hidden flex">
+              <div className="bg-emerald-500 h-full" style={{ width: `${(revenueReceived / (revenueTotal || 1)) * 100}%` }} />
+              <div className="bg-amber-500 h-full" style={{ width: `${(revenuePending / (revenueTotal || 1)) * 100}%` }} />
+            </div>
+          </div>
         </div>
 
-        {/* Card 8: Pending Amount in Bill (Rose Theme) */}
-        <div className="bg-slate-900/40 p-3.5 rounded-2xl border border-rose-500/20 hover:border-rose-500/40 transition-all duration-300 shadow-sm relative overflow-hidden group">
-          <div className="absolute -right-4 -bottom-4 w-12 h-12 bg-rose-500/5 rounded-full blur-md group-hover:scale-150 transition-transform duration-500" />
+        {/* KPI Card 2: Operations Costs */}
+        <div className="bg-slate-900/60 p-4 rounded-2xl border border-slate-800/80 hover:border-slate-700 transition-all duration-300 shadow-sm relative overflow-hidden group">
           <div className="flex justify-between items-start">
             <div>
-              <span className="text-[9.5px] font-mono text-slate-400 uppercase tracking-wider font-bold">{localT("pending_bills_amount")}</span>
-              <div className="text-lg font-black font-mono mt-1 text-rose-700">
-                ₹{totalPendingBillsAmount.toLocaleString()}
+              <span className="text-[9px] font-mono text-slate-400 uppercase tracking-wider block font-bold">OPS COST</span>
+              <div className="text-sm font-black font-mono text-slate-200 mt-1.5">
+                ₹{(expSalaryPaid + expFuel + expTools + expPipes).toLocaleString()}
               </div>
             </div>
-            <div className="p-2 bg-rose-950/80 rounded-xl text-rose-400 border border-rose-800/40">
-              <AlertTriangle className="w-4 h-4" />
+            <div className="p-2 bg-rose-950/40 rounded-xl text-rose-455 border border-rose-900/20">
+              <Briefcase className="w-4 h-4" />
+            </div>
+          </div>
+
+          <div className="mt-3 text-[8.5px] font-mono text-slate-500 space-y-0.5 leading-none pt-2.5">
+            <div className="flex justify-between">
+              <span>Wages Paid:</span>
+              <span className="text-slate-300 font-bold">₹{expSalaryPaid.toLocaleString()}</span>
+            </div>
+            <div className="flex justify-between">
+              <span>Diesel Outlay:</span>
+              <span className="text-slate-300 font-bold">₹{expFuel.toLocaleString()}</span>
+            </div>
+          </div>
+        </div>
+
+        {/* KPI Card 3: Finance Ledger (Lending Desk) */}
+        <div className="bg-slate-900/60 p-4 rounded-2xl border border-slate-800/80 hover:border-slate-700 transition-all duration-300 shadow-sm relative overflow-hidden group">
+          <div className="flex justify-between items-start">
+            <div>
+              <span className="text-[9px] font-mono text-slate-400 uppercase tracking-wider block font-bold">DEBT PORTFOLIO</span>
+              <div className="text-sm font-black font-mono text-slate-200 mt-1.5">
+                ₹{(outLent - incBorrowed).toLocaleString()}
+              </div>
+            </div>
+            <div className="p-2 bg-emerald-950/40 rounded-xl text-emerald-400 border border-emerald-900/20">
+              <Wallet className="w-4 h-4" />
+            </div>
+          </div>
+
+          <div className="mt-3 text-[8.5px] font-mono text-slate-500 space-y-0.5 leading-none pt-2.5">
+            <div className="flex justify-between">
+              <span>Lent Out:</span>
+              <span className="text-emerald-400">₹{outLent.toLocaleString()}</span>
+            </div>
+            <div className="flex justify-between">
+              <span>Borrowed In:</span>
+              <span className="text-amber-400">₹{incBorrowed.toLocaleString()}</span>
+            </div>
+          </div>
+        </div>
+
+        {/* KPI Card 4: Domestic Outlay */}
+        <div className="bg-slate-900/60 p-4 rounded-2xl border border-slate-800/80 hover:border-slate-700 transition-all duration-300 shadow-sm relative overflow-hidden group">
+          <div className="flex justify-between items-start">
+            <div>
+              <span className="text-[9px] font-mono text-slate-400 uppercase tracking-wider block font-bold">FAMILY EXPENSE</span>
+              <div className="text-sm font-black font-mono text-slate-200 mt-1.5">
+                ₹{expFamily.toLocaleString()}
+              </div>
+            </div>
+            <div className="p-2 bg-purple-950/40 rounded-xl text-purple-400 border border-purple-900/20">
+              <Home className="w-4 h-4" />
+            </div>
+          </div>
+
+          <div className="mt-3 text-[8.5px] font-mono text-slate-500 space-y-0.5 leading-none pt-2.5">
+            <div className="flex justify-between">
+              <span>Transactions:</span>
+              <span className="text-slate-300 font-bold">{filteredFamily.length} logged</span>
+            </div>
+            <div className="flex justify-between">
+              <span>Monthly Budget:</span>
+              <span className="text-rose-455 font-bold">₹{totalMonthlyExpense.toLocaleString()}</span>
             </div>
           </div>
         </div>
 
       </div>
 
-      {/* Stock Availability Section */}
-      {(() => {
-        // Registered stock counts (from pipe suppliers)
-        const reg7High = (pipeEntries as PipeEntry[]).reduce((s, p) => s + Number(p.pipe7HighCount || 0), 0);
-        const reg7Medium = (pipeEntries as PipeEntry[]).reduce((s, p) => s + Number(p.pipe7MediumCount || 0), 0);
-        const reg10High = (pipeEntries as PipeEntry[]).reduce((s, p) => s + Number(p.pipe10HighCount || 0), 0);
-        const reg10Medium = (pipeEntries as PipeEntry[]).reduce((s, p) => s + Number(p.pipe10MediumCount || 0), 0);
-
-        // Used counts from bills (each 20 ft = 1 casing pipe)
-        const used7High = (businessBills as BusinessBill[]).reduce((s, b) => s + Number(b.casing7HighFeet || 0), 0) / 20;
-        const used7Medium = (businessBills as BusinessBill[]).reduce((s, b) => s + Number(b.casing7MediumFeet || 0), 0) / 20;
-        const used10High = (businessBills as BusinessBill[]).reduce((s, b) => s + Number(b.casing10HighFeet || 0), 0) / 20;
-        const used10Medium = (businessBills as BusinessBill[]).reduce((s, b) => s + Number(b.casing10MediumFeet || 0), 0) / 20;
-
-        // Available stock
-        const avail7High = Math.max(0, reg7High - used7High);
-        const avail7Medium = Math.max(0, reg7Medium - used7Medium);
-        const avail10High = Math.max(0, reg10High - used10High);
-        const avail10Medium = Math.max(0, reg10Medium - used10Medium);
-        const totalAvail = avail7High + avail7Medium + avail10High + avail10Medium;
-
-        return (
-          <div className="space-y-2">
-            {/* Scoped style override — guarantees colors + font size beat any global !important rule */}
-            <style>{`
-              span.stock-card-number {
-                font-size: 32px !important;
-                line-height: 38px !important;
-                font-weight: 800 !important;
-              }
-              span.stock-card-number.stock-card-number-blue {
-                color: #1e40af !important;
-              }
-              span.stock-card-number.stock-card-number-green {
-                color: #059669 !important;
-              }
-              span.stock-card-number.stock-card-number-orange {
-                color: #c2410c !important;
-              }
-              span.stock-card-unit {
-                font-size: 18px !important;
-                line-height: 24px !important;
-                font-weight: 600 !important;
-                color: #64748b !important;
-              }
-            `}</style>
-
-            {/* Section header */}
-            <div className="flex items-center gap-2 px-0.5">
-              <div className="p-1.5 bg-cyan-500/10 rounded-lg text-cyan-400 border border-cyan-500/20">
-                <Layers className="w-3.5 h-3.5" />
-              </div>
-              <h3 className="text-xs font-bold text-slate-300 uppercase tracking-wider font-mono">Casing Stock Available</h3>
-            </div>
-
-            <div className="grid grid-cols-2 lg:grid-cols-5 gap-3">
-
-              {/* Total Stock Available */}
-              <div className="col-span-2 lg:col-span-1 stock-card-blue p-3 rounded-2xl border transition-all duration-300 shadow-sm relative overflow-hidden group">
-                <div className="absolute -right-3 -bottom-3 w-10 h-10 bg-blue-500/5 rounded-full blur-md group-hover:scale-150 transition-transform duration-500" />
-                <div className="flex justify-between items-start">
-                  <div>
-                    <span className="stock-card-label block uppercase">Total Stock Available</span>
-                    <div className="mt-1 flex items-baseline gap-1">
-                      <span className="stock-card-number stock-card-number-blue">{Math.round(totalAvail)}</span>
-                      <span className="stock-card-unit">pipes</span>
-                    </div>
-                  </div>
-                  <div className="p-2 bg-[#294d5a] rounded-xl text-white">
-                    <Package className="w-4 h-4" />
-                  </div>
-                </div>
-              </div>
-
-              {/* 7" High QLT */}
-              <div className="col-span-1 stock-card-green p-3 rounded-2xl border transition-all duration-300 shadow-sm relative overflow-hidden group">
-                <div className="absolute -right-3 -bottom-3 w-10 h-10 bg-emerald-500/5 rounded-full blur-md group-hover:scale-150 transition-transform duration-500" />
-                <div className="flex justify-between items-start">
-                  <div>
-                    <span className="stock-card-label block uppercase">7" H QLT</span>
-                    <div className="mt-1 flex items-baseline gap-1">
-                      <span className="stock-card-number stock-card-number-green">{Math.round(avail7High)}</span>
-                      <span className="stock-card-unit">pipes</span>
-                    </div>
-                  </div>
-                  <div className="p-2 bg-[#2d5443] rounded-xl text-white">
-                    <PackageCheck className="w-4 h-4" />
-                  </div>
-                </div>
-              </div>
-
-              {/* 7" Medium QLT */}
-              <div className="col-span-1 stock-card-green p-3 rounded-2xl border transition-all duration-300 shadow-sm relative overflow-hidden group">
-                <div className="absolute -right-3 -bottom-3 w-10 h-10 bg-teal-500/5 rounded-full blur-md group-hover:scale-150 transition-transform duration-500" />
-                <div className="flex justify-between items-start">
-                  <div>
-                    <span className="stock-card-label block uppercase">7" M QLT</span>
-                    <div className="mt-1 flex items-baseline gap-1">
-                      <span className="stock-card-number stock-card-number-green">{Math.round(avail7Medium)}</span>
-                      <span className="stock-card-unit">pipes</span>
-                    </div>
-                  </div>
-                  <div className="p-2 bg-[#2d5443] rounded-xl text-white">
-                    <PackageCheck className="w-4 h-4" />
-                  </div>
-                </div>
-              </div>
-
-              {/* 10" High QLT */}
-              <div className="col-span-1 stock-card-orange p-3 rounded-2xl border transition-all duration-300 shadow-sm relative overflow-hidden group">
-                <div className="absolute -right-3 -bottom-3 w-10 h-10 bg-orange-500/5 rounded-full blur-md group-hover:scale-150 transition-transform duration-500" />
-                <div className="flex justify-between items-start">
-                  <div>
-                    <span className="stock-card-label block uppercase">10" H QLT</span>
-                    <div className="mt-1 flex items-baseline gap-1">
-                      <span className="stock-card-number stock-card-number-orange">{Math.round(avail10High)}</span>
-                      <span className="stock-card-unit">pipes</span>
-                    </div>
-                  </div>
-                  <div className="p-2 bg-[#643b27] rounded-xl text-white">
-                    <PackageCheck className="w-4 h-4" />
-                  </div>
-                </div>
-              </div>
-
-              {/* 10" Medium QLT */}
-              <div className="col-span-1 stock-card-orange p-3 rounded-2xl border transition-all duration-300 shadow-sm relative overflow-hidden group">
-                <div className="absolute -right-3 -bottom-3 w-10 h-10 bg-amber-500/5 rounded-full blur-md group-hover:scale-150 transition-transform duration-500" />
-                <div className="flex justify-between items-start">
-                  <div>
-                    <span className="stock-card-label block uppercase">10" M QLT</span>
-                    <div className="mt-1 flex items-baseline gap-1">
-                      <span className="stock-card-number stock-card-number-orange">{Math.round(avail10Medium)}</span>
-                      <span className="stock-card-unit">pipes</span>
-                    </div>
-                  </div>
-                  <div className="p-2 bg-[#643b27] rounded-xl text-white">
-                    <PackageCheck className="w-4 h-4" />
-                  </div>
-                </div>
-              </div>
-
-            </div>
-          </div>
-        );
-      })()}
-
-      {/* 1. BUSINESS METRICS */}
-      <div className="bg-indigo-950/40 rounded-2xl border border-indigo-900/50 p-4 space-y-3 shadow-md shadow-indigo-950/20">
-        <div className="flex items-center justify-between pb-2.5 border-b border-slate-800">
-          <div className="flex items-center gap-2">
-            <div className="p-1.5 bg-indigo-500/10 rounded-lg text-indigo-400 border border-indigo-500/20">
-              <Briefcase className="w-3.5 h-3.5" />
-            </div>
-            <h3 className="text-xs font-bold text-slate-200 uppercase tracking-wider font-mono">{localT("business_ops")}</h3>
-          </div>
-          <span className="text-[9px] font-mono text-slate-500">{localT("fleet_workforce")}</span>
-        </div>
+      {/* 4. PREMIUM CASING STOCK TRACKER (Running stock up to select period) */}
+      <div className="bg-slate-900/60 p-4 rounded-3xl border border-slate-800/80 shadow-md">
         
-        <div className="grid grid-cols-2 gap-2.5 text-xs">
-          {/* Item 1: Drivers & Helpers */}
-          <div className="bg-slate-950/80 p-3 rounded-xl border border-indigo-500/10 hover:border-indigo-500/20 transition-colors">
-            <div className="text-slate-500 text-[9px] font-mono leading-none tracking-wider">{localT("workforce_roster")}</div>
-            <div className="font-extrabold text-slate-200 mt-2 flex items-baseline gap-2">
-              <span className="text-indigo-400 text-sm font-mono">{totalDrivers} <span className="text-[9px] font-normal text-slate-500">{localT("drivers")}</span></span>
-              <span className="text-slate-700 font-normal text-[10px]">•</span>
-              <span className="text-teal-400 text-sm font-mono">{totalHelpers} <span className="text-[9px] font-normal text-slate-500">{localT("helpers")}</span></span>
-            </div>
-            {/* Visual dual bar representation */}
-            <div className="mt-2.5 h-1.5 w-full bg-slate-900 rounded-full overflow-hidden flex">
-              <div className="bg-indigo-500 h-full" style={{ width: `${(totalDrivers / (totalDrivers + totalHelpers || 1)) * 100}%` }} />
-              <div className="bg-teal-500 h-full" style={{ width: `${(totalHelpers / (totalDrivers + totalHelpers || 1)) * 100}%` }} />
-            </div>
+        {/* Widget Title */}
+        <div className="flex items-center gap-2 pb-3.5 border-b border-slate-800/60">
+          <div className="p-1.5 bg-cyan-500/10 rounded-lg text-cyan-400 border border-cyan-500/20">
+            <Layers className="w-3.5 h-3.5" />
           </div>
-
-          {/* Item 2: Active Vehicles */}
-          <div className="bg-slate-950/80 p-3 rounded-xl border border-indigo-500/10 hover:border-indigo-500/20 transition-colors">
-            <div className="flex justify-between items-start">
-              <div className="text-slate-500 text-[9px] font-mono leading-none tracking-wider">{localT("total_vehicles")}</div>
-              <Car className="w-3.5 h-3.5 text-indigo-400/50" />
-            </div>
-            <div className="font-mono font-extrabold text-slate-200 mt-2 text-sm flex items-baseline gap-1">
-              <span className="text-indigo-400">{totalVehicles}</span>
-              <span className="text-[9.5px] font-normal text-slate-500">{localT("registered")}</span>
-            </div>
-
+          <div className="flex-1">
+            <h3 className="text-xs font-bold text-slate-200 uppercase font-mono leading-none">Casing Pipe Stock</h3>
+            <span className="text-[8px] font-mono text-slate-500 mt-0.5 block">Running balance at selected period end</span>
           </div>
-
-          {/* Item 3: Salary Paid */}
-          <div className="bg-slate-950/80 p-3 rounded-xl border border-emerald-500/10 hover:border-emerald-500/20 transition-colors">
-            <div className="text-slate-500 text-[9px] font-mono leading-none tracking-wider flex items-center gap-1 text-emerald-400/80">
-              <span className="w-1.5 h-1.5 rounded-full bg-emerald-400" />
-              {localT("salary_paid")}
-            </div>
-            <div className="font-mono font-black text-emerald-400 mt-2 text-sm">₹{totalSalaryPaid.toLocaleString()}</div>
-          </div>
-
-          {/* Item 4: Salary Pending */}
-          <div className="bg-slate-950/80 p-3 rounded-xl border-rose-500/10 hover:border-rose-500/20 transition-colors">
-            <div className="text-slate-500 text-[9px] font-mono leading-none tracking-wider flex items-center gap-1 text-rose-455">
-              <span className="w-1.5 h-1.5 rounded-full bg-rose-450" />
-              {localT("salary_pending")}
-            </div>
-            <div className="font-mono font-black text-rose-400 mt-2 text-sm">₹{totalSalaryPending.toLocaleString()}</div>
-          </div>
-
-          {/* Item 5: Fuel Expenses */}
-          <div className="bg-slate-950/80 p-3 rounded-xl border-amber-500/10 hover:border-amber-500/20 transition-colors">
-            <div className="flex justify-between items-start">
-              <div className="text-slate-500 text-[9px] font-mono leading-none tracking-wider flex items-center gap-1 text-amber-500/80">
-                <Fuel className="w-3 h-3" />
-                {localT("fuel_expenses")}
-              </div>
-            </div>
-            <div className="font-mono font-black text-slate-200 mt-2 text-sm">₹{totalFuelExpense.toLocaleString()}</div>
-          </div>
-
-          {/* Item 6: Finance Flows */}
-          <div className="bg-slate-950/80 p-3 rounded-xl border border-slate-800 hover:border-slate-700 transition-colors">
-            <div className="text-slate-500 text-[9px] font-mono leading-none tracking-wider">{localT("finance_flows")}</div>
-            <div className="text-[10px] text-slate-300 mt-2 space-y-1 font-mono">
-              <div className="flex justify-between items-center bg-slate-900/50 px-1.5 py-0.5 rounded border border-slate-800">
-                <span className="text-slate-500 text-[8px] uppercase">{localT("lent")}:</span> 
-                <span className="text-emerald-400 font-bold">₹{totalFinanceGiven.toLocaleString()}</span>
-              </div>
-              <div className="flex justify-between items-center bg-slate-900/50 px-1.5 py-0.5 rounded border border-slate-800">
-                <span className="text-slate-500 text-[8px] uppercase">{localT("borrowed")}:</span> 
-                <span className="text-amber-400 font-bold">₹{totalFinanceReceived.toLocaleString()}</span>
-              </div>
-            </div>
+          <div className="bg-slate-950 px-2 py-0.5 rounded text-[9.5px] font-mono font-bold text-sky-400 border border-slate-850">
+            Total: {casingStockData.totalAvail} pipes
           </div>
         </div>
+
+        {/* Small card lists */}
+        <div className="grid grid-cols-4 gap-2.5 mt-3.5 text-center">
+          <div className="bg-slate-950/60 p-2.5 rounded-xl border border-slate-850">
+            <span className="block text-[8px] text-slate-500 font-mono uppercase tracking-wider leading-none">7" H QLT</span>
+            <span className="block text-sm font-black font-mono text-emerald-400 mt-1.5 leading-none">{casingStockData.avail7High}</span>
+            <span className="text-[7.5px] text-slate-600 block mt-1">pipes</span>
+          </div>
+          <div className="bg-slate-950/60 p-2.5 rounded-xl border border-slate-850">
+            <span className="block text-[8px] text-slate-500 font-mono uppercase tracking-wider leading-none">7" M QLT</span>
+            <span className="block text-sm font-black font-mono text-emerald-400 mt-1.5 leading-none">{casingStockData.avail7Medium}</span>
+            <span className="text-[7.5px] text-slate-600 block mt-1">pipes</span>
+          </div>
+          <div className="bg-slate-950/60 p-2.5 rounded-xl border border-slate-850">
+            <span className="block text-[8px] text-slate-500 font-mono uppercase tracking-wider leading-none">10" H QLT</span>
+            <span className="block text-sm font-black font-mono text-amber-500 mt-1.5 leading-none">{casingStockData.avail10High}</span>
+            <span className="text-[7.5px] text-slate-600 block mt-1">pipes</span>
+          </div>
+          <div className="bg-slate-950/60 p-2.5 rounded-xl border border-slate-850">
+            <span className="block text-[8px] text-slate-500 font-mono uppercase tracking-wider leading-none">10" M QLT</span>
+            <span className="block text-sm font-black font-mono text-amber-500 mt-1.5 leading-none">{casingStockData.avail10Medium}</span>
+            <span className="text-[7.5px] text-slate-600 block mt-1">pipes</span>
+          </div>
+        </div>
+
       </div>
 
-      {/* 2. FINANCE ANALYTICS */}
-      <div className="bg-emerald-950/30 rounded-2xl border border-emerald-900/40 p-4 space-y-3 shadow-md shadow-emerald-950/10">
-        <div className="flex items-center justify-between pb-2.5 border-b border-slate-800">
+      {/* 5. INTERACTIVE CHARTS HUB (HIGH FIDELITY VISUALIZATIONS) */}
+      <div className="bg-slate-900/60 p-4 rounded-3xl border border-slate-800/80 space-y-4">
+        
+        {/* Section Header */}
+        <div className="flex justify-between items-center pb-2.5 border-b border-slate-800/60">
           <div className="flex items-center gap-2">
-            <div className="p-1.5 bg-emerald-500/10 rounded-lg text-emerald-400 border border-emerald-500/20">
-              <TrendingUp className="w-3.5 h-3.5" />
-            </div>
-            <h3 className="text-xs font-bold text-slate-200 uppercase tracking-wider font-mono">{localT("lending_credit")}</h3>
+            <Activity className="w-3.5 h-3.5 text-sky-400" />
+            <h3 className="text-xs font-bold text-slate-200 uppercase font-mono tracking-wider">Visual Analytics Desk</h3>
           </div>
-          <span className="text-[9px] font-mono text-slate-500">{localT("interest_portfolios")}</span>
+          <span className="text-[8px] font-mono text-slate-500">interactive graphics</span>
         </div>
 
-        <div className="grid grid-cols-2 gap-2.5 text-xs">
-          {/* Interest Earned (Receivable) */}
-          <div className="bg-slate-950/80 p-3 rounded-xl border border-emerald-500/10 hover:border-emerald-500/20 transition-colors">
-            <div className="text-slate-500 text-[9px] font-mono leading-none flex items-center gap-1 text-emerald-400">
-              <ArrowUpRight className="w-3 h-3" />
-              <span>{localT("interest_accrued")}</span>
-            </div>
-            <div className="font-mono font-black text-emerald-400 mt-2 text-sm">₹{totalInterestEarned.toLocaleString()}</div>
-            <div className="mt-2 text-[8px] text-slate-500 font-mono">{localT("earned_lent")}</div>
+        {/* Primary Chart: Cash Flow Trend over Selected period */}
+        <div className="space-y-2">
+          <div className="flex justify-between items-center text-[9px] font-mono text-slate-400">
+            <span>Period Cash Flow Trend (Inflow vs Outflow)</span>
+            <span className="text-[8.5px] text-sky-400">Recharts Engine</span>
           </div>
-
-          {/* Interest Paid (Cost of Capital) */}
-          <div className="bg-slate-950/80 p-3 rounded-xl border border-rose-500/10 hover:border-rose-500/20 transition-colors">
-            <div className="text-slate-500 text-[9px] font-mono leading-none flex items-center gap-1 text-rose-450">
-              <ArrowDownLeft className="w-3 h-3" />
-              <span>{localT("interest_serviced")}</span>
-            </div>
-            <div className="font-mono font-black text-rose-400 mt-2 text-sm">₹{totalInterestPaid.toLocaleString()}</div>
-            <div className="mt-2 text-[8px] text-slate-500 font-mono">{localT("paid_lenders")}</div>
-          </div>
-
-          {/* Pending Collections */}
-          <div className="bg-slate-950/80 p-3 rounded-xl border border-teal-500/10 hover:border-teal-500/20 transition-colors">
-            <div className="text-slate-500 text-[9px] font-mono leading-none tracking-wider text-blue-800">{localT("pending_collections")}</div>
-            <div className="font-mono font-black text-blue-700 pending-collections-value mt-2 text-sm">₹{pendingCollections.toLocaleString()}</div>
-            <div className="mt-2 text-[8px] text-slate-500 font-mono">{localT("receivables_interest")}</div>
-          </div>
-
-          {/* Pending Payments */}
-          <div className="bg-slate-950/80 p-3 rounded-xl border border-amber-500/10 hover:border-amber-500/20 transition-colors">
-            <div className="text-slate-500 text-[9px] font-mono leading-none tracking-wider text-amber-500/80">{localT("pending_payments")}</div>
-            <div className="font-mono font-black text-amber-400 mt-2 text-sm">₹{pendingPayments.toLocaleString()}</div>
-            <div className="mt-2 text-[8px] text-slate-500 font-mono">{localT("payables_interest")}</div>
-          </div>
-        </div>
-      </div>
-
-      {/* 3. FAMILY ANALYTICS */}
-      <div className="bg-rose-950/35 rounded-2xl border border-rose-900/45 p-4 space-y-3 shadow-md shadow-rose-950/10">
-        <div className="flex items-center justify-between pb-2.5 border-b border-slate-800">
-          <div className="flex items-center gap-2">
-            <div className="p-1.5 bg-rose-500/10 rounded-lg text-rose-455 border border-rose-500/20">
-              <Home className="w-3.5 h-3.5" />
-            </div>
-            <h3 className="text-xs font-bold text-slate-200 uppercase tracking-wider font-mono">{localT("family_budgets")}</h3>
-          </div>
-          <span className="text-[9px] font-mono text-slate-500">{localT("domestic_expenses")}</span>
-        </div>
-
-        <div className="bg-slate-950/80 p-3.5 rounded-xl border border-rose-500/10 space-y-3">
-          <div className="grid grid-cols-2 gap-4 text-xs">
-            <div>
-              <span className="text-slate-500 text-[9.5px] font-mono leading-none block uppercase">{localT("cumulative_outlay")}</span>
-              <span className="font-mono font-black text-slate-200 mt-1.5 block text-sm">₹{totalFamilyExpenses.toLocaleString()}</span>
-            </div>
-            <div>
-              <span className="text-slate-400 text-[9.5px] font-mono leading-none block uppercase font-bold">{localT("monthly_budget")}</span>
-              <span className="font-mono font-black text-rose-400 mt-1.5 block text-sm">₹{monthlyFamilyExpenses.toLocaleString()}</span>
-            </div>
-          </div>
-
-          {/* Visual Indicator of June usage */}
-          <div className="space-y-1">
-            <div className="flex justify-between text-[8px] font-mono text-slate-500">
-              <span>{localT("monthly_share")}</span>
-              <span className="font-bold text-rose-455">{Math.round((monthlyFamilyExpenses / (totalFamilyExpenses || 1)) * 100)}%</span>
-            </div>
-            <div className="h-2 w-full bg-slate-900 rounded-full overflow-hidden">
-              <div className="bg-gradient-to-r from-rose-500 to-amber-500 h-full rounded-full" style={{ width: `${Math.min(100, (monthlyFamilyExpenses / (totalFamilyExpenses || 1)) * 100)}%` }} />
-            </div>
-          </div>
-
-          {/* Category-wise loop list with colored indicator dots */}
-          {categoryExpenses.length > 0 && (
-            <div className="pt-2.5 border-t border-slate-800/80 text-[10px] space-y-2">
-              <span className="text-[9px] font-mono text-slate-500 uppercase tracking-tight">{localT("active_categories")}:</span>
-              <div className="grid grid-cols-2 gap-x-3 gap-y-1.5">
-                {categoryExpenses.slice(0, 6).map((c, idx) => {
-                  const categoryColors = [
-                    "bg-rose-500", "bg-indigo-500", "bg-teal-500", 
-                    "bg-amber-500", "bg-emerald-500", "bg-purple-500",
-                    "bg-sky-500", "bg-orange-500", "bg-pink-500"
-                  ];
-                  return (
-                    <div key={idx} className="flex justify-between items-center text-slate-300 bg-slate-900/40 px-2 py-1 rounded border border-slate-850/60">
-                      <div className="flex items-center gap-1.5">
-                        <span className={`inline-block w-2 h-2 rounded-full ${categoryColors[idx % categoryColors.length]}`} />
-                        <span className="text-slate-400 font-medium">{c.name}:</span>
-                      </div>
-                      <span className="font-mono font-bold text-[10.5px] text-slate-200 font-bold">₹{c.amount.toLocaleString()}</span>
-                    </div>
-                  );
-                })}
-              </div>
-            </div>
-          )}
-        </div>
-      </div>
-
-      {/* 4. HIGH-FIDELITY CHARTS */}
-      <div id="dashboard-charts-layout" className="bg-purple-950/20 rounded-2xl border border-purple-900/40 p-4 space-y-3.5 shadow-md shadow-purple-950/10">
-        <div className="flex justify-between items-center pb-1 border-b border-slate-800">
-          <span className="text-[10px] uppercase font-mono tracking-wider text-slate-400 font-black flex items-center gap-2">
-            <PieChart className="w-3.5 h-3.5 text-indigo-400" />
-            {localT("live_analytics")}
-          </span>
-          <span className="text-[9px] font-mono text-slate-500">{localT("interactive")}</span>
-        </div>
-
-        {/* Chart Selector Mini-pill-tabs - scrollable on small screens */}
-        <div className="tab-bar-scroll flex gap-1.5 bg-slate-950 p-1 rounded-xl text-[9.5px] font-bold font-mono border border-slate-800/80 min-w-0">
-          <button 
-            type="button" 
-            onClick={() => setActiveChartTab("salary")}
-            className={`py-1.5 px-2 rounded-lg text-center transition shrink-0 ${activeChartTab === "salary" ? "bg-indigo-650 text-white shadow-sm shadow-indigo-950/80" : "text-slate-400 hover:text-slate-100"}`}
-          >
-            {localT("salary")}
-          </button>
-          <button 
-            type="button" 
-            onClick={() => setActiveChartTab("fuel")}
-            className={`py-1.5 px-2 rounded-lg text-center transition shrink-0 ${activeChartTab === "fuel" ? "bg-amber-600 text-white shadow-sm shadow-amber-950/80" : "text-slate-400 hover:text-slate-100"}`}
-          >
-            {localT("fuel")}
-          </button>
-          <button 
-            type="button" 
-            onClick={() => setActiveChartTab("finance")}
-            className={`py-1.5 px-2 rounded-lg text-center transition shrink-0 ${activeChartTab === "finance" ? "bg-teal-600 text-white shadow-sm shadow-teal-950/80" : "text-slate-400 hover:text-slate-100"}`}
-          >
-            {localT("credit")}
-          </button>
-          <button 
-            type="button" 
-            onClick={() => setActiveChartTab("family")}
-            className={`py-1.5 px-2 rounded-lg text-center transition shrink-0 ${activeChartTab === "family" ? "bg-rose-600 text-white shadow-sm shadow-rose-950/80" : "text-slate-400 hover:text-slate-100"}`}
-          >
-            {localT("family")}
-          </button>
-        </div>
-
-        {/* Dynamic Graphic Chart Box */}
-        <div className="min-h-[148px] bg-slate-950/80 rounded-xl border border-slate-850 flex flex-col justify-between p-3.5 text-xs relative overflow-hidden shadow-inner">
-          
-          {activeChartTab === "salary" && (
-            <div className="w-full h-full flex flex-col justify-between">
-              <div className="flex justify-between text-[9.5px] text-slate-400">
-                <span className="font-bold">Workforce Payroll Ratios</span>
-                <span className="text-emerald-400 font-bold bg-emerald-950/40 px-1.5 py-0.5 rounded border border-emerald-900/20">Paid ({Math.round(totalSalaryPaid / (totalSalaryPaid + totalSalaryPending || 1) * 100)}%)</span>
-              </div>
-              
-              {/* Graphic Bar Chart representing Paid vs Pending */}
-              <div className="space-y-2 py-1.5">
-                <div className="flex items-center gap-3">
-                  <span className="w-14 text-[8px] font-mono text-slate-500 uppercase tracking-wider">Paid:</span>
-                  <div className="flex-1 h-3.5 bg-slate-900/80 rounded-full overflow-hidden flex border border-slate-800">
-                    <div className="bg-gradient-to-r from-emerald-500 to-teal-400 h-full rounded-full" style={{ width: `${totalSalaryPaid > 0 ? 100 : 0}%` }} />
-                  </div>
-                  <span className="text-[10px] font-mono font-bold text-emerald-400 w-16 text-right">₹{totalSalaryPaid.toLocaleString()}</span>
-                </div>
-
-                <div className="flex items-center gap-3">
-                  <span className="w-14 text-[8px] font-mono text-slate-500 uppercase tracking-wider">Pending:</span>
-                  <div className="flex-1 h-3.5 bg-slate-900/80 rounded-full overflow-hidden flex border border-slate-800">
-                    <div className="bg-gradient-to-r from-amber-500 to-rose-400 h-full rounded-full" style={{ width: `${totalSalaryPaid + totalSalaryPending > 0 ? (totalSalaryPending / (totalSalaryPaid + totalSalaryPending || 1)) * 100 : 0}%` }} />
-                  </div>
-                  <span className="text-[10px] font-mono font-bold text-rose-400 w-16 text-right">₹{totalSalaryPending.toLocaleString()}</span>
-                </div>
-              </div>
-              <div className="text-[8px] text-slate-500 text-center font-mono">Payroll distribution metric across dispatch schedules</div>
-            </div>
-          )}
-
-          {activeChartTab === "fuel" && (
-            <div className="w-full h-full flex flex-col justify-between">
-              <div className="flex justify-between text-[9.5px] text-slate-450">
-                <span className="font-bold">Weekly Fleet Diesel Outlay</span>
-                <span className="text-amber-400 font-bold bg-amber-950/40 px-1.5 py-0.5 rounded border border-amber-900/20">₹{totalFuelExpense.toLocaleString()} Spent</span>
-              </div>
-              {/* Custom SVG Line graph of fuel history with dynamic background gradient fill */}
-              <div className="relative flex-1 flex items-end my-1">
-                <svg className="absolute inset-0 w-full h-full" viewBox="0 0 100 100" preserveAspectRatio="none">
+          <div className="h-44 w-full bg-slate-950/80 p-2.5 rounded-2xl border border-slate-850/80">
+            <ResponsiveContainer width="100%" height="100%">
+              {timeGrain === "day" ? (
+                // BarChart representation for specific days
+                <BarChart data={timeSeriesTrendData} margin={{ top: 5, right: 5, left: -25, bottom: 0 }}>
+                  <CartesianGrid strokeDasharray="3 3" stroke="#1e293b" />
+                  <XAxis dataKey="name" tick={{ fill: "#64748b", fontSize: 8 }} />
+                  <YAxis tick={{ fill: "#64748b", fontSize: 8 }} />
+                  <Tooltip contentStyle={{ backgroundColor: "#0b0f19", border: "1px solid #334155", color: "#f8fafc", fontSize: 10 }} />
+                  <Bar dataKey="Inflow" fill="#10b981" radius={[4, 4, 0, 0]} />
+                  <Bar dataKey="Outflow" fill="#f43f5e" radius={[4, 4, 0, 0]} />
+                </BarChart>
+              ) : (
+                // AreaChart representation for time series
+                <AreaChart data={timeSeriesTrendData} margin={{ top: 5, right: 5, left: -25, bottom: 0 }}>
                   <defs>
-                    <linearGradient id="fuelGradient" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="0%" stopColor="#f59e0b" stopOpacity="0.25" />
-                      <stop offset="100%" stopColor="#f59e0b" stopOpacity="0" />
+                    <linearGradient id="colorInflow" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="5%" stopColor="#10b981" stopOpacity={0.2}/>
+                      <stop offset="95%" stopColor="#10b981" stopOpacity={0}/>
+                    </linearGradient>
+                    <linearGradient id="colorOutflow" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="5%" stopColor="#f43f5e" stopOpacity={0.2}/>
+                      <stop offset="95%" stopColor="#f43f5e" stopOpacity={0}/>
                     </linearGradient>
                   </defs>
-                  <path d="M 0 90 L 20 70 L 40 85 L 60 40 L 80 50 L 100 15 L 100 100 L 0 100 Z" fill="url(#fuelGradient)" />
-                  <path d="M 0 90 L 20 70 L 40 85 L 60 40 L 80 50 L 100 15" fill="none" stroke="#f59e0b" strokeWidth="2.5" strokeLinecap="round" />
-                  <circle cx="20" cy="70" r="2.5" fill="#f59e0b" />
-                  <circle cx="60" cy="40" r="2.5" fill="#f59e0b" />
-                  <circle cx="100" cy="15" r="2.5" fill="#f59e0b" />
-                </svg>
-              </div>
-              <div className="flex justify-between text-[8px] text-slate-500 font-mono">
-                <span>01 Jun</span>
-                <span>08 Jun</span>
-                <span>15 Jun</span>
-                <span>22 Jun</span>
-                <span>29 Jun</span>
-              </div>
-            </div>
-          )}
-
-          {activeChartTab === "finance" && (
-            <div className="w-full h-full flex flex-col justify-between">
-              <div className="flex justify-between text-[9.5px] text-slate-400">
-                <span className="font-bold">Lending vs Borrowing Ratio</span>
-                <span className="text-teal-400 font-bold bg-teal-950/40 px-1.5 py-0.5 rounded border border-teal-900/20">₹{(totalFinanceGiven + totalFinanceReceived).toLocaleString()} Active</span>
-              </div>
-              
-              {/* Double Comparison Bar Chart */}
-              <div className="space-y-2 py-1">
-                <div>
-                  <div className="flex justify-between text-[8px] text-slate-400 font-mono mb-0.5 uppercase tracking-wide">
-                    <span>Lent Portfolio:</span>
-                    <span className="text-emerald-400 font-bold font-mono">₹{totalFinanceGiven.toLocaleString()}</span>
-                  </div>
-                  <div className="h-2 w-full bg-slate-900/80 rounded-full overflow-hidden border border-slate-800">
-                    <div className="bg-gradient-to-r from-emerald-500 to-teal-400 h-full" style={{ width: `${(totalFinanceGiven / (totalFinanceGiven + totalFinanceReceived || 1)) * 100}%` }} />
-                  </div>
-                </div>
-
-                <div>
-                  <div className="flex justify-between text-[8px] text-slate-400 font-mono mb-0.5 uppercase tracking-wide">
-                    <span>Borrowed Funds:</span>
-                    <span className="text-amber-400 font-bold font-mono">₹{totalFinanceReceived.toLocaleString()}</span>
-                  </div>
-                  <div className="h-2 w-full bg-slate-900/80 rounded-full overflow-hidden border border-slate-800">
-                    <div className="bg-gradient-to-r from-amber-500 to-orange-400 h-full" style={{ width: `${(totalFinanceReceived / (totalFinanceGiven + totalFinanceReceived || 1)) * 100}%` }} />
-                  </div>
-                </div>
-              </div>
-            </div>
-          )}
-
-          {activeChartTab === "family" && (
-            <div className="w-full h-full flex flex-col justify-between">
-              <div className="flex justify-between text-[9.5px] text-slate-450">
-                <span className="font-bold">Active Domestic Budgets Ratio</span>
-                <span className="text-rose-455 font-bold bg-rose-950/40 px-1.5 py-0.5 rounded border border-rose-900/20">₹{totalFamilyExpenses.toLocaleString()} Total</span>
-              </div>
-              
-              {/* Pie Segment Bar Chart Representation with proportional indicators */}
-              <div className="flex gap-2.5 items-end py-1.5">
-                {categoryExpenses.slice(0, 5).map((c, i) => {
-                  const widthPct = Math.max(12, Math.round(c.amount / (totalFamilyExpenses || 1) * 100));
-                  const colors = ["bg-rose-500", "bg-indigo-500", "bg-teal-500", "bg-amber-500", "bg-purple-500"];
-                  return (
-                    <div key={i} className="flex-1 flex flex-col items-center">
-                      <div className="w-full bg-slate-900/60 rounded-lg p-1.5 border border-slate-850/80 flex flex-col items-center justify-between">
-                        <span className="text-[8px] font-mono text-slate-400 font-bold mb-1">{widthPct}%</span>
-                        <div className={`w-full h-2 rounded-sm ${colors[i % colors.length]}`} />
-                      </div>
-                      <span className="text-[7.5px] text-slate-500 truncate w-12 text-center font-mono mt-1 uppercase tracking-tight">{c.name}</span>
-                    </div>
-                  );
-                })}
-              </div>
-            </div>
-          )}
-
+                  <CartesianGrid strokeDasharray="3 3" stroke="#1e293b" />
+                  <XAxis dataKey="name" tick={{ fill: "#64748b", fontSize: 8 }} />
+                  <YAxis tick={{ fill: "#64748b", fontSize: 8 }} />
+                  <Tooltip contentStyle={{ backgroundColor: "#0b0f19", border: "1px solid #334155", color: "#f8fafc", fontSize: 10 }} />
+                  <Area type="monotone" dataKey="Inflow" stroke="#10b981" strokeWidth={2} fillOpacity={1} fill="url(#colorInflow)" />
+                  <Area type="monotone" dataKey="Outflow" stroke="#f43f5e" strokeWidth={2} fillOpacity={1} fill="url(#colorOutflow)" />
+                </AreaChart>
+              )}
+            </ResponsiveContainer>
+          </div>
         </div>
+
+        {/* Dual Secondary Charts Layout (Expense Bar Chart + Proportional allocations) */}
+        {expenseBreakdownData.length > 0 && (
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            
+            {/* Left Box: Expense Breakdown Bar Chart */}
+            <div className="space-y-2 bg-slate-950/40 p-3 rounded-2xl border border-slate-850/60">
+              <span className="text-[9px] font-mono text-slate-400 block">Expense Breakdown Mix</span>
+              <div className="h-40 w-full">
+                <ResponsiveContainer width="100%" height="100%">
+                  <BarChart data={expenseBreakdownData} layout="vertical" margin={{ top: 5, right: 5, left: -20, bottom: 5 }}>
+                    <CartesianGrid strokeDasharray="3 3" stroke="#1e293b" />
+                    <XAxis type="number" tick={{ fill: "#64748b", fontSize: 8 }} />
+                    <YAxis dataKey="name" type="category" tick={{ fill: "#94a3b8", fontSize: 8 }} width={60} />
+                    <Tooltip contentStyle={{ backgroundColor: "#0b0f19", border: "1px solid #334155", color: "#f8fafc", fontSize: 9 }} />
+                    <Bar dataKey="Amount" fill="#3b82f6" radius={[0, 4, 4, 0]}>
+                      {expenseBreakdownData.map((entry, index) => (
+                        <Cell key={`cell-${index}`} fill={entry.color} />
+                      ))}
+                    </Bar>
+                  </BarChart>
+                </ResponsiveContainer>
+              </div>
+            </div>
+
+            {/* Right Box: Budget Allocator Pie Chart */}
+            {pieDistributionData.length > 0 && (
+              <div className="space-y-2 bg-slate-950/40 p-3 rounded-2xl border border-slate-850/60">
+                <span className="text-[9px] font-mono text-slate-400 block">Family vs Business Allocations</span>
+                <div className="h-40 w-full flex items-center justify-between">
+                  <div className="w-[50%] h-full">
+                    <ResponsiveContainer width="100%" height="100%">
+                      <PieChart>
+                        <Pie
+                          data={pieDistributionData}
+                          cx="50%"
+                          cy="50%"
+                          innerRadius={22}
+                          outerRadius={38}
+                          paddingAngle={3}
+                          dataKey="value"
+                        >
+                          {pieDistributionData.map((entry, index) => (
+                            <Cell key={`cell-${index}`} fill={entry.color} />
+                          ))}
+                        </Pie>
+                        <Tooltip contentStyle={{ backgroundColor: "#0b0f19", border: "1px solid #334155", color: "#f8fafc", fontSize: 9 }} />
+                      </PieChart>
+                    </ResponsiveContainer>
+                  </div>
+                  {/* Custom legend grid */}
+                  <div className="w-[48%] space-y-2.5 text-[8.5px] font-mono">
+                    {pieDistributionData.map((p, idx) => (
+                      <div key={idx} className="flex flex-col">
+                        <div className="flex items-center gap-1.5 text-slate-300 font-bold">
+                          <span className="w-1.5 h-1.5 rounded-full shrink-0" style={{ backgroundColor: p.color }} />
+                          <span className="truncate">{p.name.split(" ")[0]}</span>
+                        </div>
+                        <span className="text-slate-500 pl-3">₹{p.value.toLocaleString()}</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            )}
+
+          </div>
+        )}
+
       </div>
 
+      {/* 6. DETAILS TRACING EXPLORER (TABULATED LEDGERS) */}
+      <div className="bg-slate-900/60 p-4 rounded-3xl border border-slate-800/80 space-y-4">
+        
+        {/* Section Header */}
+        <div className="flex items-center gap-2 pb-3.5 border-b border-slate-800/60">
+          <div className="p-1.5 bg-indigo-500/10 rounded-lg text-indigo-400 border border-indigo-500/20">
+            <Search className="w-3.5 h-3.5" />
+          </div>
+          <div className="flex-1">
+            <h3 className="text-xs font-bold text-slate-200 uppercase font-mono leading-none">Tracing Details Explorer</h3>
+            <span className="text-[8px] font-mono text-slate-500 mt-0.5 block">Audit contribution records for select filters</span>
+          </div>
+        </div>
+
+        {/* Tab List */}
+        <div className="flex gap-1.5 bg-slate-950 p-1 rounded-xl text-[9px] font-bold font-mono border border-slate-850 overflow-x-auto custom-scrollbar">
+          {(["bills", "payroll", "fuel", "family", "loans"] as const).map(tab => {
+            const countDict = {
+              bills: filteredBills.length,
+              payroll: filteredSalary.length,
+              fuel: filteredFuel.length,
+              family: filteredFamily.length,
+              loans: filteredLoansGiven.length + filteredLoansReceived.length
+            };
+            return (
+              <button
+                key={tab}
+                type="button"
+                onClick={() => setActiveExplorerTab(tab)}
+                className={`py-1.5 px-3 rounded-lg text-center transition whitespace-nowrap ${
+                  activeExplorerTab === tab
+                    ? "bg-slate-900 text-sky-400 border border-slate-800 shadow"
+                    : "text-slate-500 hover:text-slate-300"
+                }`}
+              >
+                {tab.toUpperCase()} ({countDict[tab]})
+              </button>
+            );
+          })}
+        </div>
+
+        {/* Ledger logs view */}
+        <div className="bg-slate-950 rounded-2xl border border-slate-850 p-3 overflow-hidden shadow-inner">
+          <div className="overflow-x-auto max-h-60 overflow-y-auto custom-scrollbar">
+            
+            {activeExplorerTab === "bills" && (
+              <table className="w-full text-left border-collapse text-[10px] font-mono">
+                <thead>
+                  <tr className="border-b border-slate-800 text-slate-500">
+                    <th className="pb-2 font-bold uppercase">Invoice No</th>
+                    <th className="pb-2 font-bold uppercase">Client</th>
+                    <th className="pb-2 font-bold uppercase">Date</th>
+                    <th className="pb-2 font-bold text-right uppercase">Amount</th>
+                    <th className="pb-2 font-bold text-center uppercase">Status</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-slate-900">
+                  {filteredBills.length === 0 ? (
+                    <tr>
+                      <td colSpan={5} className="py-8 text-center text-slate-600">No bills logged in this period.</td>
+                    </tr>
+                  ) : (
+                    filteredBills.map((b, i) => (
+                      <tr key={i} className="hover:bg-slate-900/30 transition-colors">
+                        <td className="py-2.5 text-slate-300 font-bold">{b.invoiceNo}</td>
+                        <td className="py-2.5 text-slate-400 truncate max-w-[80px]">{b.clientName}</td>
+                        <td className="py-2.5 text-slate-500">{b.billDate}</td>
+                        <td className="py-2.5 text-slate-200 text-right font-bold">₹{(b.amount || 0).toLocaleString()}</td>
+                        <td className="py-2.5 text-center">
+                          <span className={`px-1.5 py-0.5 rounded text-[8px] font-bold border ${
+                            b.status === "Paid" 
+                              ? "bg-emerald-950/60 text-emerald-400 border-emerald-900/30" 
+                              : "bg-amber-950/60 text-amber-400 border-amber-900/30"
+                          }`}>
+                            {b.status}
+                          </span>
+                        </td>
+                      </tr>
+                    ))
+                  )}
+                </tbody>
+              </table>
+            )}
+
+            {activeExplorerTab === "payroll" && (
+              <table className="w-full text-left border-collapse text-[10px] font-mono">
+                <thead>
+                  <tr className="border-b border-slate-800 text-slate-500">
+                    <th className="pb-2 font-bold uppercase">Labour ID</th>
+                    <th className="pb-2 font-bold uppercase">Date</th>
+                    <th className="pb-2 font-bold text-right uppercase">Salary Paid</th>
+                    <th className="pb-2 font-bold text-center uppercase">Status</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-slate-900">
+                  {filteredSalary.length === 0 ? (
+                    <tr>
+                      <td colSpan={4} className="py-8 text-center text-slate-600">No payroll entries in this period.</td>
+                    </tr>
+                  ) : (
+                    filteredSalary.map((s, i) => {
+                      const worker = labours.find(l => l.id === s.labourId);
+                      return (
+                        <tr key={i} className="hover:bg-slate-900/30 transition-colors">
+                          <td className="py-2.5 text-slate-300 font-bold truncate max-w-[100px]">{worker?.fullName || s.labourId}</td>
+                          <td className="py-2.5 text-slate-500">{s.date}</td>
+                          <td className="py-2.5 text-slate-200 text-right font-bold">₹{Number(s.netPaid || 0).toLocaleString()}</td>
+                          <td className="py-2.5 text-center">
+                            <span className={`px-1.5 py-0.5 rounded text-[8px] font-bold border ${
+                              s.status === "Paid"
+                                ? "bg-emerald-950/60 text-emerald-400 border-emerald-900/30"
+                                : "bg-amber-950/60 text-amber-400 border-amber-900/30"
+                            }`}>
+                              {s.status}
+                            </span>
+                          </td>
+                        </tr>
+                      );
+                    })
+                  )}
+                </tbody>
+              </table>
+            )}
+
+            {activeExplorerTab === "fuel" && (
+              <table className="w-full text-left border-collapse text-[10px] font-mono">
+                <thead>
+                  <tr className="border-b border-slate-800 text-slate-500">
+                    <th className="pb-2 font-bold uppercase">Vehicle</th>
+                    <th className="pb-2 font-bold uppercase">Date</th>
+                    <th className="pb-2 font-bold text-right uppercase">Liters</th>
+                    <th className="pb-2 font-bold text-right uppercase">Total Cost</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-slate-900">
+                  {filteredFuel.length === 0 ? (
+                    <tr>
+                      <td colSpan={4} className="py-8 text-center text-slate-600">No fuel entries logged in this period.</td>
+                    </tr>
+                  ) : (
+                    filteredFuel.map((f, i) => (
+                      <tr key={i} className="hover:bg-slate-900/30 transition-colors">
+                        <td className="py-2.5 text-slate-300 font-bold">{f.vehicleName || f.vehicleId || "Generic"}</td>
+                        <td className="py-2.5 text-slate-500">{f.date || f.dateTime || "N/A"}</td>
+                        <td className="py-2.5 text-slate-400 text-right">{f.liters || 0} L</td>
+                        <td className="py-2.5 text-slate-200 text-right font-bold">₹{Number(f.totalAmount ?? f.cost ?? 0).toLocaleString()}</td>
+                      </tr>
+                    ))
+                  )}
+                </tbody>
+              </table>
+            )}
+
+            {activeExplorerTab === "family" && (
+              <table className="w-full text-left border-collapse text-[10px] font-mono">
+                <thead>
+                  <tr className="border-b border-slate-800 text-slate-500">
+                    <th className="pb-2 font-bold uppercase">Category</th>
+                    <th className="pb-2 font-bold uppercase">Date</th>
+                    <th className="pb-2 font-bold uppercase">Description</th>
+                    <th className="pb-2 font-bold text-right uppercase">Amount</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-slate-900">
+                  {filteredFamily.length === 0 ? (
+                    <tr>
+                      <td colSpan={4} className="py-8 text-center text-slate-600">No family expenses logged in this period.</td>
+                    </tr>
+                  ) : (
+                    filteredFamily.map((e, i) => (
+                      <tr key={i} className="hover:bg-slate-900/30 transition-colors">
+                        <td className="py-2.5 text-slate-300 font-bold">{e.reason || e.category || "Other"}</td>
+                        <td className="py-2.5 text-slate-500">{e.date}</td>
+                        <td className="py-2.5 text-slate-400 truncate max-w-[100px]">{e.description || "-"}</td>
+                        <td className="py-2.5 text-slate-250 text-right font-bold text-rose-455">₹{e.amount.toLocaleString()}</td>
+                      </tr>
+                    ))
+                  )}
+                </tbody>
+              </table>
+            )}
+
+            {activeExplorerTab === "loans" && (
+              <table className="w-full text-left border-collapse text-[10px] font-mono">
+                <thead>
+                  <tr className="border-b border-slate-800 text-slate-500">
+                    <th className="pb-2 font-bold uppercase">Counterparty</th>
+                    <th className="pb-2 font-bold uppercase">Date</th>
+                    <th className="pb-2 font-bold uppercase">Type</th>
+                    <th className="pb-2 font-bold text-right uppercase">Amount</th>
+                    <th className="pb-2 font-bold text-center uppercase">Status</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-slate-900">
+                  {filteredLoansGiven.length === 0 && filteredLoansReceived.length === 0 ? (
+                    <tr>
+                      <td colSpan={5} className="py-8 text-center text-slate-600">No loan records in this period.</td>
+                    </tr>
+                  ) : (
+                    [
+                      ...filteredLoansGiven.map(l => ({ name: l.personName || l.borrowerName || "Lent Loan", date: l.startDate || "N/A", type: "LENT (Given)", amount: l.amountGiven ?? l.loanAmount ?? 0, status: l.collectionStatus || "Pending" })),
+                      ...filteredLoansReceived.map(l => ({ name: l.personName || l.lenderName || "Borrowed Loan", date: l.startDate || "N/A", type: "BORROWED (Got)", amount: l.amount ?? l.borrowedAmount ?? 0, status: l.interestStatus || "Pending" }))
+                    ].map((l, i) => (
+                      <tr key={i} className="hover:bg-slate-900/30 transition-colors">
+                        <td className="py-2.5 text-slate-300 font-bold truncate max-w-[80px]">{l.name}</td>
+                        <td className="py-2.5 text-slate-500">{l.date}</td>
+                        <td className={`py-2.5 text-[8.5px] font-bold ${l.type.startsWith("LENT") ? "text-purple-400" : "text-amber-400"}`}>{l.type}</td>
+                        <td className="py-2.5 text-slate-200 text-right font-bold">₹{l.amount.toLocaleString()}</td>
+                        <td className="py-2.5 text-center">
+                          <span className={`px-1.5 py-0.5 rounded text-[8px] font-bold border ${
+                            l.status === "Paid"
+                              ? "bg-emerald-950/60 text-emerald-400 border-emerald-900/30"
+                              : "bg-amber-950/60 text-amber-400 border-amber-900/30"
+                          }`}>
+                            {l.status}
+                          </span>
+                        </td>
+                      </tr>
+                    ))
+                  )}
+                </tbody>
+              </table>
+            )}
+
+          </div>
+        </div>
+
+      </div>
 
     </div>
   );
