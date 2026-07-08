@@ -1301,3 +1301,138 @@ export function downloadBusinessReportPDF(options: {
   const periodSuffix = mode === "monthly" ? `${monthNames[month]}_${year}` : `Year_${year}`;
   doc.save(`SRS_${reportType.toUpperCase()}_Report_${periodSuffix}.pdf`);
 }
+
+export function downloadLabourDirectoryReportPDF(labours: Labour[]) {
+  const doc = new jsPDF({
+    orientation: "portrait",
+    unit: "mm",
+    format: "a4"
+  });
+
+  // 1. Draw Subtle Border Accent Frame
+  doc.setDrawColor(203, 213, 225); // Slate-300
+  doc.setLineWidth(0.4);
+  doc.rect(7, 7, 196, 283); // 7mm margins around page
+
+  // 2. Main Executive Header Banner (Slate Navy Blue)
+  doc.setFillColor(15, 23, 42); // slate-900 (Deep Navy Dark background)
+  doc.rect(7, 7, 196, 32, "F");
+
+  // Logo / Business Header details
+  doc.setTextColor(255, 255, 255);
+  doc.setFont("Helvetica", "bold");
+  doc.setFontSize(15);
+  doc.text("SRS (Sri Selvanayagi Rig Service)", 15, 17);
+
+  doc.setFont("Helvetica", "normal");
+  doc.setFontSize(8);
+  doc.setTextColor(203, 213, 225); // Slate-300
+  doc.text("8\", 6 1/2\", 4 1/2\" Borewells in Best", 15, 22);
+  doc.text("Office at Sathy Road, Annur. | Contact No: 9791908234, 9384918254", 15, 26);
+  doc.text("Doc Type: Complete Labour Directory & Staff Roster Registry", 15, 30);
+
+  // Status block right-aligned in header
+  doc.setFont("Helvetica", "bold");
+  doc.setFontSize(9);
+  doc.setTextColor(129, 140, 248); // Indigo-400
+  doc.text("LABOUR REGISTRY REPORT", 195, 16, { align: "right" });
+
+  doc.setFont("Helvetica", "normal");
+  doc.setFontSize(7.5);
+  doc.setTextColor(203, 213, 225);
+  doc.text(`Total Worker Records: ${labours.length}`, 195, 21, { align: "right" });
+  doc.text(`Generated: ${new Date().toLocaleString()}`, 195, 25, { align: "right" });
+  doc.text("Status: ARCHIVE VALIDATED", 195, 29, { align: "right" });
+
+  // 3. Document Identifier Title
+  doc.setTextColor(15, 23, 42); // slate-900
+  doc.setFont("Helvetica", "bold");
+  doc.setFontSize(11.5);
+  doc.text("COMPLETE LABOUR DIRECTORY & STAFF REGISTRY", 15, 48);
+
+  // Accent Line under title
+  doc.setDrawColor(79, 70, 229); // Indigo-600
+  doc.setLineWidth(0.6);
+  doc.line(15, 51, 195, 51);
+
+  let curY = 56;
+  const pageHeight = 270;
+
+  // Headers X positions: S.No, Worker Name, Skill, Contact No, Aadhaar No, License No, Salary (INR), Status
+  const xs = [17, 25, 65, 85, 110, 135, 160, 180];
+
+  drawTableHeader(
+    doc,
+    curY,
+    ["#", "Worker Name", "Skill", "Contact No", "Aadhaar No", "License No", "Salary (INR)", "Status"],
+    xs,
+    [79, 70, 229]
+  );
+  curY += 8;
+
+  labours.forEach((lab, idx) => {
+    if (curY > pageHeight) {
+      doc.addPage();
+
+      // Page frame
+      doc.setDrawColor(203, 213, 225);
+      doc.setLineWidth(0.4);
+      doc.rect(7, 7, 196, 283);
+
+      curY = 20;
+      drawTableHeader(
+        doc,
+        curY,
+        ["#", "Worker Name", "Skill", "Contact No", "Aadhaar No", "License No", "Salary (INR)", "Status"],
+        xs,
+        [79, 70, 229]
+      );
+      curY += 8;
+    }
+
+    const formattedSalary = lab.salaryPerMonth != null ? `Rs. ${lab.salaryPerMonth.toLocaleString()}` : "-";
+    const statusText = lab.isActive ? "ACTIVE" : "INACTIVE";
+    const aadhaarText = lab.aadhaarNumber || "-";
+    const licenseText = lab.licenseNumber || "-";
+
+    curY = drawRow(doc, curY, [
+      String(idx + 1),
+      lab.fullName,
+      lab.skillType,
+      lab.phone,
+      aadhaarText,
+      licenseText,
+      formattedSalary,
+      statusText
+    ], xs, idx);
+
+    // Bold/Color the status text
+    doc.setFont("Helvetica", "bold");
+    doc.setFontSize(7.5);
+    if (lab.isActive) {
+      doc.setTextColor(6, 95, 70); // Green
+    } else {
+      doc.setTextColor(185, 28, 28); // Red
+    }
+    doc.text(statusText, 180, curY - 2.8);
+  });
+
+  // Footer
+  const sigY = Math.min(curY + 14, 268);
+  doc.setDrawColor(15, 23, 42);
+  doc.setLineWidth(0.4);
+  doc.line(15, sigY, 75, sigY);
+  doc.line(140, sigY, 195, sigY);
+  doc.setFont("Helvetica", "bold");
+  doc.setFontSize(7.5);
+  doc.setTextColor(71, 85, 105);
+  doc.text("Authorized Controller", 15, sigY + 4);
+  doc.text("Registry Auditor", 140, sigY + 4);
+
+  doc.setTextColor(150, 150, 150);
+  doc.setFont("Helvetica", "normal");
+  doc.setFontSize(6.5);
+  doc.text("Generated via SRS Business Management System. Data is accurate as of generation timestamp.", 15, 278);
+
+  doc.save("SRS_Labour_Directory_Report.pdf");
+}

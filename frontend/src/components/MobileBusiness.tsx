@@ -42,7 +42,7 @@ import {
   Layers
 } from "lucide-react";
 import { Labour, Vehicle, BitEntry, HammerEntry, HammerUsageRecord, BusinessBill, FuelEntry, SalaryPayment, AdvanceEntry, AttendanceRecord, PipeEntry } from "../types";
-import { downloadSalarySlipPDF, downloadAttendanceReportPDF, downloadSingleLabourAttendancePDF, downloadBusinessReportPDF } from "../utils/pdfGenerator";
+import { downloadSalarySlipPDF, downloadAttendanceReportPDF, downloadSingleLabourAttendancePDF, downloadBusinessReportPDF, downloadLabourDirectoryReportPDF } from "../utils/pdfGenerator";
 import {
   mapFuelFromApi,
   mapBusinessBillFromApi,
@@ -8699,6 +8699,13 @@ export default function MobileBusiness({
                 description: "Labour salary slips with advance deductions, bonus, and net paid summary",
                 icon: DollarSign,
                 type: "salary"
+              },
+              {
+                id: "labour_directory",
+                name: "Labour Directory",
+                description: "Complete list of all registered workers with their roles, wages, contact, and Aadhaar registry details",
+                icon: Users,
+                type: "labour_directory"
               }
             ].map((report) => {
               const Icon = report.icon;
@@ -8779,6 +8786,18 @@ export default function MobileBusiness({
                           className="bg-emerald-600 hover:bg-emerald-550 active:bg-emerald-700 text-white border border-emerald-500/20 py-2 px-3 rounded-xl flex items-center justify-center gap-1.5 cursor-pointer shadow-md shadow-emerald-950/45 transition uppercase tracking-widest text-[8px]"
                         >
                           <History className="w-3.5 h-3.5" /> Download Overall
+                        </button>
+                      </>
+                    ) : report.type === "labour_directory" ? (
+                      <>
+                        <button
+                          onClick={() => {
+                            downloadLabourDirectoryReportPDF(labours);
+                            triggerOnlineSync("Downloaded Labour Directory Report");
+                          }}
+                          className="col-span-2 bg-indigo-600 hover:bg-indigo-550 active:bg-indigo-700 text-white border border-indigo-500/20 py-2 px-3 rounded-xl flex items-center justify-center gap-1.5 cursor-pointer shadow-md shadow-indigo-950/45 transition uppercase tracking-widest text-[8px] w-full"
+                        >
+                          <Download className="w-3.5 h-3.5" /> Download Directory PDF
                         </button>
                       </>
                     ) : (
