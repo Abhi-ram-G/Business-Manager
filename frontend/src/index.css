@@ -458,3 +458,31 @@ span.stock-card-label {
   color: #64748b !important;
   letter-spacing: 0.05em !important;
 }
+
+/* Force Recharts Tooltips to have a white container background and dark text */
+.recharts-default-tooltip {
+  background-color: #ffffff !important;
+  border: 1px solid #cbd5e1 !important;
+  border-radius: 8px !important;
+  box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1) !important;
+  padding: 8px 12px !important;
+}
+
+.recharts-default-tooltip .recharts-tooltip-label {
+  color: #0f172a !important;
+  font-weight: 700 !important;
+  font-family: monospace !important;
+  font-size: 11px !important;
+}
+
+.recharts-default-tooltip .recharts-tooltip-item {
+  color: #334155 !important;
+  font-family: monospace !important;
+  font-size: 10px !important;
+}
+
+.recharts-default-tooltip .recharts-tooltip-item-list {
+  padding: 0 !important;
+  margin: 0 !important;
+  list-style: none !important;
+}
