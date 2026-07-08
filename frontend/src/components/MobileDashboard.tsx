@@ -758,7 +758,11 @@ export default function MobileDashboard({
                   <CartesianGrid strokeDasharray="3 3" stroke="#1e293b" />
                   <XAxis dataKey="name" tick={{ fill: "#64748b", fontSize: 8 }} />
                   <YAxis tick={{ fill: "#64748b", fontSize: 8 }} />
-                  <Tooltip contentStyle={{ backgroundColor: "#0b0f19", border: "1px solid #334155", color: "#f8fafc", fontSize: 10 }} />
+                  <Tooltip 
+                    contentStyle={{ backgroundColor: "#0b0f19", border: "1px solid #334155", fontSize: 10 }} 
+                    labelStyle={{ color: "#ffffff", fontWeight: "bold" }}
+                    itemStyle={{ color: "#ffffff" }}
+                  />
                   <Bar dataKey="Inflow" fill="#10b981" radius={[4, 4, 0, 0]} />
                   <Bar dataKey="Outflow" fill="#f43f5e" radius={[4, 4, 0, 0]} />
                 </BarChart>
@@ -778,7 +782,11 @@ export default function MobileDashboard({
                   <CartesianGrid strokeDasharray="3 3" stroke="#1e293b" />
                   <XAxis dataKey="name" tick={{ fill: "#64748b", fontSize: 8 }} />
                   <YAxis tick={{ fill: "#64748b", fontSize: 8 }} />
-                  <Tooltip contentStyle={{ backgroundColor: "#0b0f19", border: "1px solid #334155", color: "#f8fafc", fontSize: 10 }} />
+                  <Tooltip 
+                    contentStyle={{ backgroundColor: "#0b0f19", border: "1px solid #334155", fontSize: 10 }} 
+                    labelStyle={{ color: "#ffffff", fontWeight: "bold" }}
+                    itemStyle={{ color: "#ffffff" }}
+                  />
                   <Area type="monotone" dataKey="Inflow" stroke="#10b981" strokeWidth={2} fillOpacity={1} fill="url(#colorInflow)" />
                   <Area type="monotone" dataKey="Outflow" stroke="#f43f5e" strokeWidth={2} fillOpacity={1} fill="url(#colorOutflow)" />
                 </AreaChart>
@@ -800,7 +808,11 @@ export default function MobileDashboard({
                     <CartesianGrid strokeDasharray="3 3" stroke="#1e293b" />
                     <XAxis type="number" tick={{ fill: "#64748b", fontSize: 8 }} />
                     <YAxis dataKey="name" type="category" tick={{ fill: "#94a3b8", fontSize: 8 }} width={60} />
-                    <Tooltip contentStyle={{ backgroundColor: "#0b0f19", border: "1px solid #334155", color: "#f8fafc", fontSize: 9 }} />
+                    <Tooltip 
+                      contentStyle={{ backgroundColor: "#0b0f19", border: "1px solid #334155", fontSize: 9 }} 
+                      labelStyle={{ color: "#ffffff", fontWeight: "bold" }}
+                      itemStyle={{ color: "#ffffff" }}
+                    />
                     <Bar dataKey="Amount" fill="#3b82f6" radius={[0, 4, 4, 0]}>
                       {expenseBreakdownData.map((entry, index) => (
                         <Cell key={`cell-${index}`} fill={entry.color} />
@@ -832,7 +844,11 @@ export default function MobileDashboard({
                             <Cell key={`cell-${index}`} fill={entry.color} />
                           ))}
                         </Pie>
-                        <Tooltip contentStyle={{ backgroundColor: "#0b0f19", border: "1px solid #334155", color: "#f8fafc", fontSize: 9 }} />
+                        <Tooltip 
+                          contentStyle={{ backgroundColor: "#0b0f19", border: "1px solid #334155", fontSize: 9 }} 
+                          labelStyle={{ color: "#ffffff", fontWeight: "bold" }}
+                          itemStyle={{ color: "#ffffff" }}
+                        />
                       </PieChart>
                     </ResponsiveContainer>
                   </div>
