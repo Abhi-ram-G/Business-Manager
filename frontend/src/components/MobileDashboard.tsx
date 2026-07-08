@@ -381,22 +381,22 @@ export default function MobileDashboard({
             {/* Scoped style override — guarantees colors + font size beat any global !important rule */}
             <style>{`
               span.stock-card-number {
-                font-size: 32px !important;
-                line-height: 38px !important;
+                font-size: 16px !important;
+                line-height: 22px !important;
                 font-weight: 800 !important;
               }
               span.stock-card-number.stock-card-number-blue {
-                color: #1e40af !important;
+                color: #8b5cf6 !important; /* Violet */
               }
               span.stock-card-number.stock-card-number-green {
-                color: #059669 !important;
+                color: #4ade80 !important; /* Light Green */
               }
               span.stock-card-number.stock-card-number-orange {
-                color: #c2410c !important;
+                color: #f97316 !important; /* Orange */
               }
               span.stock-card-unit {
-                font-size: 18px !important;
-                line-height: 24px !important;
+                font-size: 14px !important;
+                line-height: 20px !important;
                 font-weight: 600 !important;
                 color: #64748b !important;
               }
