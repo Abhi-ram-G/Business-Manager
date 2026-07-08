@@ -702,6 +702,11 @@ export default function MobileDashboard({
 
       </div>
 
+      {/* Divider Separator with clean vertical spacing */}
+      <div className="py-4 px-1">
+        <div className="h-px bg-gradient-to-r from-transparent via-slate-800 to-transparent" />
+      </div>
+
       {/* 1. PREMIUM HEADER SYSTEM */}
       <div className="relative overflow-hidden bg-gradient-to-br from-slate-900 via-slate-950/80 to-[#0e1628] p-5 rounded-3xl border border-slate-800 shadow-xl shadow-[#040810]/50">
         <div className="absolute top-0 right-0 w-24 h-24 bg-sky-500/10 rounded-full blur-2xl" />
