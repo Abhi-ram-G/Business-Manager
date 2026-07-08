@@ -215,9 +215,14 @@ def initialize_database() -> None:
             removed_bills = purge_legacy_demo_business_bills(db)
             if removed_bills:
                 print(f"Removed {removed_bills} legacy demo business bills from the database.")
+            
+            # Resequence all existing bills in database to match new gapless I-SRS format
+            print("Enforcing gapless resequencing for existing bills...")
+            resequence_all_bills(db)
+            print("Gapless resequencing completed successfully.")
         except Exception as err:
             db.rollback()
-            print(f"Warning: Failed to ensure default admin user: {err}")
+            print(f"Warning: Failed to initialize/resequence database: {err}")
         finally:
             db.close()
     except OperationalError as exc:
@@ -272,7 +277,47 @@ def update_instance(db: Session, instance: Any, payload: dict[str, Any]):
 
 
 def generate_bill_invoice_no() -> str:
-    return f"INV-SRS-{datetime.now(timezone.utc).strftime('%Y%m%d%H%M%S%f')[:-3]}"
+    import uuid
+    return f"I-SRS-TEMP-{uuid.uuid4().hex}"
+
+
+def resequence_bills_for_month(db: Session, year: int, month: int):
+    from sqlalchemy import extract
+    import uuid
+    
+    # Fetch all bills for that year and month, ordered by created_at ascending, then by id ascending
+    bills = db.execute(
+        select(BusinessBill)
+        .where(
+            extract("year", BusinessBill.bill_date) == year,
+            extract("month", BusinessBill.bill_date) == month
+        )
+        .order_by(BusinessBill.created_at.asc(), BusinessBill.id.asc())
+    ).scalars().all()
+    
+    # Update to temporary unique invoice numbers first to prevent transient constraint violations
+    for bill in bills:
+        bill.invoice_no = f"TEMP-{uuid.uuid4().hex}"
+        db.add(bill)
+    db.flush()
+    
+    # Assign final formatted sequence invoice numbers
+    for idx, bill in enumerate(bills, start=1):
+        bill.invoice_no = f"I-SRS-{year}{month:02d}-{idx}"
+        db.add(bill)
+    db.commit()
+
+
+def resequence_all_bills(db: Session):
+    from collections import defaultdict
+    bills = db.execute(select(BusinessBill)).scalars().all()
+    groups = defaultdict(list)
+    for bill in bills:
+        if bill.bill_date:
+            groups[(bill.bill_date.year, bill.bill_date.month)].append(bill)
+            
+    for (year, month) in groups.keys():
+        resequence_bills_for_month(db, year, month)
 
 
 def purge_legacy_demo_business_bills(db: Session) -> int:
@@ -725,7 +770,13 @@ def create_business_bill(payload: BusinessBillCreate, db: Session = Depends(get_
     if not payload_data.get("invoice_no"):
         payload_data["invoice_no"] = generate_bill_invoice_no()
     bill = BusinessBill(**payload_data)
-    return serialize_model(create_or_400(db, BusinessBill, bill, "Unable to create business bill"))
+    created_bill = create_or_400(db, BusinessBill, bill, "Unable to create business bill")
+    
+    if created_bill.bill_date:
+        resequence_bills_for_month(db, created_bill.bill_date.year, created_bill.bill_date.month)
+        db.refresh(created_bill)
+        
+    return serialize_model(created_bill)
 
 
 @app.put("/api/v1/business/bills/{bill_id}")
@@ -733,7 +784,20 @@ def update_business_bill(bill_id: str, payload: BusinessBillUpdate, db: Session 
     bill = db.get(BusinessBill, bill_id)
     if not bill:
         raise HTTPException(status_code=404, detail="Business bill not found")
-    return serialize_model(update_instance(db, bill, payload.model_dump(exclude_unset=True)))
+    
+    old_date = bill.bill_date
+    updated_data = payload.model_dump(exclude_unset=True)
+    bill = update_instance(db, bill, updated_data)
+    new_date = bill.bill_date
+    
+    if old_date and new_date and (old_date.year != new_date.year or old_date.month != new_date.month):
+        resequence_bills_for_month(db, old_date.year, old_date.month)
+        resequence_bills_for_month(db, new_date.year, new_date.month)
+    elif new_date:
+        resequence_bills_for_month(db, new_date.year, new_date.month)
+        
+    db.refresh(bill)
+    return serialize_model(bill)
 
 
 @app.delete("/api/v1/business/bills/{bill_id}", status_code=status.HTTP_204_NO_CONTENT)
@@ -741,6 +805,9 @@ def delete_business_bill(bill_id: str, db: Session = Depends(get_db)):
     bill = db.get(BusinessBill, bill_id)
     if not bill:
         raise HTTPException(status_code=404, detail="Business bill not found")
+    
+    year = bill.bill_date.year if bill.bill_date else None
+    month = bill.bill_date.month if bill.bill_date else None
     
     # Clean up hammer usage history records that refer to this bill_id
     hammers = db.execute(select(Hammer)).scalars().all()
@@ -758,6 +825,9 @@ def delete_business_bill(bill_id: str, db: Session = Depends(get_db)):
 
     db.delete(bill)
     db.commit()
+    
+    if year and month:
+        resequence_bills_for_month(db, year, month)
 
 
 @app.get("/api/v1/loans/given")
