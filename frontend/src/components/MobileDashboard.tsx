@@ -634,8 +634,8 @@ export default function MobileDashboard({
                 <div>
                   <span className="stock-card-label block uppercase">Total Stock Available</span>
                   <div className="mt-1 flex items-baseline gap-1">
-                    <span className="stock-card-number stock-card-number-blue">{overallTotalAvail}</span>
-                    <span className="stock-card-unit">pipes</span>
+                    <span className="stock-card-number stock-card-number-blue" style={{ fontSize: "16px", color: "#2563eb", fontWeight: "bold" }}>{overallTotalAvail}</span>
+                    <span className="stock-card-unit" style={{ fontSize: "12px", color: "#64748b", fontWeight: "normal", marginLeft: "4px" }}>pipes</span>
                   </div>
                 </div>
                 <div className="p-2 bg-[#294d5a] rounded-xl text-white">
@@ -651,8 +651,8 @@ export default function MobileDashboard({
                 <div>
                   <span className="stock-card-label block uppercase">7" H QLT</span>
                   <div className="mt-1 flex items-baseline gap-1">
-                    <span className="stock-card-number stock-card-number-green">{overallAvail7High}</span>
-                    <span className="stock-card-unit">pipes</span>
+                    <span className="stock-card-number stock-card-number-green" style={{ fontSize: "16px", color: "#10b981", fontWeight: "bold" }}>{overallAvail7High}</span>
+                    <span className="stock-card-unit" style={{ fontSize: "12px", color: "#64748b", fontWeight: "normal", marginLeft: "4px" }}>pipes</span>
                   </div>
                 </div>
                 <div className="p-2 bg-[#2d5443] rounded-xl text-white">
@@ -668,8 +668,8 @@ export default function MobileDashboard({
                 <div>
                   <span className="stock-card-label block uppercase">7" M QLT</span>
                   <div className="mt-1 flex items-baseline gap-1">
-                    <span className="stock-card-number stock-card-number-green">{overallAvail7Medium}</span>
-                    <span className="stock-card-unit">pipes</span>
+                    <span className="stock-card-number stock-card-number-green" style={{ fontSize: "16px", color: "#10b981", fontWeight: "bold" }}>{overallAvail7Medium}</span>
+                    <span className="stock-card-unit" style={{ fontSize: "12px", color: "#64748b", fontWeight: "normal", marginLeft: "4px" }}>pipes</span>
                   </div>
                 </div>
                 <div className="p-2 bg-[#2d5443] rounded-xl text-white">
@@ -685,8 +685,8 @@ export default function MobileDashboard({
                 <div>
                   <span className="stock-card-label block uppercase">10" H QLT</span>
                   <div className="mt-1 flex items-baseline gap-1">
-                    <span className="stock-card-number stock-card-number-orange">{overallAvail10High}</span>
-                    <span className="stock-card-unit">pipes</span>
+                    <span className="stock-card-number stock-card-number-orange" style={{ fontSize: "16px", color: "#f97316", fontWeight: "bold" }}>{overallAvail10High}</span>
+                    <span className="stock-card-unit" style={{ fontSize: "12px", color: "#64748b", fontWeight: "normal", marginLeft: "4px" }}>pipes</span>
                   </div>
                 </div>
                 <div className="p-2 bg-[#643b27] rounded-xl text-white">
@@ -702,8 +702,8 @@ export default function MobileDashboard({
                 <div>
                   <span className="stock-card-label block uppercase">10" M QLT</span>
                   <div className="mt-1 flex items-baseline gap-1">
-                    <span className="stock-card-number stock-card-number-orange">{overallAvail10Medium}</span>
-                    <span className="stock-card-unit">pipes</span>
+                    <span className="stock-card-number stock-card-number-orange" style={{ fontSize: "16px", color: "#f97316", fontWeight: "bold" }}>{overallAvail10Medium}</span>
+                    <span className="stock-card-unit" style={{ fontSize: "12px", color: "#64748b", fontWeight: "normal", marginLeft: "4px" }}>pipes</span>
                   </div>
                 </div>
                 <div className="p-2 bg-[#643b27] rounded-xl text-white">
