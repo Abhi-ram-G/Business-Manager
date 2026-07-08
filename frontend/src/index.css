@@ -402,8 +402,8 @@ html, body {
 
 /* Stock card number — high specificity to beat global span rule */
 span.stock-card-number {
-  font-size: 16px !important;
-  line-height: 22px !important;
+  font-size: 24px !important;
+  line-height: 30px !important;
   font-weight: 800 !important;
 }
 
@@ -421,11 +421,22 @@ span.stock-card-number.stock-card-number-orange {
 
 /* "pipes" unit label */
 span.stock-card-unit {
-  font-size: 14px !important;
-  line-height: 20px !important;
+  font-size: 16px !important;
+  line-height: 22px !important;
   font-weight: 600 !important;
-  color: #475569 !important;
   margin-left: 4px !important;
+}
+
+.stock-card-blue span.stock-card-unit {
+  color: #8b5cf6 !important;
+}
+
+.stock-card-green span.stock-card-unit {
+  color: #4ade80 !important;
+}
+
+.stock-card-orange span.stock-card-unit {
+  color: #f97316 !important;
 }
 
 
