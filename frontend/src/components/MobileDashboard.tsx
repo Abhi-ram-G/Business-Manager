@@ -386,27 +386,19 @@ export default function MobileDashboard({
                 font-weight: 800 !important;
               }
               span.stock-card-number.stock-card-number-blue {
-                color: #8b5cf6 !important; /* Violet */
+                color: #1e40af !important;
               }
               span.stock-card-number.stock-card-number-green {
-                color: #4ade80 !important; /* Light Green */
+                color: #059669 !important;
               }
               span.stock-card-number.stock-card-number-orange {
-                color: #f97316 !important; /* Orange */
+                color: #c2410c !important;
               }
               span.stock-card-unit {
                 font-size: 18px !important;
                 line-height: 24px !important;
                 font-weight: 600 !important;
-              }
-              .stock-card-blue span.stock-card-unit {
-                color: #8b5cf6 !important;
-              }
-              .stock-card-green span.stock-card-unit {
-                color: #4ade80 !important;
-              }
-              .stock-card-orange span.stock-card-unit {
-                color: #f97316 !important;
+                color: #64748b !important;
               }
             `}</style>
 
