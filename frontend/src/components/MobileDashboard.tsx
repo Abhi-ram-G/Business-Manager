@@ -1054,45 +1054,18 @@ export default function MobileDashboard({
           </div>
           <div className="h-44 w-full bg-slate-950/80 p-2.5 rounded-2xl border border-slate-850/80">
             <ResponsiveContainer width="100%" height="100%">
-              {timeGrain === "day" ? (
-                // BarChart representation for specific days
-                <BarChart data={timeSeriesTrendData} margin={{ top: 5, right: 5, left: -25, bottom: 0 }}>
-                  <CartesianGrid strokeDasharray="3 3" stroke="#1e293b" />
-                  <XAxis dataKey="name" tick={{ fill: "#64748b", fontSize: 8 }} />
-                  <YAxis tick={{ fill: "#64748b", fontSize: 8 }} />
-                  <Tooltip 
-                    contentStyle={{ backgroundColor: "#ffffff", border: "1px solid #cbd5e1", borderRadius: "8px", fontSize: 10 }} 
-                    labelStyle={{ color: "#0f172a", fontWeight: "bold" }}
-                    itemStyle={{ color: "#334155" }}
-                  />
-                  <Bar dataKey="Inflow" fill="#10b981" radius={[4, 4, 0, 0]} />
-                  <Bar dataKey="Outflow" fill="#f43f5e" radius={[4, 4, 0, 0]} />
-                </BarChart>
-              ) : (
-                // AreaChart representation for time series
-                <AreaChart data={timeSeriesTrendData} margin={{ top: 5, right: 5, left: -25, bottom: 0 }}>
-                  <defs>
-                    <linearGradient id="colorInflow" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="5%" stopColor="#10b981" stopOpacity={0.2}/>
-                      <stop offset="95%" stopColor="#10b981" stopOpacity={0}/>
-                    </linearGradient>
-                    <linearGradient id="colorOutflow" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="5%" stopColor="#f43f5e" stopOpacity={0.2}/>
-                      <stop offset="95%" stopColor="#f43f5e" stopOpacity={0}/>
-                    </linearGradient>
-                  </defs>
-                  <CartesianGrid strokeDasharray="3 3" stroke="#1e293b" />
-                  <XAxis dataKey="name" tick={{ fill: "#64748b", fontSize: 8 }} />
-                  <YAxis tick={{ fill: "#64748b", fontSize: 8 }} />
-                  <Tooltip 
-                    contentStyle={{ backgroundColor: "#ffffff", border: "1px solid #cbd5e1", borderRadius: "8px", fontSize: 10 }} 
-                    labelStyle={{ color: "#0f172a", fontWeight: "bold" }}
-                    itemStyle={{ color: "#334155" }}
-                  />
-                  <Area type="monotone" dataKey="Inflow" stroke="#10b981" strokeWidth={2} fillOpacity={1} fill="url(#colorInflow)" />
-                  <Area type="monotone" dataKey="Outflow" stroke="#f43f5e" strokeWidth={2} fillOpacity={1} fill="url(#colorOutflow)" />
-                </AreaChart>
-              )}
+              <BarChart data={timeSeriesTrendData} margin={{ top: 5, right: 5, left: -25, bottom: 0 }}>
+                <CartesianGrid strokeDasharray="3 3" stroke="#1e293b" />
+                <XAxis dataKey="name" tick={{ fill: "#64748b", fontSize: 8 }} />
+                <YAxis tick={{ fill: "#64748b", fontSize: 8 }} />
+                <Tooltip 
+                  contentStyle={{ backgroundColor: "#ffffff", border: "1px solid #cbd5e1", borderRadius: "8px", fontSize: 10 }} 
+                  labelStyle={{ color: "#0f172a", fontWeight: "bold" }}
+                  itemStyle={{ color: "#334155" }}
+                />
+                <Bar dataKey="Inflow" fill="#10b981" radius={[4, 4, 0, 0]} />
+                <Bar dataKey="Outflow" fill="#f43f5e" radius={[4, 4, 0, 0]} />
+              </BarChart>
             </ResponsiveContainer>
           </div>
         </div>
