@@ -436,7 +436,7 @@ export default function MobileDashboard({
   const monthsDict = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
 
   return (
-    <div id="mobile-dashboard-scroll" className="space-y-5 pb-6 text-slate-100 bg-[#0b0f19] min-h-screen">
+    <div id="mobile-dashboard-scroll" className="space-y-5 pb-6 text-slate-100 bg-slate-950 min-h-screen">
       
       {/* 0. OVERALL DETAILS SUMMARY SECTION */}
       <div className="space-y-3">
