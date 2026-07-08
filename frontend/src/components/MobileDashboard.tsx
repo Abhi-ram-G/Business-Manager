@@ -628,85 +628,85 @@ export default function MobileDashboard({
           <div className="grid grid-cols-2 lg:grid-cols-5 gap-3">
             
             {/* Total Stock Available */}
-            <div className="col-span-2 lg:col-span-1 stock-card-blue p-3 rounded-2xl border transition-all duration-300 shadow-sm relative overflow-hidden group">
-              <div className="absolute -right-3 -bottom-3 w-10 h-10 bg-blue-500/5 rounded-full blur-md group-hover:scale-150 transition-transform duration-500" />
+            <div className="col-span-2 lg:col-span-1 bg-slate-900/40 p-3.5 rounded-2xl border border-blue-500/20 hover:border-blue-500/40 transition-all duration-300 shadow-sm relative overflow-hidden group">
+              <div className="absolute -right-4 -bottom-4 w-12 h-12 bg-blue-500/5 rounded-full blur-md group-hover:scale-150 transition-transform duration-500" />
               <div className="flex justify-between items-start">
                 <div>
-                  <span className="stock-card-label block uppercase">Total Stock Available</span>
-                  <div className="mt-1 flex items-baseline gap-1">
-                    <span className="stock-card-number stock-card-number-blue" style={{ fontSize: "16px", color: "#2563eb", fontWeight: "bold" }}>{overallTotalAvail}</span>
-                    <span className="stock-card-unit" style={{ fontSize: "12px", color: "#64748b", fontWeight: "normal", marginLeft: "4px" }}>pipes</span>
+                  <span className="text-[9.5px] font-mono text-slate-400 uppercase tracking-wider font-bold">Total Stock Available</span>
+                  <div className="text-lg font-black font-mono mt-1 text-blue-700 flex items-baseline gap-1">
+                    <span>{overallTotalAvail}</span>
+                    <span className="text-[9px] text-slate-500 font-bold uppercase">pipes</span>
                   </div>
                 </div>
-                <div className="p-2 bg-[#294d5a] rounded-xl text-white">
+                <div className="p-2 bg-blue-950/80 rounded-xl text-blue-400 border border-blue-800/40">
                   <Package className="w-4 h-4" />
                 </div>
               </div>
             </div>
 
             {/* 7" High QLT */}
-            <div className="col-span-1 stock-card-green p-3 rounded-2xl border transition-all duration-300 shadow-sm relative overflow-hidden group">
-              <div className="absolute -right-3 -bottom-3 w-10 h-10 bg-emerald-500/5 rounded-full blur-md group-hover:scale-150 transition-transform duration-500" />
+            <div className="col-span-1 bg-slate-900/40 p-3.5 rounded-2xl border border-emerald-500/20 hover:border-emerald-500/40 transition-all duration-300 shadow-sm relative overflow-hidden group">
+              <div className="absolute -right-4 -bottom-4 w-12 h-12 bg-emerald-500/5 rounded-full blur-md group-hover:scale-150 transition-transform duration-500" />
               <div className="flex justify-between items-start">
                 <div>
-                  <span className="stock-card-label block uppercase">7" H QLT</span>
-                  <div className="mt-1 flex items-baseline gap-1">
-                    <span className="stock-card-number stock-card-number-green" style={{ fontSize: "16px", color: "#10b981", fontWeight: "bold" }}>{overallAvail7High}</span>
-                    <span className="stock-card-unit" style={{ fontSize: "12px", color: "#64748b", fontWeight: "normal", marginLeft: "4px" }}>pipes</span>
+                  <span className="text-[9.5px] font-mono text-slate-400 uppercase tracking-wider font-bold">7" H QLT</span>
+                  <div className="text-lg font-black font-mono mt-1 text-emerald-450 flex items-baseline gap-1">
+                    <span>{overallAvail7High}</span>
+                    <span className="text-[9px] text-slate-500 font-bold uppercase">pipes</span>
                   </div>
                 </div>
-                <div className="p-2 bg-[#2d5443] rounded-xl text-white">
+                <div className="p-2 bg-emerald-950/80 rounded-xl text-emerald-400 border border-emerald-800/40">
                   <Package className="w-4 h-4" />
                 </div>
               </div>
             </div>
 
             {/* 7" Medium QLT */}
-            <div className="col-span-1 stock-card-green p-3 rounded-2xl border transition-all duration-300 shadow-sm relative overflow-hidden group">
-              <div className="absolute -right-3 -bottom-3 w-10 h-10 bg-teal-500/5 rounded-full blur-md group-hover:scale-150 transition-transform duration-500" />
+            <div className="col-span-1 bg-slate-900/40 p-3.5 rounded-2xl border border-teal-500/20 hover:border-teal-500/40 transition-all duration-300 shadow-sm relative overflow-hidden group">
+              <div className="absolute -right-4 -bottom-4 w-12 h-12 bg-teal-500/5 rounded-full blur-md group-hover:scale-150 transition-transform duration-500" />
               <div className="flex justify-between items-start">
                 <div>
-                  <span className="stock-card-label block uppercase">7" M QLT</span>
-                  <div className="mt-1 flex items-baseline gap-1">
-                    <span className="stock-card-number stock-card-number-green" style={{ fontSize: "16px", color: "#10b981", fontWeight: "bold" }}>{overallAvail7Medium}</span>
-                    <span className="stock-card-unit" style={{ fontSize: "12px", color: "#64748b", fontWeight: "normal", marginLeft: "4px" }}>pipes</span>
+                  <span className="text-[9.5px] font-mono text-slate-400 uppercase tracking-wider font-bold">7" M QLT</span>
+                  <div className="text-lg font-black font-mono mt-1 text-teal-400 flex items-baseline gap-1">
+                    <span>{overallAvail7Medium}</span>
+                    <span className="text-[9px] text-slate-500 font-bold uppercase">pipes</span>
                   </div>
                 </div>
-                <div className="p-2 bg-[#2d5443] rounded-xl text-white">
+                <div className="p-2 bg-teal-950/80 rounded-xl text-teal-400 border border-teal-800/40">
                   <Package className="w-4 h-4" />
                 </div>
               </div>
             </div>
 
             {/* 10" High QLT */}
-            <div className="col-span-1 stock-card-orange p-3 rounded-2xl border transition-all duration-300 shadow-sm relative overflow-hidden group">
-              <div className="absolute -right-3 -bottom-3 w-10 h-10 bg-orange-500/5 rounded-full blur-md group-hover:scale-150 transition-transform duration-500" />
+            <div className="col-span-1 bg-slate-900/40 p-3.5 rounded-2xl border border-amber-500/20 hover:border-amber-500/40 transition-all duration-300 shadow-sm relative overflow-hidden group">
+              <div className="absolute -right-4 -bottom-4 w-12 h-12 bg-amber-500/5 rounded-full blur-md group-hover:scale-150 transition-transform duration-500" />
               <div className="flex justify-between items-start">
                 <div>
-                  <span className="stock-card-label block uppercase">10" H QLT</span>
-                  <div className="mt-1 flex items-baseline gap-1">
-                    <span className="stock-card-number stock-card-number-orange" style={{ fontSize: "16px", color: "#f97316", fontWeight: "bold" }}>{overallAvail10High}</span>
-                    <span className="stock-card-unit" style={{ fontSize: "12px", color: "#64748b", fontWeight: "normal", marginLeft: "4px" }}>pipes</span>
+                  <span className="text-[9.5px] font-mono text-slate-400 uppercase tracking-wider font-bold">10" H QLT</span>
+                  <div className="text-lg font-black font-mono mt-1 text-amber-700 flex items-baseline gap-1">
+                    <span>{overallAvail10High}</span>
+                    <span className="text-[9px] text-slate-500 font-bold uppercase">pipes</span>
                   </div>
                 </div>
-                <div className="p-2 bg-[#643b27] rounded-xl text-white">
+                <div className="p-2 bg-amber-950/80 rounded-xl text-amber-400 border border-amber-800/40">
                   <Package className="w-4 h-4" />
                 </div>
               </div>
             </div>
 
             {/* 10" Medium QLT */}
-            <div className="col-span-1 stock-card-orange p-3 rounded-2xl border transition-all duration-300 shadow-sm relative overflow-hidden group">
-              <div className="absolute -right-3 -bottom-3 w-10 h-10 bg-amber-500/5 rounded-full blur-md group-hover:scale-150 transition-transform duration-500" />
+            <div className="col-span-1 bg-slate-900/40 p-3.5 rounded-2xl border border-amber-500/20 hover:border-amber-500/40 transition-all duration-300 shadow-sm relative overflow-hidden group">
+              <div className="absolute -right-4 -bottom-4 w-12 h-12 bg-amber-500/5 rounded-full blur-md group-hover:scale-150 transition-transform duration-500" />
               <div className="flex justify-between items-start">
                 <div>
-                  <span className="stock-card-label block uppercase">10" M QLT</span>
-                  <div className="mt-1 flex items-baseline gap-1">
-                    <span className="stock-card-number stock-card-number-orange" style={{ fontSize: "16px", color: "#f97316", fontWeight: "bold" }}>{overallAvail10Medium}</span>
-                    <span className="stock-card-unit" style={{ fontSize: "12px", color: "#64748b", fontWeight: "normal", marginLeft: "4px" }}>pipes</span>
+                  <span className="text-[9.5px] font-mono text-slate-400 uppercase tracking-wider font-bold">10" M QLT</span>
+                  <div className="text-lg font-black font-mono mt-1 text-amber-700 flex items-baseline gap-1">
+                    <span>{overallAvail10Medium}</span>
+                    <span className="text-[9px] text-slate-500 font-bold uppercase">pipes</span>
                   </div>
                 </div>
-                <div className="p-2 bg-[#643b27] rounded-xl text-white">
+                <div className="p-2 bg-amber-950/80 rounded-xl text-amber-400 border border-amber-800/40">
                   <Package className="w-4 h-4" />
                 </div>
               </div>
