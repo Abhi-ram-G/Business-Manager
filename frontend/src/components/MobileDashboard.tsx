@@ -591,8 +591,8 @@ export default function MobileDashboard({
         <div className="h-px bg-gradient-to-r from-transparent via-slate-800 to-transparent" />
       </div>
 
-      {/* Casing Stock Row */}
-      <div className="space-y-3">
+      {/* Casing Stock Row wrapped inside a unified section container */}
+      <div className="bg-slate-900/40 p-4 rounded-3xl border border-slate-800 shadow-sm space-y-4">
           
           <style>{`
             span.stock-card-number {
