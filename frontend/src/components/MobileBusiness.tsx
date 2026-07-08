@@ -1812,6 +1812,10 @@ export default function MobileBusiness({
   const [matIsPaid, setMatIsPaid] = useState<boolean>(false);
   const [matVendor, setMatVendor] = useState("");
   const [matRemarks, setMatRemarks] = useState("");
+  const [matItems, setMatItems] = useState<{ name: string; count: number; rate: number; cost: number }[]>([]);
+  const [curItemName, setCurItemName] = useState("");
+  const [curItemCount, setCurItemCount] = useState<number>(1);
+  const [curItemRate, setCurItemRate] = useState<number>(500);
 
   // C. Salary Payout calculation state
   const [selectedLabourForPayout, setSelectedLabourForPayout] = useState<Labour | null>(null);
@@ -2464,6 +2468,10 @@ export default function MobileBusiness({
     setMatVendor("");
     setMatRemarks("");
     setMatIsPaid(false);
+    setMatItems([]);
+    setCurItemName("");
+    setCurItemCount(1);
+    setCurItemRate(0);
     setIsMatFormOpen(true);
   };
 
@@ -2476,29 +2484,102 @@ export default function MobileBusiness({
     setMatUnit(mat.unit);
     setMatRate(mat.rate);
     setMatVendor(mat.vendorName || "");
-    setMatRemarks(mat.remarks || "");
+    
+    // Parse items from remarks JSON
+    let notes = mat.remarks || "";
+    let itemsList: { name: string; count: number; rate: number; cost: number }[] = [];
+    try {
+      const parsed = JSON.parse(mat.remarks || "");
+      if (parsed && typeof parsed === "object" && Array.isArray(parsed.items)) {
+        notes = parsed.notes || "";
+        itemsList = parsed.items;
+      }
+    } catch (e) {
+      // Treat as raw text
+    }
+
+    if (itemsList.length === 0) {
+      itemsList = [{
+        name: mat.materialName || "Material",
+        count: mat.quantity || 1,
+        rate: mat.rate || 0,
+        cost: mat.totalAmount || ((mat.quantity || 1) * (mat.rate || 0))
+      }];
+    }
+
+    setMatRemarks(notes);
+    setMatItems(itemsList);
     setMatIsPaid(!!mat.isPaid);
+    
+    setCurItemName("");
+    setCurItemCount(1);
+    setCurItemRate(0);
     setIsMatFormOpen(true);
+  };
+
+  const handleAddItemClick = () => {
+    if (!curItemName.trim()) {
+      alert("Please enter a material name.");
+      return;
+    }
+    const countVal = Number(curItemCount) || 1;
+    const rateVal = Number(curItemRate) || 0;
+    const costVal = countVal * rateVal;
+
+    const newItem = {
+      name: curItemName.trim(),
+      count: countVal,
+      rate: rateVal,
+      cost: costVal
+    };
+
+    setMatItems(prev => [...prev, newItem]);
+    setCurItemName("");
+    setCurItemCount(1);
+    setCurItemRate(0);
   };
 
   const handleSaveMaterial = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!matName) return;
 
-    const totalAmount = Number(matQuantity) * Number(matRate);
+    let finalItems = [...matItems];
+    if (curItemName.trim()) {
+      finalItems.push({
+        name: curItemName.trim(),
+        count: Number(curItemCount) || 1,
+        rate: Number(curItemRate) || 0,
+        cost: (Number(curItemCount) || 1) * (Number(curItemRate) || 0)
+      });
+    }
+
+    if (finalItems.length === 0) {
+      alert("Please add at least one material item.");
+      return;
+    }
+
+    const totalAmount = finalItems.reduce((sum, item) => sum + item.cost, 0);
+    const summaryName = finalItems.map(i => i.name).join(", ");
+    const totalCount = finalItems.reduce((sum, item) => sum + item.count, 0);
+    const calculatedRate = totalCount > 0 ? totalAmount / totalCount : 0;
+
     const existing = editingMatId ? materials.find(m => m.id === editingMatId) : undefined;
     const targetId = editingMatId || `MAT-${Date.now()}`;
+    const remarksPayload = JSON.stringify({
+      notes: matRemarks,
+      items: finalItems
+    });
+
     const payloadMaterial = {
       id: targetId,
       vehicleId: matVehicleId,
       date: matDate,
-      materialName: matName,
-      quantity: Number(matQuantity),
-      unit: matUnit,
-      rate: Number(matRate),
+      materialName: summaryName,
+      quantity: totalCount,
+      unit: "pcs",
+      rate: calculatedRate,
       totalAmount: totalAmount,
       vendorName: matVendor,
-      remarks: matRemarks,
+      remarks: remarksPayload,
       isPaid: matIsPaid,
       payments: existing?.payments || (matIsPaid ? [{ id: "init", date: matDate, amount: totalAmount }] : []),
     };
@@ -2516,19 +2597,19 @@ export default function MobileBusiness({
       const savedMat = mapMaterialFromApi(response);
       if (editingMatId) {
         setMaterials(prev => prev.map(m => m.id === editingMatId ? savedMat : m));
-        triggerOnlineSync(`UPDATED PURCHASE RECORD: ${matName}`);
+        triggerOnlineSync(`UPDATED PURCHASE RECORD: ${summaryName}`);
       } else {
         setMaterials(prev => [savedMat, ...prev]);
-        triggerOnlineSync(`ADDED MATERIAL PURCHASED: ${matName} FOR ${matVehicleId}`);
+        triggerOnlineSync(`ADDED MATERIAL PURCHASED: ${summaryName} FOR ${matVehicleId}`);
       }
     } catch (error) {
       console.error(error);
       if (editingMatId) {
         setMaterials(prev => prev.map(m => m.id === editingMatId ? payloadMaterial : m));
-        triggerOnlineSync(`UPDATED PURCHASE RECORD: ${matName} (local fallback)`);
+        triggerOnlineSync(`UPDATED PURCHASE RECORD: ${summaryName} (local fallback)`);
       } else {
         setMaterials(prev => [payloadMaterial, ...prev]);
-        triggerOnlineSync(`ADDED MATERIAL PURCHASED: ${matName} (local fallback)`);
+        triggerOnlineSync(`ADDED MATERIAL PURCHASED: ${summaryName} (local fallback)`);
       }
     }
     setIsMatFormOpen(false);
@@ -6775,52 +6856,84 @@ export default function MobileBusiness({
                       </div>
                     </div>
 
-                    <div>
-                      <label className="text-[9px] text-slate-500 block">MATERIAL DESCRIPTION / NAME</label>
-                      <input
-                        type="text"
-                        value={matName}
-                        onChange={(e) => setMatName(e.target.value)}
-                        className="w-full bg-slate-950 p-1.5 rounded text-slate-100 border border-slate-850"
-                        placeholder="e.g. 6 1/2 inch Drilling Bit, Slider Grease"
-                        required
-                      />
-                    </div>
+                    {/* Dynamic Items Entry Row */}
+                    <div className="bg-slate-950/20 p-3 rounded-xl border border-slate-850/60 space-y-3">
+                      <span className="text-[9.5px] font-mono font-bold text-indigo-400 block uppercase tracking-wider">Item Details</span>
+                      
+                      <div className="grid grid-cols-1 sm:grid-cols-12 gap-2 items-end">
+                        <div className="sm:col-span-4">
+                          <label className="text-[9px] text-slate-500 block">NAME</label>
+                          <input
+                            type="text"
+                            value={curItemName}
+                            onChange={(e) => setCurItemName(e.target.value)}
+                            className="w-full bg-slate-950 p-1.5 focus:outline-none border border-slate-850 rounded text-slate-100"
+                            placeholder="e.g. 6 1/2 inch Drilling Bit"
+                          />
+                        </div>
+                        <div className="sm:col-span-2">
+                          <label className="text-[9px] text-slate-500 block">COUNT</label>
+                          <input
+                            type="number"
+                            value={curItemCount}
+                            onChange={(e) => setCurItemCount(Number(e.target.value))}
+                            className="w-full bg-slate-950 p-1.5 focus:outline-none border border-slate-850 rounded text-slate-100 font-bold"
+                            min="1"
+                          />
+                        </div>
+                        <div className="sm:col-span-2">
+                          <label className="text-[9px] text-slate-500 block">RATE (₹)</label>
+                          <input
+                            type="number"
+                            value={curItemRate}
+                            onChange={(e) => setCurItemRate(Number(e.target.value))}
+                            className="w-full bg-slate-950 p-1.5 focus:outline-none border border-slate-850 rounded text-slate-100 font-bold"
+                            min="0"
+                          />
+                        </div>
+                        <div className="sm:col-span-2">
+                          <label className="text-[9px] text-slate-500 block">COST (₹)</label>
+                          <div className="w-full bg-slate-950/40 p-1.5 border border-slate-900 rounded text-emerald-450 font-bold text-center leading-tight font-mono">
+                            ₹{((Number(curItemCount) || 1) * (Number(curItemRate) || 0)).toLocaleString()}
+                          </div>
+                        </div>
+                        <div className="sm:col-span-2">
+                          <button
+                            type="button"
+                            onClick={handleAddItemClick}
+                            className="w-full bg-indigo-650 hover:bg-indigo-500 py-1.5 rounded text-[10px] font-bold text-white uppercase tracking-wider flex items-center justify-center gap-0.5 cursor-pointer"
+                          >
+                            <Plus className="w-3.5 h-3.5" /> Add
+                          </button>
+                        </div>
+                      </div>
 
-                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-1.5">
-                      <div>
-                        <label className="text-[9px] text-slate-500 block">QUANTITY</label>
-                        <input
-                          type="number"
-                          value={matQuantity}
-                          onChange={(e) => setMatQuantity(Number(e.target.value))}
-                          className="w-full bg-slate-950 p-1.5 rounded text-slate-100 border border-slate-850 font-bold"
-                          min="1"
-                          required
-                        />
-                      </div>
-                      <div>
-                        <label className="text-[9px] text-slate-500 block">UNIT TYPE</label>
-                        <input
-                          type="text"
-                          value={matUnit}
-                          onChange={(e) => setMatUnit(e.target.value)}
-                          className="w-full bg-slate-950 p-1.5 rounded text-slate-100 border border-slate-850 font-semibold"
-                          placeholder="pcs / kg / ltr"
-                          required
-                        />
-                      </div>
-                      <div>
-                        <label className="text-[9px] text-slate-500 block">RATE PER UNIT (₹)</label>
-                        <input
-                          type="number"
-                          value={matRate}
-                          onChange={(e) => setMatRate(Number(e.target.value))}
-                          className="w-full bg-slate-950 p-1.5 rounded text-slate-100 border border-slate-850 font-bold"
-                          min="0"
-                          required
-                        />
-                      </div>
+                      {/* Display added items list inside form */}
+                      {matItems.length > 0 && (
+                        <div className="bg-slate-950/40 p-2.5 rounded-lg border border-slate-850/60 space-y-1.5">
+                          <span className="text-[8.5px] text-slate-400 block uppercase font-bold tracking-wider">Added Items List:</span>
+                          <div className="space-y-1 max-h-40 overflow-y-auto pr-1">
+                            {matItems.map((item, idx) => (
+                              <div key={idx} className="flex justify-between items-center text-[10px] bg-slate-950/60 p-2 rounded border border-slate-900 font-mono">
+                                <div className="min-w-0 flex-1 pr-2">
+                                  <span className="font-bold text-slate-350 block truncate">{item.name}</span>
+                                  <span className="text-slate-550 text-[8.5px]">{item.count} count × ₹{item.rate.toLocaleString()}</span>
+                                </div>
+                                <div className="flex items-center gap-2 shrink-0">
+                                  <span className="text-emerald-450 font-bold">₹{item.cost.toLocaleString()}</span>
+                                  <button
+                                    type="button"
+                                    onClick={() => setMatItems(prev => prev.filter((_, i) => i !== idx))}
+                                    className="text-rose-450 hover:text-rose-400 font-bold text-[9px] cursor-pointer"
+                                  >
+                                    Remove
+                                  </button>
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      )}
                     </div>
 
                     <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
@@ -6848,7 +6961,11 @@ export default function MobileBusiness({
                       <div>
                         <label className="text-[9px] text-slate-500 block">AUTO TOTAL COST</label>
                         <div className="bg-slate-950 p-1.5 rounded border border-slate-850 text-emerald-450 font-black text-[10.5px] leading-tight flex items-center justify-center font-mono">
-                          ₹{(matQuantity * matRate).toLocaleString()} NET
+                          ₹{(() => {
+                            const sumAdded = matItems.reduce((sum, item) => sum + item.cost, 0);
+                            const currentVal = curItemName.trim() ? (Number(curItemCount) || 1) * (Number(curItemRate) || 0) : 0;
+                            return (sumAdded + currentVal).toLocaleString();
+                          })()} NET
                         </div>
                       </div>
                     </div>
@@ -6905,23 +7022,53 @@ export default function MobileBusiness({
                                   {m.isPaid ? "Paid" : "Pending"}
                                 </span>
                               </div>
-                              <h4 className={`font-bold mt-1 flex items-center gap-1 ${m.isPaid ? "text-green-800" : "text-slate-200"}`}>
-                                <Package className={`w-3 h-3 shrink-0 ${m.isPaid ? "text-green-600" : "text-teal-450"}`} />
-                                {m.materialName}
-                              </h4>
-                              <p className={`text-[8px] mt-1 ${m.isPaid ? "text-green-700" : "text-slate-400"}`}>
-                                <span className={m.isPaid ? "text-green-600" : "text-slate-500"}>Logistics:</span> {m.quantity} {m.unit} × ₹{m.rate}/unit
-                              </p>
-                              {m.vendorName && (
-                                <p className={`text-[8px] ${m.isPaid ? "text-green-600" : "text-slate-450"}`}>
-                                  <span className={m.isPaid ? "text-green-600" : "text-slate-550"}>Vendor:</span> {m.vendorName}
-                                </p>
-                              )}
-                              {m.remarks && (
-                                <p className={`text-[8px] italic mt-0.5 ${m.isPaid ? "text-green-600" : "text-slate-500"}`}>
-                                  "{m.remarks}"
-                                </p>
-                              )}
+                              {(() => {
+                                let parsedRemarks = null;
+                                let displayRemarks = m.remarks || "";
+                                let displayItems: { name: string; count: number; rate: number; cost: number }[] = [];
+                                try {
+                                  const parsed = JSON.parse(m.remarks || "");
+                                  if (parsed && typeof parsed === "object" && (parsed.notes !== undefined || Array.isArray(parsed.items))) {
+                                    parsedRemarks = parsed;
+                                    displayRemarks = parsed.notes || "";
+                                    displayItems = parsed.items || [];
+                                  }
+                                } catch (e) {}
+
+                                return (
+                                  <>
+                                    <h4 className={`font-bold mt-1 flex items-center gap-1 ${m.isPaid ? "text-green-800" : "text-slate-200"}`}>
+                                      <Package className={`w-3 h-3 shrink-0 ${m.isPaid ? "text-green-600" : "text-teal-450"}`} />
+                                      {m.materialName}
+                                    </h4>
+                                    
+                                    {displayItems && displayItems.length > 0 ? (
+                                      <div className="mt-1.5 space-y-0.5 pl-3 border-l-2 border-indigo-650/40">
+                                        {displayItems.map((item, idx) => (
+                                          <div key={idx} className={`text-[8px] leading-tight ${m.isPaid ? "text-green-700" : "text-slate-400"}`}>
+                                            • <span className="font-bold text-slate-350">{item.name}</span>: {item.count} count × ₹{item.rate.toLocaleString()} = <span className="font-bold text-slate-200">₹{item.cost.toLocaleString()}</span>
+                                          </div>
+                                        ))}
+                                      </div>
+                                    ) : (
+                                      <p className={`text-[8px] mt-1 ${m.isPaid ? "text-green-700" : "text-slate-400"}`}>
+                                        <span className={m.isPaid ? "text-green-600" : "text-slate-500"}>Logistics:</span> {m.quantity} × ₹{m.rate}/unit
+                                      </p>
+                                    )}
+
+                                    {m.vendorName && (
+                                      <p className={`text-[8px] mt-1 ${m.isPaid ? "text-green-600" : "text-slate-450"}`}>
+                                        <span className={m.isPaid ? "text-green-600" : "text-slate-550"}>Vendor:</span> {m.vendorName}
+                                      </p>
+                                    )}
+                                    {displayRemarks && (
+                                      <p className={`text-[8px] italic mt-0.5 ${m.isPaid ? "text-green-600" : "text-slate-500"}`}>
+                                        "{displayRemarks}"
+                                      </p>
+                                    )}
+                                  </>
+                                );
+                              })()}
                             </div>
 
                             <div className="text-right shrink-0 flex flex-col items-end justify-start gap-1 pl-2">
