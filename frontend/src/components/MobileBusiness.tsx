@@ -418,6 +418,7 @@ export default function MobileBusiness({
   const [pipe10MediumCount, setPipe10MediumCount] = useState<number>(0);
   const [pipe10MediumRate, setPipe10MediumRate] = useState<number>(0);
   const [pipeDiscountAmount, setPipeDiscountAmount] = useState<number>(0);
+  const [pipeIsPaid, setPipeIsPaid] = useState<boolean>(false);
   const [selectedPipeForHistory, setSelectedPipeForHistory] = useState<string | null>(null);
   const [showGlobalPipeHistory, setShowGlobalPipeHistory] = useState(false);
   const [selectedBitForHistory, setSelectedBitForHistory] = useState<string | null>(null);
@@ -1711,6 +1712,7 @@ export default function MobileBusiness({
     return `${yyyy}-${mm}-${dd}`;
   });
   const [bitRate, setBitRate] = useState(0);
+  const [bitIsPaid, setBitIsPaid] = useState<boolean>(false);
 
   // Core state for active file preview modal
   const [selectedFileToView, setSelectedFileToView] = useState<{
@@ -1729,6 +1731,7 @@ export default function MobileBusiness({
   const [fuelType, setFuelType] = useState<"Diesel" | "Petrol" | "CNG">("Diesel");
   const [fuelPerLiterCost, setFuelPerLiterCost] = useState(95);
   const [fuelLiters, setFuelLiters] = useState(40);
+  const [fuelIsPaid, setFuelIsPaid] = useState<boolean>(false);
 
   // 4-Way subfolder switcher under Vehicle Management
   const [vehicleSubTab, setVehicleSubTab] = useState<"profiles" | "fuel" | "service" | "materials">("profiles");
@@ -1793,6 +1796,7 @@ export default function MobileBusiness({
   const [serviceDate, setServiceDate] = useState("2026-06-18");
   const [serviceTypeInput, setServiceTypeInput] = useState("");
   const [serviceCost, setServiceCost] = useState(3000);
+  const [serviceIsPaid, setServiceIsPaid] = useState<boolean>(false);
   const [serviceSpareParts, setServiceSpareParts] = useState("");
   const [serviceRemarks, setServiceRemarks] = useState("");
 
@@ -1805,6 +1809,7 @@ export default function MobileBusiness({
   const [matQuantity, setMatQuantity] = useState(1);
   const [matUnit, setMatUnit] = useState("pcs");
   const [matRate, setMatRate] = useState(500);
+  const [matIsPaid, setMatIsPaid] = useState<boolean>(false);
   const [matVendor, setMatVendor] = useState("");
   const [matRemarks, setMatRemarks] = useState("");
 
@@ -2198,6 +2203,7 @@ export default function MobileBusiness({
     const dd = String(now.getDate()).padStart(2, "0");
     setBitDateEntry(`${yyyy}-${mm}-${dd}`);
     setBitRate(0);
+    setBitIsPaid(false);
     setIsBitFormOpen(true);
   };
 
@@ -2215,6 +2221,7 @@ export default function MobileBusiness({
       return `${yyyy}-${mm}-${dd}`;
     })());
     setBitRate(bit.rate);
+    setBitIsPaid(!!bit.isPaid);
     setIsBitFormOpen(true);
   };
 
@@ -2222,6 +2229,7 @@ export default function MobileBusiness({
     e.preventDefault();
     if (!bitNo.trim() || !bitBrand.trim() || bitButtonSizeMm === "" || !bitDateEntry) return;
 
+    const existing = editingBitId ? bitEntries.find(b => b.id === editingBitId) : undefined;
     const next: BitEntry = {
       id: editingBitId || `bit-${Date.now()}`,
       bitNo: bitNo.trim(),
@@ -2230,6 +2238,8 @@ export default function MobileBusiness({
       buttonSizeMm: Number(bitButtonSizeMm),
       dateEntry: bitDateEntry,
       rate: Number(bitRate),
+      isPaid: bitIsPaid,
+      payments: existing?.payments || (bitIsPaid ? [{ id: "init", date: bitDateEntry || "2026-06-18", amount: Number(bitRate) }] : [])
     };
 
     try {
@@ -2251,6 +2261,7 @@ export default function MobileBusiness({
       const dd = String(now.getDate()).padStart(2, "0");
       setBitDateEntry(`${yyyy}-${mm}-${dd}`);
       setBitRate(0);
+      setBitIsPaid(false);
     } catch (error) {
       console.error(error);
       alert("Unable to save the bit entry right now.");
@@ -2269,6 +2280,7 @@ export default function MobileBusiness({
     setFuelType("Diesel");
     setFuelPerLiterCost(95);
     setFuelLiters(45);
+    setFuelIsPaid(false);
     setIsFuelFormOpen(true);
   };
 
@@ -2279,6 +2291,7 @@ export default function MobileBusiness({
     setFuelType((entry.fuelType as "Diesel" | "Petrol" | "CNG") || "Diesel");
     setFuelPerLiterCost(Number(entry.perLiterCost ?? (entry.liters && entry.totalAmount ? entry.totalAmount / entry.liters : 95)));
     setFuelLiters(Number(entry.liters ?? 40));
+    setFuelIsPaid(!!entry.isPaid);
     setIsFuelFormOpen(true);
   };
 
@@ -2303,6 +2316,8 @@ export default function MobileBusiness({
               liters: Number(fuelLiters),
               cost: totalAmount,
               total_amount: totalAmount,
+              is_paid: fuelIsPaid,
+              payments: (editingFuelId ? fuelEntries.find(f => f.id === editingFuelId)?.payments : undefined) || (fuelIsPaid ? [{ id: "init", date: fuelDateTime.split(" ")[0], amount: totalAmount }] : [])
             }),
           }
         );
@@ -2326,7 +2341,9 @@ export default function MobileBusiness({
       fuelType: fuelType,
       perLiterCost: Number(fuelPerLiterCost),
       liters: Number(fuelLiters),
-      totalAmount
+      totalAmount,
+      isPaid: fuelIsPaid,
+      payments: fuelIsPaid ? [{ id: "init", date: fuelDateTime.split(" ")[0], amount: totalAmount }] : []
     };
 
     void requestJson(apiBaseUrl, "/api/v1/vehicles/fuel", {
@@ -2335,11 +2352,15 @@ export default function MobileBusiness({
       body: JSON.stringify({
         id: newFuel.id,
         date: fuelDateTime.split(" ")[0],
+        date_time: fuelDateTime,
         vehicle_name: newFuel.vehicleName,
         fuel_type: newFuel.fuelType,
         per_liter_cost: newFuel.perLiterCost,
         liters: newFuel.liters,
         cost: newFuel.totalAmount,
+        total_amount: newFuel.totalAmount,
+        is_paid: fuelIsPaid,
+        payments: fuelIsPaid ? [{ id: "init", date: fuelDateTime.split(" ")[0], amount: totalAmount }] : []
       }),
     }).catch((error) => console.error(error));
 
@@ -2361,6 +2382,7 @@ export default function MobileBusiness({
     setServiceCost(3000);
     setServiceSpareParts("");
     setServiceRemarks("");
+    setServiceIsPaid(false);
     setIsServiceFormOpen(true);
   };
 
@@ -2372,6 +2394,7 @@ export default function MobileBusiness({
     setServiceCost(srv.cost);
     setServiceSpareParts(srv.spareParts);
     setServiceRemarks(srv.remarks || "");
+    setServiceIsPaid(!!srv.isPaid);
     setIsServiceFormOpen(true);
   };
 
@@ -2389,8 +2412,8 @@ export default function MobileBusiness({
       cost: Number(serviceCost),
       spareParts: serviceSpareParts,
       remarks: serviceRemarks,
-      isPaid: existing?.isPaid ?? false,
-      payments: existing?.payments ?? [],
+      isPaid: serviceIsPaid,
+      payments: existing?.payments || (serviceIsPaid ? [{ id: "init", date: serviceDate, amount: Number(serviceCost) }] : []),
     };
 
     try {
@@ -2440,6 +2463,7 @@ export default function MobileBusiness({
     setMatRate(500);
     setMatVendor("");
     setMatRemarks("");
+    setMatIsPaid(false);
     setIsMatFormOpen(true);
   };
 
@@ -2453,6 +2477,7 @@ export default function MobileBusiness({
     setMatRate(mat.rate);
     setMatVendor(mat.vendorName || "");
     setMatRemarks(mat.remarks || "");
+    setMatIsPaid(!!mat.isPaid);
     setIsMatFormOpen(true);
   };
 
@@ -2474,8 +2499,8 @@ export default function MobileBusiness({
       totalAmount: totalAmount,
       vendorName: matVendor,
       remarks: matRemarks,
-      isPaid: existing?.isPaid ?? false,
-      payments: existing?.payments ?? [],
+      isPaid: matIsPaid,
+      payments: existing?.payments || (matIsPaid ? [{ id: "init", date: matDate, amount: totalAmount }] : []),
     };
 
     try {
@@ -2765,6 +2790,7 @@ export default function MobileBusiness({
     setPipe10MediumCount(0);
     setPipe10MediumRate(0);
     setPipeDiscountAmount(0);
+    setPipeIsPaid(false);
     setIsPipeFormOpen(true);
   };
 
@@ -2782,6 +2808,7 @@ export default function MobileBusiness({
     setPipe10MediumCount(pipe.pipe10MediumCount);
     setPipe10MediumRate(pipe.pipe10MediumRate);
     setPipeDiscountAmount(pipe.discountAmount);
+    setPipeIsPaid(!!pipe.isPaid);
     setIsPipeFormOpen(true);
   };
 
@@ -2790,6 +2817,7 @@ export default function MobileBusiness({
     if (!pipeCompanyName.trim() || !pipeLocation.trim()) return;
 
     void (async () => {
+      const existing = editingPipeId ? pipeEntries.find(p => p.id === editingPipeId) : undefined;
       const targetId = editingPipeId || `PIPE-${Date.now()}`;
       
       const t7h = Number(pipe7HighCount) * Number(pipe7HighRate);
@@ -2819,6 +2847,8 @@ export default function MobileBusiness({
         grandTotal: gt,
         discountAmount: Number(pipeDiscountAmount),
         grandPrice: gp,
+        isPaid: pipeIsPaid,
+        payments: existing?.payments || (pipeIsPaid ? [{ id: "init", date: pipeDateEntry || "2026-06-18", amount: gp }] : [])
       };
 
       try {
@@ -4060,7 +4090,7 @@ export default function MobileBusiness({
                     </div>
                   </div>
 
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
                     <div>
                       <label className="text-[9px] text-slate-500 block font-mono">DATE ENTRY</label>
                       <input
@@ -4081,6 +4111,17 @@ export default function MobileBusiness({
                         min="0"
                         required
                       />
+                    </div>
+                    <div>
+                      <label className="text-[9px] text-slate-500 block font-mono">PAYMENT STATUS</label>
+                      <select
+                        value={bitIsPaid ? "Paid" : "Pending"}
+                        onChange={(e) => setBitIsPaid(e.target.value === "Paid")}
+                        className="w-full bg-slate-950 p-1.5 rounded text-slate-100 border border-slate-850 font-bold focus:outline-none"
+                      >
+                        <option value="Pending">Pending</option>
+                        <option value="Paid">Paid</option>
+                      </select>
                     </div>
                   </div>
 
@@ -4379,12 +4420,12 @@ export default function MobileBusiness({
                     <div>
                       <label className="text-[9px] text-slate-500 block font-mono">PAYMENT STATUS</label>
                       <select
-                        value={hammerIsPaid ? "Paid" : "Not Paid"}
+                        value={hammerIsPaid ? "Paid" : "Pending"}
                         onChange={(e) => setHammerIsPaid(e.target.value === "Paid")}
-                        className="w-full bg-slate-950 p-1.5 rounded text-slate-100 border border-slate-850 font-bold"
+                        className="w-full bg-slate-950 p-1.5 rounded text-slate-100 border border-slate-850 font-bold focus:outline-none"
                       >
-                        <option value="Not Paid">Not Paid / Due</option>
-                        <option value="Paid">Paid / Cleared</option>
+                        <option value="Pending">Pending</option>
+                        <option value="Paid">Paid</option>
                       </select>
                     </div>
                   </div>
@@ -4781,7 +4822,7 @@ export default function MobileBusiness({
                     </div>
                   </div>
 
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
                     <div>
                       <label className="text-[9px] text-slate-500 block font-mono">DATE ENTRY</label>
                       <input
@@ -4801,6 +4842,17 @@ export default function MobileBusiness({
                         className="w-full bg-slate-950 p-1.5 rounded text-slate-100 border border-slate-850 font-bold"
                         min="0"
                       />
+                    </div>
+                    <div>
+                      <label className="text-[9px] text-slate-500 block font-mono">PAYMENT STATUS</label>
+                      <select
+                        value={pipeIsPaid ? "Paid" : "Pending"}
+                        onChange={(e) => setPipeIsPaid(e.target.value === "Paid")}
+                        className="w-full bg-slate-950 p-1.5 rounded text-slate-100 border border-slate-850 font-bold focus:outline-none"
+                      >
+                        <option value="Pending">Pending</option>
+                        <option value="Paid">Paid</option>
+                      </select>
                     </div>
                   </div>
 
@@ -6261,7 +6313,7 @@ export default function MobileBusiness({
                       </div>
                     </div>
 
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
                       <div>
                         <label className="text-[9px] text-slate-500 block">SERVICE TYPE / REPAIR</label>
                         <input
@@ -6283,6 +6335,17 @@ export default function MobileBusiness({
                           min="0"
                           required
                         />
+                      </div>
+                      <div>
+                        <label className="text-[9px] text-slate-500 block">PAYMENT STATUS</label>
+                        <select
+                          value={serviceIsPaid ? "Paid" : "Pending"}
+                          onChange={(e) => setServiceIsPaid(e.target.value === "Paid")}
+                          className="w-full bg-slate-950 p-1.5 focus:outline-none border border-slate-850 rounded text-slate-100 font-bold"
+                        >
+                          <option value="Pending">Pending</option>
+                          <option value="Paid">Paid</option>
+                        </select>
                       </div>
                     </div>
 
@@ -6495,7 +6558,7 @@ export default function MobileBusiness({
                       </div>
                     </div>
 
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
                       <div>
                         <label className="text-[9px] text-slate-500 block">COST PER LITER (₹)</label>
                         <input
@@ -6515,6 +6578,17 @@ export default function MobileBusiness({
                           className="w-full bg-slate-950 p-1.5 rounded text-slate-100 font-bold"
                           required
                         />
+                      </div>
+                      <div>
+                        <label className="text-[9px] text-slate-500 block">PAYMENT STATUS</label>
+                        <select
+                          value={fuelIsPaid ? "Paid" : "Pending"}
+                          onChange={(e) => setFuelIsPaid(e.target.value === "Paid")}
+                          className="w-full bg-slate-950 p-1.5 focus:outline-none border border-slate-850 rounded text-slate-100 font-bold"
+                        >
+                          <option value="Pending">Pending</option>
+                          <option value="Paid">Paid</option>
+                        </select>
                       </div>
                     </div>
 
@@ -6749,7 +6823,7 @@ export default function MobileBusiness({
                       </div>
                     </div>
 
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
                       <div>
                         <label className="text-[9px] text-slate-500 block">VENDOR NAME</label>
                         <input
@@ -6759,6 +6833,17 @@ export default function MobileBusiness({
                           className="w-full bg-slate-950 p-1.5 rounded text-slate-100 border border-slate-850"
                           placeholder="Kovai Spares"
                         />
+                      </div>
+                      <div>
+                        <label className="text-[9px] text-slate-500 block">PAYMENT STATUS</label>
+                        <select
+                          value={matIsPaid ? "Paid" : "Pending"}
+                          onChange={(e) => setMatIsPaid(e.target.value === "Paid")}
+                          className="w-full bg-slate-950 p-1.5 focus:outline-none border border-slate-850 rounded text-slate-100 font-bold"
+                        >
+                          <option value="Pending">Pending</option>
+                          <option value="Paid">Paid</option>
+                        </select>
                       </div>
                       <div>
                         <label className="text-[9px] text-slate-500 block">AUTO TOTAL COST</label>
