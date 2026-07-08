@@ -355,6 +355,32 @@ export default function MobileBusiness({
 }: MobileBusinessProps) {
   // Navigation tabs inside Business Section
   const [activeSubSection, setActiveSubSection] = React.useState<"labour" | "bit" | "attendance" | "vehicles" | "salaries">(initialSubSection);
+
+  // Helper for number inputs: clears default 0 on focus, restores on blur
+  const numInputProps = (val: any, setter: any, defaultVal = 0) => ({
+    value: val,
+    onChange: (e: React.ChangeEvent<HTMLInputElement>) => {
+      setter(e.target.value === "" ? "" : Number(e.target.value));
+    },
+    onFocus: () => {
+      if (val === 0 || val === "0") {
+        setter("");
+      }
+    },
+    onBlur: () => {
+      if (val === "" || val === null || val === undefined) {
+        setter(defaultVal);
+      }
+    }
+  });
+
+  // Helper for string inputs: converts lowercase to uppercase automatically while typing
+  const strInputProps = (val: string, setter: any) => ({
+    value: val,
+    onChange: (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+      setter(e.target.value.toUpperCase());
+    }
+  });
   const [activeMainSection, setActiveMainSection] = React.useState<"management" | "bill" | "reports">("management");
   // Reports section: month/year state
   const [reportMonth, setReportMonth] = React.useState(new Date().getMonth());
@@ -3698,11 +3724,10 @@ export default function MobileBusiness({
                         <label className="text-[9px] font-mono text-slate-500 block">FULL NAME</label>
                         <input
                           type="text"
-                          value={fullName}
-                          onChange={(e) => setFullName(e.target.value)}
-                          className="w-full bg-slate-950 border border-slate-800 p-1.5 rounded focus:outline-none focus:border-indigo-500"
+                          className="w-full bg-slate-950 border border-slate-800 p-1.5 rounded focus:outline-none focus:border-indigo-550 uppercase text-slate-100 font-bold"
                           placeholder="e.g. Ramesh Sah"
                           required
+                          {...strInputProps(fullName, setFullName)}
                         />
                       </div>
                       <div>
@@ -3745,10 +3770,9 @@ export default function MobileBusiness({
                         <label className="text-[9px] font-mono text-slate-500 block">12-DIGIT AADHAAR</label>
                         <input
                           type="text"
-                          value={aadhaarNumber}
-                          onChange={(e) => setAadhaarNumber(e.target.value)}
-                          className="w-full bg-slate-950 border border-slate-800 p-1.5 rounded focus:outline-none focus:border-indigo-500"
+                          className="w-full bg-slate-950 border border-slate-800 p-1.5 rounded focus:outline-none focus:border-indigo-500 uppercase font-mono"
                           placeholder="1234 5678 9012"
+                          {...strInputProps(aadhaarNumber, setAadhaarNumber)}
                         />
                       </div>
                       <div>
@@ -3768,10 +3792,9 @@ export default function MobileBusiness({
                           <label className="text-[9px] font-mono text-slate-500 block">LICENSE ID</label>
                           <input
                             type="text"
-                            value={licenseNumber}
-                            onChange={(e) => setLicenseNumber(e.target.value)}
-                            className="w-full bg-slate-950 border border-slate-800 p-1.5 rounded focus:outline-none"
+                            className="w-full bg-slate-950 border border-slate-800 p-1.5 rounded focus:outline-none uppercase font-mono"
                             placeholder="DL-88339X"
+                            {...strInputProps(licenseNumber, setLicenseNumber)}
                           />
                         </div>
                         <div>
@@ -3791,19 +3814,17 @@ export default function MobileBusiness({
                         <label className="text-[9px] font-mono text-slate-500 block">EMERGENCY PHONE</label>
                         <input
                           type="text"
-                          value={emergencyContact}
-                          onChange={(e) => setEmergencyContact(e.target.value)}
-                          className="w-full bg-slate-950 border border-slate-800 p-1.5 rounded"
+                          className="w-full bg-slate-950 border border-slate-800 p-1.5 rounded uppercase font-mono"
                           placeholder="Father/Spouse no"
+                          {...strInputProps(emergencyContact, setEmergencyContact)}
                         />
                       </div>
                       <div>
                         <label className="text-[9px] font-mono text-slate-500 block">SALARY PER MONTH (₹)</label>
                         <input
                           type="number"
-                          value={salaryPerMonth}
-                          onChange={(e) => setSalaryPerMonth(Number(e.target.value))}
-                          className="w-full bg-slate-950 border border-slate-800 p-1.5 rounded"
+                          className="w-full bg-slate-950 border border-slate-800 p-1.5 rounded font-bold font-mono"
+                          {...numInputProps(salaryPerMonth, setSalaryPerMonth, 0)}
                         />
                       </div>
                     </div>
@@ -3811,11 +3832,10 @@ export default function MobileBusiness({
                     <div>
                       <label className="text-[9px] font-mono text-slate-500 block">ADDRESS</label>
                       <textarea
-                        value={address}
-                        onChange={(e) => setAddress(e.target.value)}
-                        className="w-full bg-slate-950 border border-slate-800 p-1.5 rounded text-xs"
+                        className="w-full bg-slate-950 border border-slate-800 p-1.5 rounded text-xs uppercase"
                         rows={2}
                         placeholder="Complete postal address..."
+                        {...strInputProps(address, setAddress)}
                       />
                     </div>
 
@@ -3884,9 +3904,8 @@ export default function MobileBusiness({
                           <input 
                             type="text" 
                             placeholder="e.g. PAN Card, Fitness" 
-                            value={tempDocName}
-                            onChange={(e) => setTempDocName(e.target.value)}
-                            className="w-full bg-slate-900 border border-slate-800 p-1 rounded text-[10px]"
+                            className="w-full bg-slate-900 border border-slate-800 p-1 rounded text-[10px] uppercase font-bold"
+                            {...strInputProps(tempDocName, setTempDocName)}
                           />
                         </div>
                         <div className="col-span-5">
@@ -4126,22 +4145,20 @@ export default function MobileBusiness({
                       <label className="text-[9px] text-slate-500 block font-mono">BIT NUMBER</label>
                       <input
                         type="text"
-                        value={bitNo}
-                        onChange={(e) => setBitNo(e.target.value)}
-                        className="w-full bg-slate-950 p-1.5 rounded text-slate-100 border border-slate-850"
+                        className="w-full bg-slate-950 p-1.5 rounded text-slate-100 border border-slate-850 uppercase font-bold"
                         placeholder="BT-001"
                         required
+                        {...strInputProps(bitNo, setBitNo)}
                       />
                     </div>
                     <div>
                       <label className="text-[9px] text-slate-500 block font-mono">BIT BRAND</label>
                       <input
                         type="text"
-                        value={bitBrand}
-                        onChange={(e) => setBitBrand(e.target.value)}
-                        className="w-full bg-slate-950 p-1.5 rounded text-slate-100 border border-slate-850"
+                        className="w-full bg-slate-950 p-1.5 rounded text-slate-100 border border-slate-850 uppercase font-bold"
                         placeholder="Atlas Copco"
                         required
+                        {...strInputProps(bitBrand, setBitBrand)}
                       />
                     </div>
                   </div>
@@ -4151,22 +4168,20 @@ export default function MobileBusiness({
                       <label className="text-[9px] text-slate-500 block font-mono">BIT SIZE IN MM</label>
                       <input
                         type="number"
-                        value={bitSizeMm}
-                        onChange={(e) => setBitSizeMm(Number(e.target.value))}
-                        className="w-full bg-slate-950 p-1.5 rounded text-slate-100 border border-slate-850 font-bold"
+                        className="w-full bg-slate-950 p-1.5 rounded text-slate-100 border border-slate-850 font-bold font-mono"
                         min="1"
                         required
+                        {...numInputProps(bitSizeMm, setBitSizeMm, 1)}
                       />
                     </div>
                     <div>
                       <label className="text-[9px] text-slate-500 block font-mono">BUTTON SIZE IN MM</label>
                       <input
                         type="number"
-                        value={bitButtonSizeMm}
-                        onChange={(e) => setBitButtonSizeMm(e.target.value === "" ? "" : Number(e.target.value))}
-                        className="w-full bg-slate-950 p-1.5 rounded text-slate-100 border border-slate-850 font-bold"
+                        className="w-full bg-slate-950 p-1.5 rounded text-slate-100 border border-slate-850 font-bold font-mono"
                         min="1"
                         required
+                        {...numInputProps(bitButtonSizeMm, setBitButtonSizeMm, 1)}
                       />
                     </div>
                   </div>
@@ -4186,11 +4201,10 @@ export default function MobileBusiness({
                       <label className="text-[9px] text-slate-500 block font-mono">RATE OF BIT (₹)</label>
                       <input
                         type="number"
-                        value={bitRate}
-                        onChange={(e) => setBitRate(Number(e.target.value))}
-                        className="w-full bg-slate-950 p-1.5 rounded text-slate-100 border border-slate-850 font-bold"
+                        className="w-full bg-slate-950 p-1.5 rounded text-slate-100 border border-slate-850 font-bold font-mono"
                         min="0"
                         required
+                        {...numInputProps(bitRate, setBitRate, 0)}
                       />
                     </div>
                     <div>
@@ -4442,22 +4456,20 @@ export default function MobileBusiness({
                       <label className="text-[9px] text-slate-500 block font-mono">HAMMER NUMBER</label>
                       <input
                         type="text"
-                        value={hammerNo}
-                        onChange={(e) => setHammerNo(e.target.value)}
-                        className="w-full bg-slate-950 p-1.5 rounded text-slate-100 border border-slate-850"
+                        className="w-full bg-slate-950 p-1.5 rounded text-slate-100 border border-slate-850 uppercase font-bold"
                         placeholder="H-001"
                         required
+                        {...strInputProps(hammerNo, setHammerNo)}
                       />
                     </div>
                     <div>
                       <label className="text-[9px] text-slate-500 block font-mono">BRAND</label>
                       <input
                         type="text"
-                        value={hammerBrand}
-                        onChange={(e) => setHammerBrand(e.target.value)}
-                        className="w-full bg-slate-950 p-1.5 rounded text-slate-100 border border-slate-850"
+                        className="w-full bg-slate-950 p-1.5 rounded text-slate-100 border border-slate-850 uppercase font-bold"
                         placeholder="Atlas Copco"
                         required
+                        {...strInputProps(hammerBrand, setHammerBrand)}
                       />
                     </div>
                   </div>
@@ -4477,11 +4489,10 @@ export default function MobileBusiness({
                       <label className="text-[9px] text-slate-500 block font-mono">RATE (₹)</label>
                       <input
                         type="number"
-                        value={hammerRate}
-                        onChange={(e) => setHammerRate(Number(e.target.value))}
-                        className="w-full bg-slate-950 p-1.5 rounded text-slate-100 border border-slate-850 font-bold"
+                        className="w-full bg-slate-950 p-1.5 rounded text-slate-100 border border-slate-850 font-bold font-mono"
                         min="0"
                         required
+                        {...numInputProps(hammerRate, setHammerRate, 0)}
                       />
                     </div>
                   </div>
@@ -4491,11 +4502,10 @@ export default function MobileBusiness({
                       <label className="text-[9px] text-slate-500 block font-mono">CAPABLE FEET DEPTH</label>
                       <input
                         type="number"
-                        value={hammerCapableFeet}
-                        onChange={(e) => setHammerCapableFeet(Number(e.target.value))}
-                        className="w-full bg-slate-950 p-1.5 rounded text-slate-100 border border-slate-850 font-bold"
+                        className="w-full bg-slate-950 p-1.5 rounded text-slate-100 border border-slate-850 font-bold font-mono"
                         min="1"
                         required
+                        {...numInputProps(hammerCapableFeet, setHammerCapableFeet, 1)}
                       />
                     </div>
                     <div>
@@ -4883,22 +4893,20 @@ export default function MobileBusiness({
                       <label className="text-[9px] text-slate-500 block font-mono">COMPANY NAME</label>
                       <input
                         type="text"
-                        value={pipeCompanyName}
-                        onChange={(e) => setPipeCompanyName(e.target.value)}
-                        className="w-full bg-slate-950 p-1.5 rounded text-slate-100 border border-slate-850"
+                        className="w-full bg-slate-950 p-1.5 rounded text-slate-100 border border-slate-850 uppercase font-bold"
                         placeholder="e.g. Supreme Pipes"
                         required
+                        {...strInputProps(pipeCompanyName, setPipeCompanyName)}
                       />
                     </div>
                     <div>
                       <label className="text-[9px] text-slate-500 block font-mono">LOCATION</label>
                       <input
                         type="text"
-                        value={pipeLocation}
-                        onChange={(e) => setPipeLocation(e.target.value)}
-                        className="w-full bg-slate-950 p-1.5 rounded text-slate-100 border border-slate-850"
+                        className="w-full bg-slate-950 p-1.5 rounded text-slate-100 border border-slate-850 uppercase font-bold"
                         placeholder="e.g. Mumbai Warehouse"
                         required
+                        {...strInputProps(pipeLocation, setPipeLocation)}
                       />
                     </div>
                   </div>
@@ -4918,10 +4926,9 @@ export default function MobileBusiness({
                       <label className="text-[9px] text-slate-500 block font-mono">DISCOUNT AMOUNT (₹)</label>
                       <input
                         type="number"
-                        value={pipeDiscountAmount}
-                        onChange={(e) => setPipeDiscountAmount(Number(e.target.value))}
-                        className="w-full bg-slate-950 p-1.5 rounded text-slate-100 border border-slate-850 font-bold"
+                        className="w-full bg-slate-950 p-1.5 rounded text-slate-100 border border-slate-850 font-bold font-mono"
                         min="0"
+                        {...numInputProps(pipeDiscountAmount, setPipeDiscountAmount, 0)}
                       />
                     </div>
                     <div>
@@ -4946,20 +4953,18 @@ export default function MobileBusiness({
                         <label className="text-[8px] text-slate-500 block font-mono">7" HIGH QUALITY QTY</label>
                         <input
                           type="number"
-                          value={pipe7HighCount}
-                          onChange={(e) => setPipe7HighCount(Number(e.target.value))}
-                          className="w-full bg-slate-950 p-1 rounded text-slate-100 border border-slate-850 text-center font-bold"
+                          className="w-full bg-slate-950 p-1 rounded text-slate-100 border border-slate-850 text-center font-bold font-mono"
                           min="0"
+                          {...numInputProps(pipe7HighCount, setPipe7HighCount, 0)}
                         />
                       </div>
                       <div className="space-y-1">
                         <label className="text-[8px] text-slate-500 block font-mono">7" HIGH QUALITY RATE / PIPE (₹)</label>
                         <input
                           type="number"
-                          value={pipe7HighRate}
-                          onChange={(e) => setPipe7HighRate(Number(e.target.value))}
-                          className="w-full bg-slate-950 p-1 rounded text-slate-100 border border-slate-850 text-center font-bold"
+                          className="w-full bg-slate-950 p-1 rounded text-slate-100 border border-slate-850 text-center font-bold font-mono"
                           min="0"
+                          {...numInputProps(pipe7HighRate, setPipe7HighRate, 0)}
                         />
                       </div>
                       <div className="space-y-1">
@@ -4978,20 +4983,18 @@ export default function MobileBusiness({
                         <label className="text-[8px] text-slate-500 block font-mono">7" MEDIUM QUALITY QTY</label>
                         <input
                           type="number"
-                          value={pipe7MediumCount}
-                          onChange={(e) => setPipe7MediumCount(Number(e.target.value))}
-                          className="w-full bg-slate-950 p-1 rounded text-slate-100 border border-slate-850 text-center font-bold"
+                          className="w-full bg-slate-950 p-1 rounded text-slate-100 border border-slate-850 text-center font-bold font-mono"
                           min="0"
+                          {...numInputProps(pipe7MediumCount, setPipe7MediumCount, 0)}
                         />
                       </div>
                       <div className="space-y-1">
                         <label className="text-[8px] text-slate-500 block font-mono">7" MEDIUM QUALITY RATE / PIPE (₹)</label>
                         <input
                           type="number"
-                          value={pipe7MediumRate}
-                          onChange={(e) => setPipe7MediumRate(Number(e.target.value))}
-                          className="w-full bg-slate-950 p-1 rounded text-slate-100 border border-slate-850 text-center font-bold"
+                          className="w-full bg-slate-950 p-1 rounded text-slate-100 border border-slate-850 text-center font-bold font-mono"
                           min="0"
+                          {...numInputProps(pipe7MediumRate, setPipe7MediumRate, 0)}
                         />
                       </div>
                       <div className="space-y-1">
@@ -5011,20 +5014,18 @@ export default function MobileBusiness({
                         <label className="text-[8px] text-slate-500 block font-mono">10" HIGH QUALITY QTY</label>
                         <input
                           type="number"
-                          value={pipe10HighCount}
-                          onChange={(e) => setPipe10HighCount(Number(e.target.value))}
-                          className="w-full bg-slate-950 p-1 rounded text-slate-100 border border-slate-850 text-center font-bold"
+                          className="w-full bg-slate-950 p-1 rounded text-slate-100 border border-slate-850 text-center font-bold font-mono"
                           min="0"
+                          {...numInputProps(pipe10HighCount, setPipe10HighCount, 0)}
                         />
                       </div>
                       <div className="space-y-1">
                         <label className="text-[8px] text-slate-500 block font-mono">10" HIGH QUALITY RATE / PIPE (₹)</label>
                         <input
                           type="number"
-                          value={pipe10HighRate}
-                          onChange={(e) => setPipe10HighRate(Number(e.target.value))}
-                          className="w-full bg-slate-950 p-1 rounded text-slate-100 border border-slate-850 text-center font-bold"
+                          className="w-full bg-slate-950 p-1 rounded text-slate-100 border border-slate-850 text-center font-bold font-mono"
                           min="0"
+                          {...numInputProps(pipe10HighRate, setPipe10HighRate, 0)}
                         />
                       </div>
                       <div className="space-y-1">
@@ -5043,20 +5044,18 @@ export default function MobileBusiness({
                         <label className="text-[8px] text-slate-500 block font-mono">10" MEDIUM QUALITY QTY</label>
                         <input
                           type="number"
-                          value={pipe10MediumCount}
-                          onChange={(e) => setPipe10MediumCount(Number(e.target.value))}
-                          className="w-full bg-slate-950 p-1 rounded text-slate-100 border border-slate-850 text-center font-bold"
+                          className="w-full bg-slate-950 p-1 rounded text-slate-100 border border-slate-850 text-center font-bold font-mono"
                           min="0"
+                          {...numInputProps(pipe10MediumCount, setPipe10MediumCount, 0)}
                         />
                       </div>
                       <div className="space-y-1">
                         <label className="text-[8px] text-slate-500 block font-mono">10" MEDIUM QUALITY RATE / PIPE (₹)</label>
                         <input
                           type="number"
-                          value={pipe10MediumRate}
-                          onChange={(e) => setPipe10MediumRate(Number(e.target.value))}
-                          className="w-full bg-slate-950 p-1 rounded text-slate-100 border border-slate-850 text-center font-bold"
+                          className="w-full bg-slate-950 p-1 rounded text-slate-100 border border-slate-850 text-center font-bold font-mono"
                           min="0"
+                          {...numInputProps(pipe10MediumRate, setPipe10MediumRate, 0)}
                         />
                       </div>
                       <div className="space-y-1">
@@ -6014,22 +6013,20 @@ export default function MobileBusiness({
                         <label className="text-[9px] text-slate-500">PLATE NO ID</label>
                         <input
                           type="text"
-                          value={vehId}
-                          onChange={(e) => setVehId(e.target.value)}
-                          className="w-full bg-slate-950 p-1.5 rounded focus:outline-none focus:border-indigo-500 text-slate-200"
+                          className="w-full bg-slate-950 p-1.5 rounded focus:outline-none focus:border-indigo-500 text-slate-200 uppercase font-bold"
                           placeholder="DL-03-CX-4567"
                           required
+                          {...strInputProps(vehId, setVehId)}
                         />
                       </div>
                       <div>
                         <label className="text-[9px] text-slate-500">NICKNAME NAME</label>
                         <input
                           type="text"
-                          value={vehName}
-                          onChange={(e) => setVehName(e.target.value)}
-                          className="w-full bg-slate-950 p-1.5 rounded text-slate-200"
+                          className="w-full bg-slate-950 p-1.5 rounded text-slate-200 uppercase font-bold"
                           placeholder="e.g. Blue Tipper"
                           required
+                          {...strInputProps(vehName, setVehName)}
                         />
                       </div>
                     </div>
@@ -6051,20 +6048,18 @@ export default function MobileBusiness({
                         <label className="text-[9px] text-slate-500">BRAND</label>
                         <input
                           type="text"
-                          value={vehBrand}
-                          onChange={(e) => setVehBrand(e.target.value)}
-                          className="w-full bg-slate-950 p-1.5 rounded text-[10px]"
+                          className="w-full bg-slate-950 p-1.5 rounded text-[10px] uppercase font-bold"
                           placeholder="Tata"
+                          {...strInputProps(vehBrand, setVehBrand)}
                         />
                       </div>
                       <div>
                         <label className="text-[9px] text-slate-500">MODEL & CYL</label>
                         <input
                           type="text"
-                          value={vehModel}
-                          onChange={(e) => setVehModel(e.target.value)}
-                          className="w-full bg-slate-950 p-1.5 rounded text-[10px]"
+                          className="w-full bg-slate-950 p-1.5 rounded text-[10px] uppercase font-bold"
                           placeholder="SFC 407"
+                          {...strInputProps(vehModel, setVehModel)}
                         />
                       </div>
                     </div>
@@ -6399,22 +6394,20 @@ export default function MobileBusiness({
                         <label className="text-[9px] text-slate-500 block">SERVICE TYPE / REPAIR</label>
                         <input
                           type="text"
-                          value={serviceTypeInput}
-                          onChange={(e) => setServiceTypeInput(e.target.value)}
-                          className="w-full bg-slate-950 p-1.5 rounded text-slate-100 border border-slate-850"
+                          className="w-full bg-slate-950 p-1.5 rounded text-slate-100 border border-slate-850 uppercase font-bold"
                           placeholder="e.g. Brake Pads Replacement"
                           required
+                          {...strInputProps(serviceTypeInput, setServiceTypeInput)}
                         />
                       </div>
                       <div>
                         <label className="text-[9px] text-slate-500 block">TOTAL SERVICE COST (₹)</label>
                         <input
                           type="number"
-                          value={serviceCost}
-                          onChange={(e) => setServiceCost(Number(e.target.value))}
-                          className="w-full bg-slate-950 p-1.5 rounded text-slate-100 border border-slate-850 font-bold"
+                          className="w-full bg-slate-950 p-1.5 rounded text-slate-100 border border-slate-850 font-bold font-mono"
                           min="0"
                           required
+                          {...numInputProps(serviceCost, setServiceCost, 0)}
                         />
                       </div>
                       <div>
@@ -6434,20 +6427,18 @@ export default function MobileBusiness({
                       <label className="text-[9px] text-slate-500 block">SPARE PARTS REPLACED (OPTIONAL)</label>
                       <input
                         type="text"
-                        value={serviceSpareParts}
-                        onChange={(e) => setServiceSpareParts(e.target.value)}
-                        className="w-full bg-slate-950 p-1.5 rounded text-slate-100 border border-slate-850"
+                        className="w-full bg-slate-950 p-1.5 rounded text-slate-100 border border-slate-850 uppercase font-bold"
                         placeholder="e.g. Castrol Oil, Oil Filter"
+                        {...strInputProps(serviceSpareParts, setServiceSpareParts)}
                       />
                     </div>
 
                     <div>
                       <label className="text-[9px] text-slate-500 block">REMARKS / WORK DETAILS</label>
                       <textarea
-                        value={serviceRemarks}
-                        onChange={(e) => setServiceRemarks(e.target.value)}
-                        className="w-full bg-slate-950 p-1.5 rounded text-slate-100 border border-slate-850 font-mono text-[10px] h-12 text-slate-200"
+                        className="w-full bg-slate-950 p-1.5 rounded text-slate-100 border border-slate-850 font-mono text-[10px] h-12 text-slate-200 uppercase"
                         placeholder="Detail mechanical observations, next warning etc."
+                        {...strInputProps(serviceRemarks, setServiceRemarks)}
                       />
                     </div>
                   </div>
@@ -6644,20 +6635,18 @@ export default function MobileBusiness({
                         <label className="text-[9px] text-slate-500 block">COST PER LITER (₹)</label>
                         <input
                           type="number"
-                          value={fuelPerLiterCost}
-                          onChange={(e) => setFuelPerLiterCost(Number(e.target.value))}
-                          className="w-full bg-slate-950 p-1.5 rounded text-slate-100 font-bold"
+                          className="w-full bg-slate-950 p-1.5 rounded text-slate-100 font-bold font-mono"
                           required
+                          {...numInputProps(fuelPerLiterCost, setFuelPerLiterCost, 0)}
                         />
                       </div>
                       <div>
                         <label className="text-[9px] text-slate-500 block">NUM OF LITER qty</label>
                         <input
                           type="number"
-                          value={fuelLiters}
-                          onChange={(e) => setFuelLiters(Number(e.target.value))}
-                          className="w-full bg-slate-950 p-1.5 rounded text-slate-100 font-bold"
+                          className="w-full bg-slate-950 p-1.5 rounded text-slate-100 font-bold font-mono"
                           required
+                          {...numInputProps(fuelLiters, setFuelLiters, 0)}
                         />
                       </div>
                       <div>
@@ -6865,30 +6854,27 @@ export default function MobileBusiness({
                           <label className="text-[9px] text-slate-500 block">NAME</label>
                           <input
                             type="text"
-                            value={curItemName}
-                            onChange={(e) => setCurItemName(e.target.value)}
-                            className="w-full bg-slate-950 p-1.5 focus:outline-none border border-slate-850 rounded text-slate-100"
+                            className="w-full bg-slate-950 p-1.5 focus:outline-none border border-slate-850 rounded text-slate-100 uppercase font-bold"
                             placeholder="e.g. 6 1/2 inch Drilling Bit"
+                            {...strInputProps(curItemName, setCurItemName)}
                           />
                         </div>
                         <div className="sm:col-span-2">
                           <label className="text-[9px] text-slate-500 block">COUNT</label>
                           <input
                             type="number"
-                            value={curItemCount}
-                            onChange={(e) => setCurItemCount(Number(e.target.value))}
-                            className="w-full bg-slate-950 p-1.5 focus:outline-none border border-slate-850 rounded text-slate-100 font-bold"
+                            className="w-full bg-slate-950 p-1.5 focus:outline-none border border-slate-850 rounded text-slate-100 font-bold font-mono"
                             min="1"
+                            {...numInputProps(curItemCount, setCurItemCount, 1)}
                           />
                         </div>
                         <div className="sm:col-span-2">
                           <label className="text-[9px] text-slate-500 block">RATE (₹)</label>
                           <input
                             type="number"
-                            value={curItemRate}
-                            onChange={(e) => setCurItemRate(Number(e.target.value))}
-                            className="w-full bg-slate-950 p-1.5 focus:outline-none border border-slate-850 rounded text-slate-100 font-bold"
+                            className="w-full bg-slate-950 p-1.5 focus:outline-none border border-slate-850 rounded text-slate-100 font-bold font-mono"
                             min="0"
+                            {...numInputProps(curItemRate, setCurItemRate, 0)}
                           />
                         </div>
                         <div className="sm:col-span-2">
@@ -6955,10 +6941,9 @@ export default function MobileBusiness({
                         <label className="text-[9px] text-slate-500 block">VENDOR NAME</label>
                         <input
                           type="text"
-                          value={matVendor}
-                          onChange={(e) => setMatVendor(e.target.value)}
-                          className="w-full bg-slate-950 p-1.5 rounded text-slate-100 border border-slate-850"
+                          className="w-full bg-slate-950 p-1.5 rounded text-slate-100 border border-slate-850 uppercase font-bold"
                           placeholder="Kovai Spares"
+                          {...strInputProps(matVendor, setMatVendor)}
                         />
                       </div>
                       <div>
@@ -6988,10 +6973,9 @@ export default function MobileBusiness({
                       <label className="text-[9px] text-slate-500 block">REMARKS / INVOICE NO</label>
                       <input
                         type="text"
-                        value={matRemarks}
-                        onChange={(e) => setMatRemarks(e.target.value)}
-                        className="w-full bg-slate-950 p-1.5 rounded text-slate-100 border border-slate-850"
+                        className="w-full bg-slate-950 p-1.5 rounded text-slate-100 border border-slate-850 uppercase"
                         placeholder="Warranty info, remarks..."
+                        {...strInputProps(matRemarks, setMatRemarks)}
                       />
                     </div>
                   </div>
@@ -7534,9 +7518,8 @@ export default function MobileBusiness({
                     type="text"
                     required
                     placeholder="e.g. Senthil Kumar"
-                    value={billClient}
-                    onChange={(e) => setBillClient(e.target.value)}
-                    className="w-full bg-slate-950 p-2 text-xs text-white rounded border border-slate-850 focus:border-indigo-550 focus:ring-1 focus:ring-indigo-550/30"
+                    className="w-full bg-slate-950 p-2 text-xs text-white rounded border border-slate-850 focus:border-indigo-550 focus:ring-1 focus:ring-indigo-550/30 uppercase font-bold"
+                    {...strInputProps(billClient, setBillClient)}
                   />
                 </div>
 
@@ -7546,9 +7529,8 @@ export default function MobileBusiness({
                     <input
                       type="text"
                       placeholder="e.g. Pollachi"
-                      value={customLocation || ""}
-                      onChange={(e) => setCustomLocation(e.target.value)}
-                      className="w-full bg-slate-950 p-1.5 rounded text-white border border-slate-850 focus:border-indigo-550"
+                      className="w-full bg-slate-950 p-1.5 rounded text-white border border-slate-850 focus:border-indigo-550 uppercase font-bold"
+                      {...strInputProps(customLocation || "", setCustomLocation)}
                     />
                   </div>
                   <div>
@@ -7556,9 +7538,8 @@ export default function MobileBusiness({
                     <input
                       type="text"
                       placeholder="e.g. Vignesh"
-                      value={customBrokerName || ""}
-                      onChange={(e) => setCustomBrokerName(e.target.value)}
-                      className="w-full bg-slate-950 p-1.5 rounded text-white border border-slate-850 focus:border-indigo-550"
+                      className="w-full bg-slate-950 p-1.5 rounded text-white border border-slate-850 focus:border-indigo-550 uppercase font-bold"
+                      {...strInputProps(customBrokerName || "", setCustomBrokerName)}
                     />
                   </div>
                 </div>
@@ -7637,20 +7618,18 @@ export default function MobileBusiness({
                         <label className="text-[9px] text-teal-400 block uppercase font-mono font-bold">STARTING FEET</label>
                         <input
                           type="number"
-                          min={0}
-                          value={customStartingFeet}
-                          onChange={(e) => setCustomStartingFeet(Math.max(0, Number(e.target.value)))}
                           className="w-full bg-slate-950 p-1.5 rounded text-teal-400 font-mono font-bold border border-slate-850"
+                          min={0}
+                          {...numInputProps(customStartingFeet, setCustomStartingFeet, 0)}
                         />
                       </div>
                       <div>
                         <label className="text-[9px] text-teal-400 block uppercase font-mono font-bold">ENDING FEET</label>
                         <input
                           type="number"
-                          min={1}
-                          value={customEndingFeet}
-                          onChange={(e) => setCustomEndingFeet(Math.max(1, Number(e.target.value)))}
                           className="w-full bg-slate-950 p-1.5 rounded text-teal-400 font-mono font-bold border border-slate-850"
+                          min={1}
+                          {...numInputProps(customEndingFeet, setCustomEndingFeet, 1)}
                         />
                       </div>
                     </div>
@@ -7681,8 +7660,22 @@ export default function MobileBusiness({
                                     value={val}
                                     onChange={(e) => {
                                       const newRates = { ...customSlabRates };
-                                      newRates[slab.label] = Math.max(0, Number(e.target.value));
+                                      newRates[slab.label] = e.target.value === "" ? "" : Math.max(0, Number(e.target.value));
                                       setCustomSlabRates(newRates);
+                                    }}
+                                    onFocus={(e) => {
+                                      if (val === 0 || val === "0") {
+                                        const newRates = { ...customSlabRates };
+                                        newRates[slab.label] = "" as any;
+                                        setCustomSlabRates(newRates);
+                                      }
+                                    }}
+                                    onBlur={(e) => {
+                                      if (val === "") {
+                                        const newRates = { ...customSlabRates };
+                                        newRates[slab.label] = 0;
+                                        setCustomSlabRates(newRates);
+                                      }
                                     }}
                                     className="w-20 bg-slate-900 text-teal-400 p-1 font-mono font-bold rounded border border-slate-800 focus:border-indigo-500 text-right text-[10px]"
                                   />
@@ -7711,10 +7704,8 @@ export default function MobileBusiness({
                         <input
                           type="number"
                           min={0}
-                          max={2000}
-                          value={existingDepth}
-                          onChange={(e) => setExistingDepth(Math.max(0, Number(e.target.value)))}
                           className="w-full bg-slate-950 p-1.5 rounded text-indigo-400 font-mono font-bold border border-slate-850"
+                          {...numInputProps(existingDepth, setExistingDepth, 0)}
                         />
                       </div>
                       <div>
@@ -7722,9 +7713,8 @@ export default function MobileBusiness({
                         <input
                           type="number"
                           min={0}
-                          value={oldFeetRate}
-                          onChange={(e) => setOldFeetRate(Math.max(0, Number(e.target.value)))}
                           className="w-full bg-slate-950 p-1.5 rounded text-indigo-300 font-mono font-bold border border-slate-850 focus:border-indigo-500"
+                          {...numInputProps(oldFeetRate, setOldFeetRate, 0)}
                         />
                       </div>
                     </div>
@@ -7734,10 +7724,8 @@ export default function MobileBusiness({
                         <input
                           type="number"
                           min={1}
-                          max={2000}
-                          value={finalDepth}
-                          onChange={(e) => setFinalDepth(Math.max(1, Number(e.target.value)))}
                           className="w-full bg-slate-950 p-1.5 rounded text-teal-400 font-mono font-bold border border-slate-850"
+                          {...numInputProps(finalDepth, setFinalDepth, 1)}
                         />
                       </div>
                       <div>
@@ -7745,9 +7733,8 @@ export default function MobileBusiness({
                         <input
                           type="number"
                           min={1}
-                          value={startingPrice}
-                          onChange={(e) => setStartingPrice(Math.max(1, Number(e.target.value)))}
                           className="w-full bg-slate-950 p-1.5 rounded text-amber-400 font-mono font-bold border border-slate-850 focus:border-amber-500"
+                          {...numInputProps(startingPrice, setStartingPrice, 1)}
                         />
                       </div>
                     </div>
@@ -7771,10 +7758,8 @@ export default function MobileBusiness({
                         <input
                           type="number"
                           min={1}
-                          max={2000}
-                          value={finalDepth}
-                          onChange={(e) => setFinalDepth(Math.max(1, Number(e.target.value)))}
                           className="w-full bg-slate-950 p-1.5 rounded text-teal-400 font-mono font-bold border border-slate-850"
+                          {...numInputProps(finalDepth, setFinalDepth, 1)}
                         />
                       </div>
                     </div>
@@ -7784,10 +7769,9 @@ export default function MobileBusiness({
                       <label className="text-[9px] text-amber-400 block uppercase font-mono font-bold">STARTING PRICE FOR 1-{borewellType === "Tight Formation" ? "300" : "500"} FT (Rs.)</label>
                       <input
                         type="number"
-                        min={1}
-                        value={startingPrice}
-                        onChange={(e) => setStartingPrice(Math.max(1, Number(e.target.value)))}
                         className="w-full bg-slate-950 p-1.5 rounded text-amber-400 font-mono font-bold border border-slate-850 focus:border-amber-500 focus:ring-1 focus:ring-amber-500/20 text-xs mt-1"
+                        min={1}
+                        {...numInputProps(startingPrice, setStartingPrice, 1)}
                       />
                     </div>
                   </>
@@ -7845,9 +7829,19 @@ export default function MobileBusiness({
                           min={0}
                           value={billCasing10HighFeet}
                           onChange={(e) => {
-                            const val = Math.max(0, Number(e.target.value));
-                            setBillCasing10HighFeet(val);
-                            setCasing10Feet(val + Number(billCasing10MediumFeet));
+                            const val = e.target.value === "" ? "" : Math.max(0, Number(e.target.value));
+                            setBillCasing10HighFeet(val as any);
+                            setCasing10Feet((Number(val) || 0) + Number(billCasing10MediumFeet));
+                          }}
+                          onFocus={() => {
+                            if (billCasing10HighFeet === 0 || billCasing10HighFeet === "0") {
+                              setBillCasing10HighFeet("");
+                            }
+                          }}
+                          onBlur={() => {
+                            if (billCasing10HighFeet === "") {
+                              setBillCasing10HighFeet(0);
+                            }
                           }}
                           className="w-full bg-slate-950 p-1.5 rounded text-slate-200 font-mono border border-slate-850 focus:border-pink-500"
                         />
@@ -7859,9 +7853,19 @@ export default function MobileBusiness({
                           min={0}
                           value={billCasing10MediumFeet}
                           onChange={(e) => {
-                            const val = Math.max(0, Number(e.target.value));
-                            setBillCasing10MediumFeet(val);
-                            setCasing10Feet(Number(billCasing10HighFeet) + val);
+                            const val = e.target.value === "" ? "" : Math.max(0, Number(e.target.value));
+                            setBillCasing10MediumFeet(val as any);
+                            setCasing10Feet(Number(billCasing10HighFeet) + (Number(val) || 0));
+                          }}
+                          onFocus={() => {
+                            if (billCasing10MediumFeet === 0 || billCasing10MediumFeet === "0") {
+                              setBillCasing10MediumFeet("");
+                            }
+                          }}
+                          onBlur={() => {
+                            if (billCasing10MediumFeet === "") {
+                              setBillCasing10MediumFeet(0);
+                            }
                           }}
                           className="w-full bg-slate-950 p-1.5 rounded text-slate-200 font-mono border border-slate-850 focus:border-pink-500"
                         />
@@ -7872,7 +7876,17 @@ export default function MobileBusiness({
                           type="number"
                           min={0}
                           value={casing10Rate}
-                          onChange={(e) => setCasing10Rate(Math.max(0, Number(e.target.value)))}
+                          onChange={(e) => setCasing10Rate(e.target.value === "" ? "" as any : Math.max(0, Number(e.target.value)))}
+                          onFocus={() => {
+                            if (casing10Rate === 0 || casing10Rate === "0") {
+                              setCasing10Rate("");
+                            }
+                          }}
+                          onBlur={() => {
+                            if (casing10Rate === "") {
+                              setCasing10Rate(0);
+                            }
+                          }}
                           className="w-full bg-slate-950 p-1.5 rounded text-pink-400 font-mono border border-slate-850 focus:border-pink-500"
                         />
                       </div>
@@ -7908,9 +7922,19 @@ export default function MobileBusiness({
                           min={0}
                           value={billCasing7HighFeet}
                           onChange={(e) => {
-                            const val = Math.max(0, Number(e.target.value));
-                            setBillCasing7HighFeet(val);
-                            setCasing7Feet(val + Number(billCasing7MediumFeet));
+                            const val = e.target.value === "" ? "" : Math.max(0, Number(e.target.value));
+                            setBillCasing7HighFeet(val as any);
+                            setCasing7Feet((Number(val) || 0) + Number(billCasing7MediumFeet));
+                          }}
+                          onFocus={() => {
+                            if (billCasing7HighFeet === 0 || billCasing7HighFeet === "0") {
+                              setBillCasing7HighFeet("");
+                            }
+                          }}
+                          onBlur={() => {
+                            if (billCasing7HighFeet === "") {
+                              setBillCasing7HighFeet(0);
+                            }
                           }}
                           className="w-full bg-slate-950 p-1.5 rounded text-slate-200 font-mono border border-slate-850 focus:border-violet-500"
                         />
@@ -7922,9 +7946,19 @@ export default function MobileBusiness({
                           min={0}
                           value={billCasing7MediumFeet}
                           onChange={(e) => {
-                            const val = Math.max(0, Number(e.target.value));
-                            setBillCasing7MediumFeet(val);
-                            setCasing7Feet(Number(billCasing7HighFeet) + val);
+                            const val = e.target.value === "" ? "" : Math.max(0, Number(e.target.value));
+                            setBillCasing7MediumFeet(val as any);
+                            setCasing7Feet(Number(billCasing7HighFeet) + (Number(val) || 0));
+                          }}
+                          onFocus={() => {
+                            if (billCasing7MediumFeet === 0 || billCasing7MediumFeet === "0") {
+                              setBillCasing7MediumFeet("");
+                            }
+                          }}
+                          onBlur={() => {
+                            if (billCasing7MediumFeet === "") {
+                              setBillCasing7MediumFeet(0);
+                            }
                           }}
                           className="w-full bg-slate-950 p-1.5 rounded text-slate-200 font-mono border border-slate-850 focus:border-violet-500"
                         />
@@ -7935,7 +7969,17 @@ export default function MobileBusiness({
                           type="number"
                           min={0}
                           value={casing7Rate}
-                          onChange={(e) => setCasing7Rate(Math.max(0, Number(e.target.value)))}
+                          onChange={(e) => setCasing7Rate(e.target.value === "" ? "" as any : Math.max(0, Number(e.target.value)))}
+                          onFocus={() => {
+                            if (casing7Rate === 0 || casing7Rate === "0") {
+                              setCasing7Rate("");
+                            }
+                          }}
+                          onBlur={() => {
+                            if (casing7Rate === "") {
+                              setCasing7Rate(0);
+                            }
+                          }}
                           className="w-full bg-slate-950 p-1.5 rounded text-violet-400 font-mono border border-slate-850 focus:border-violet-500"
                         />
                       </div>
@@ -7967,9 +8011,8 @@ export default function MobileBusiness({
                       <input
                         type="number"
                         min={0}
-                        value={batta}
-                        onChange={(e) => setBatta(Math.max(0, Number(e.target.value)))}
                         className="w-full bg-slate-950 p-1.5 rounded text-white font-mono border border-slate-850 focus:border-indigo-500 mt-1"
+                        {...numInputProps(batta, setBatta, 0)}
                       />
                     </div>
                   </div>
