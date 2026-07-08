@@ -7779,17 +7779,17 @@ export default function MobileBusiness({
 
                 {/* UNCONDITIONAL CASING & BATTA SPECIFICATIONS */}
                 <div className="border-t border-slate-850 pt-2.5 space-y-2">
-                  <div className="text-[9px] text-indigo-400 font-mono uppercase font-black tracking-wider">
+                  <div className="text-[14px] text-indigo-400 font-mono uppercase font-black tracking-wider">
                     Casing Pipe Specifications & Internal Equipment Selection
                   </div>
 
-                  <div className="grid grid-cols-2 gap-2 text-[10px] bg-slate-950/40 p-2 rounded-xl border border-slate-850">
+                  <div className="grid grid-cols-2 gap-2 text-[14px] bg-slate-950/40 p-2 rounded-xl border border-slate-850">
                     <div>
-                      <label className="text-[8.5px] text-indigo-400 font-bold uppercase block mb-1">Drilling Bit Used</label>
+                      <label className="text-[14px] text-indigo-400 font-bold uppercase block mb-1">Drilling Bit Used</label>
                       <select
                         value={selectedBitId}
                         onChange={(e) => setSelectedBitId(e.target.value)}
-                        className="w-full bg-slate-950 p-1.5 rounded text-slate-200 border border-slate-850 font-mono text-[9px] focus:outline-none focus:border-indigo-500"
+                        className="w-full bg-slate-950 p-1.5 rounded text-slate-200 border border-slate-850 font-mono text-[14px] focus:outline-none focus:border-indigo-500"
                       >
                         <option value="">No Bit Selected</option>
                         {bitEntries.map((bit) => (
@@ -7800,11 +7800,11 @@ export default function MobileBusiness({
                       </select>
                     </div>
                     <div>
-                      <label className="text-[8.5px] text-indigo-400 font-bold uppercase block mb-1">Drilling Hammer Used</label>
+                      <label className="text-[14px] text-indigo-400 font-bold uppercase block mb-1">Drilling Hammer Used</label>
                       <select
                         value={selectedHammerId}
                         onChange={(e) => setSelectedHammerId(e.target.value)}
-                        className="w-full bg-slate-950 p-1.5 rounded text-slate-200 border border-slate-850 font-mono text-[9px] focus:outline-none focus:border-indigo-500"
+                        className="w-full bg-slate-950 p-1.5 rounded text-slate-200 border border-slate-850 font-mono text-[14px] focus:outline-none focus:border-indigo-500"
                       >
                         <option value="">No Hammer Selected</option>
                         {hammerEntries.map((h) => {
@@ -7820,10 +7820,10 @@ export default function MobileBusiness({
                   </div>
 
                   {/* 10" CASING SECTION */}
-                  <div className="grid grid-cols-1 gap-2 text-[10px] bg-slate-950/40 p-2.5 rounded-xl border border-slate-850 font-mono">
+                  <div className="grid grid-cols-1 gap-2 text-[14px] bg-slate-950/40 p-2.5 rounded-xl border border-slate-850 font-mono">
                     <div className="grid grid-cols-3 gap-2">
                       <div>
-                        <div className="text-[6px] text-red-500 font-bold uppercase block mb-1 whitespace-nowrap">10" H QLT(FT)</div>
+                        <div className="text-[14px] text-red-500 font-bold uppercase block mb-1 whitespace-nowrap">10" H QLT(FT)</div>
                         <input
                           type="number"
                           min={0}
@@ -7847,7 +7847,7 @@ export default function MobileBusiness({
                         />
                       </div>
                       <div>
-                        <div className="text-[6px] text-red-500 font-bold uppercase block mb-1 whitespace-nowrap">10" M QLT(FT)</div>
+                        <div className="text-[14px] text-red-500 font-bold uppercase block mb-1 whitespace-nowrap">10" M QLT(FT)</div>
                         <input
                           type="number"
                           min={0}
@@ -7871,7 +7871,7 @@ export default function MobileBusiness({
                         />
                       </div>
                       <div>
-                        <div className="text-[6px] text-red-500 font-bold uppercase block mb-1 whitespace-nowrap">RATE / FT (₹)</div>
+                        <div className="text-[14px] text-red-500 font-bold uppercase block mb-1 whitespace-nowrap">RATE / FT (₹)</div>
                         <input
                           type="number"
                           min={0}
@@ -7893,11 +7893,11 @@ export default function MobileBusiness({
                     </div>
                     
                     <div className="pt-1.5 border-t border-slate-900/60 mt-1">
-                      <div className="text-[8px] text-slate-400 font-mono font-bold uppercase block mb-1">10" Casing Hammer Used</div>
+                      <div className="text-[14px] text-slate-400 font-mono font-bold uppercase block mb-1">10" Casing Hammer Used</div>
                       <select
                         value={selectedCasing10HammerId}
                         onChange={(e) => setSelectedCasing10HammerId(e.target.value)}
-                        className="w-full bg-slate-950 p-1.5 rounded text-slate-200 border border-slate-850 font-mono text-[9px] focus:outline-none focus:border-pink-500"
+                        className="w-full bg-slate-950 p-1.5 rounded text-slate-200 border border-slate-850 font-mono text-[14px] focus:outline-none focus:border-pink-500"
                       >
                         <option value="">No 10" Casing Hammer Selected</option>
                         {hammerEntries.filter(h => h.casingType === "10 inch").map((h) => {
@@ -7913,10 +7913,10 @@ export default function MobileBusiness({
                   </div>
 
                   {/* 7" CASING SECTION */}
-                  <div className="grid grid-cols-1 gap-2 text-[10px] bg-slate-950/40 p-2.5 rounded-xl border border-slate-850 font-mono">
+                  <div className="grid grid-cols-1 gap-2 text-[14px] bg-slate-950/40 p-2.5 rounded-xl border border-slate-850 font-mono">
                     <div className="grid grid-cols-3 gap-2">
                       <div>
-                        <div className="text-[6px] text-emerald-500 font-bold uppercase block mb-1 whitespace-nowrap">7" H QLT(FT)</div>
+                        <div className="text-[14px] text-emerald-500 font-bold uppercase block mb-1 whitespace-nowrap">7" H QLT(FT)</div>
                         <input
                           type="number"
                           min={0}
@@ -7940,7 +7940,7 @@ export default function MobileBusiness({
                         />
                       </div>
                       <div>
-                        <div className="text-[6px] text-emerald-500 font-bold uppercase block mb-1 whitespace-nowrap">7" M QLT(FT)</div>
+                        <div className="text-[14px] text-emerald-500 font-bold uppercase block mb-1 whitespace-nowrap">7" M QLT(FT)</div>
                         <input
                           type="number"
                           min={0}
@@ -7964,7 +7964,7 @@ export default function MobileBusiness({
                         />
                       </div>
                       <div>
-                        <div className="text-[6px] text-emerald-500 font-bold uppercase block mb-1 whitespace-nowrap">RATE / FT (₹)</div>
+                        <div className="text-[14px] text-emerald-500 font-bold uppercase block mb-1 whitespace-nowrap">RATE / FT (₹)</div>
                         <input
                           type="number"
                           min={0}
@@ -7986,11 +7986,11 @@ export default function MobileBusiness({
                     </div>
 
                     <div className="pt-1.5 border-t border-slate-900/60 mt-1">
-                      <div className="text-[8px] text-slate-400 font-mono font-bold uppercase block mb-1">7" Casing Hammer Used</div>
+                      <div className="text-[14px] text-slate-400 font-mono font-bold uppercase block mb-1">7" Casing Hammer Used</div>
                       <select
                         value={selectedCasing7HammerId}
                         onChange={(e) => setSelectedCasing7HammerId(e.target.value)}
-                        className="w-full bg-slate-950 p-1.5 rounded text-slate-200 border border-slate-850 font-mono text-[9px] focus:outline-none focus:border-violet-500"
+                        className="w-full bg-slate-950 p-1.5 rounded text-slate-200 border border-slate-850 font-mono text-[14px] focus:outline-none focus:border-violet-500"
                       >
                         <option value="">No 7" Casing Hammer Selected</option>
                         {hammerEntries.filter(h => h.casingType === "7 inch").map((h) => {
@@ -8005,9 +8005,9 @@ export default function MobileBusiness({
                     </div>
                   </div>
 
-                  <div className="grid grid-cols-2 gap-2 text-[10px]">
+                  <div className="grid grid-cols-2 gap-2 text-[14px]">
                     <div>
-                      <label className="text-[9px] text-slate-400 block uppercase font-mono font-bold">BATTA FEE (Rs.)</label>
+                      <label className="text-[14px] text-slate-400 block uppercase font-mono font-bold">BATTA FEE (Rs.)</label>
                       <input
                         type="number"
                         min={0}
