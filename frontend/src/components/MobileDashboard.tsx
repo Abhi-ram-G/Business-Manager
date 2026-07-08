@@ -438,9 +438,17 @@ export default function MobileDashboard({
   return (
     <div id="mobile-dashboard-scroll" className="space-y-5 pb-6 text-slate-100 bg-[#0b0f19] min-h-screen">
       
-      {/* 0. ACCUMULATED ALL-TIME SUMMARY SECTION */}
-      <div className="space-y-4">
+      {/* 0. OVERALL DETAILS SUMMARY SECTION */}
+      <div className="space-y-3">
         
+        {/* Section Header: Overall Details */}
+        <div className="flex items-center gap-2 px-0.5 mb-1.5">
+          <div className="p-1.5 bg-indigo-500/10 rounded-lg text-indigo-400 border border-indigo-500/20">
+            <Activity className="w-3.5 h-3.5" />
+          </div>
+          <h3 className="text-xs font-bold text-slate-300 uppercase tracking-wider font-mono">Overall Details</h3>
+        </div>
+
         {/* Real-time Accumulated Data Metrics Grid */}
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-3.5">
           
@@ -576,8 +584,15 @@ export default function MobileDashboard({
 
         </div>
 
-        {/* Casing Stock Row */}
-        <div className="space-y-2">
+      </div>
+
+      {/* Divider Separator between Overall Details and Casing Stock */}
+      <div className="py-2 px-1">
+        <div className="h-px bg-gradient-to-r from-transparent via-slate-800 to-transparent" />
+      </div>
+
+      {/* Casing Stock Row */}
+      <div className="space-y-3">
           
           <style>{`
             span.stock-card-number {
@@ -699,8 +714,6 @@ export default function MobileDashboard({
 
           </div>
         </div>
-
-      </div>
 
       {/* Divider Separator with clean vertical spacing */}
       <div className="py-4 px-1">
