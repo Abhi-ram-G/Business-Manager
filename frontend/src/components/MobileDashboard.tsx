@@ -759,7 +759,7 @@ export default function MobileDashboard({
                     onChange={(e) => setSelectedYear(parseInt(e.target.value, 10))}
                     className="w-full bg-slate-950 border border-slate-800 rounded-lg py-1.5 px-2.5 text-xs text-slate-200 focus:outline-none focus:border-sky-500 font-mono appearance-none"
                   >
-                    {detectedYears.map(yr => (
+                    {Array.from({ length: 101 }, (_, i) => 2025 + i).map(yr => (
                       <option key={yr} value={yr}>{yr}</option>
                     ))}
                   </select>
