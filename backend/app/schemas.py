@@ -174,7 +174,11 @@ class HammerCreate(BaseModel):
     capable_feet_depth: int = 950
     is_paid: bool = False
     casing_type: str | None = None
+    status: str = "active"
+    sold_date: dt_date | None = None
+    sold_rate: float | None = None
     usage_history: list[dict[str, Any]] | None = None
+    casing_usage_history: list[dict[str, Any]] | None = None
     payments: list[dict[str, Any]] | None = None
 
 
@@ -186,7 +190,11 @@ class HammerUpdate(BaseModel):
     capable_feet_depth: int | None = None
     is_paid: bool | None = None
     casing_type: str | None = None
+    status: str | None = None
+    sold_date: dt_date | None = None
+    sold_rate: float | None = None
     usage_history: list[dict[str, Any]] | None = None
+    casing_usage_history: list[dict[str, Any]] | None = None
     payments: list[dict[str, Any]] | None = None
 
 

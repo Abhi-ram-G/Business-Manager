@@ -39,7 +39,9 @@ import {
   Mars,
   Venus,
   History,
-  Layers
+  Layers,
+  ArrowUp,
+  ArrowDown
 } from "lucide-react";
 import { Labour, Vehicle, BitEntry, HammerEntry, HammerUsageRecord, BusinessBill, FuelEntry, SalaryPayment, AdvanceEntry, AttendanceRecord, PipeEntry } from "../types";
 import { downloadSalarySlipPDF, downloadAttendanceReportPDF, downloadSingleLabourAttendancePDF, downloadBusinessReportPDF, downloadLabourDirectoryReportPDF } from "../utils/pdfGenerator";
@@ -425,9 +427,25 @@ export default function MobileBusiness({
   const [hammerBrand, setHammerBrand] = useState("");
   const [hammerDateEntry, setHammerDateEntry] = useState(() => new Date().toISOString().split("T")[0]);
   const [hammerRate, setHammerRate] = useState<number>(0);
+  const [hammerUsedFeet, setHammerUsedFeet] = useState<number>(0);
   const [hammerCapableFeet, setHammerCapableFeet] = useState<number>(500);
   const [hammerIsPaid, setHammerIsPaid] = useState<boolean>(false);
   const [selectedHammerForHistory, setSelectedHammerForHistory] = useState<string | null>(null);
+  // Sell modal state
+  const [hammerSellModalId, setHammerSellModalId] = useState<string | null>(null);
+  const [hammerSellDate, setHammerSellDate] = useState(() => new Date().toISOString().split("T")[0]);
+  const [hammerSellRate, setHammerSellRate] = useState<number>(0);
+  // Section collapse state for hammer inventory
+  const [hammerSectionOpen, setHammerSectionOpen] = useState<Record<string,boolean>>({ drilling: true, casing7: true, casing10: true, unusable: true, sold: true });
+
+  const countDrilling = (hammerEntries || []).filter(h => !h.casingType && h.status !== "unusable" && h.status !== "sold").length;
+  const countCasing7 = (hammerEntries || []).filter(h => h.casingType === "7 inch" && h.status !== "unusable" && h.status !== "sold").length;
+  const countCasing10 = (hammerEntries || []).filter(h => h.casingType === "10 inch" && h.status !== "unusable" && h.status !== "sold").length;
+  const countUnusable = (hammerEntries || []).filter(h => h.status === "unusable").length;
+  const countSold = (hammerEntries || []).filter(h => h.status === "sold").length;
+
+  const totalHammers = countDrilling + countCasing7 + countCasing10 + countUnusable + countSold;
+  const totalHammersHaving = countDrilling + countCasing7 + countCasing10 + countUnusable;
 
   // Pipe form states
   const [isPipeFormOpen, setIsPipeFormOpen] = useState(false);
@@ -1052,45 +1070,53 @@ export default function MobileBusiness({
       : 0;
 
     const updatedHammers = hammerEntries.map((h) => {
+      // For casing hammers track in casingUsageHistory; for drilling in usageHistory
+      const isCasing10 = h.id === selectedCasing10HammerId && (casing10Feet || 0) > 0;
+      const isCasing7 = h.id === selectedCasing7HammerId && (casing7Feet || 0) > 0;
+      const isDrilling = h.id === selectedHammerId && drillingFeet > 0;
+
       let history = (h.usageHistory || []).filter((rec) => rec.billId !== payloadBill.id && rec.id !== payloadBill.id);
+      let casingHistory = (h.casingUsageHistory || []).filter((rec) => rec.billId !== payloadBill.id);
 
-      let addedFeet = 0;
-      if (h.id === selectedHammerId && drillingFeet > 0) {
-        addedFeet = drillingFeet;
-      } else if (h.id === selectedCasing10HammerId && (casing10Feet || 0) > 0) {
-        addedFeet = casing10Feet || 0;
-      } else if (h.id === selectedCasing7HammerId && (casing7Feet || 0) > 0) {
-        addedFeet = casing7Feet || 0;
-      }
-
-      if (addedFeet > 0) {
+      if (isDrilling) {
         const newRecord: HammerUsageRecord = {
           id: `rec-${Date.now()}-${h.id}`,
           billId: payloadBill.id,
           date: billDate,
           clientName: billClient,
           location: customLocation || "",
-          calculatedFeet: addedFeet
+          calculatedFeet: drillingFeet
         };
         history = [...history, newRecord];
-      }
-
-      const totalFeet = history.reduce((sum, r) => sum + r.calculatedFeet, 0);
-      let casingType = h.casingType;
-      if (totalFeet >= h.capableFeetDepth && !casingType) {
-        const casingChoice = window.confirm(
-          `⚠️ Hammer ${h.hammerNo} has reached its capable feet limit!\n` +
-          `Total feet used: ${totalFeet} ft (limit: ${h.capableFeetDepth} ft)\n\n` +
-          `Click OK to mark as 7" Casing Hammer\n` +
-          `Click Cancel to mark as 10" Casing Hammer`
-        ) ? "7 inch" : "10 inch";
-        casingType = casingChoice;
+      } else if (isCasing10) {
+        const newRecord: HammerUsageRecord = {
+          id: `rec-${Date.now()}-${h.id}`,
+          billId: payloadBill.id,
+          date: billDate,
+          clientName: billClient,
+          location: customLocation || "",
+          calculatedFeet: casing10Feet || 0
+        };
+        casingHistory = [...casingHistory, newRecord];
+      } else if (isCasing7) {
+        const addedFeet = casing7Feet || 0;
+        // For 7" casing: usage = 7" casing feet - 10" casing feet (if 10" was also used in this bill), else just 7" casing feet
+        const effectiveFeet = (casing10Feet || 0) > 0 ? Math.max(0, addedFeet - (casing10Feet || 0)) : addedFeet;
+        const newRecord: HammerUsageRecord = {
+          id: `rec-${Date.now()}-${h.id}`,
+          billId: payloadBill.id,
+          date: billDate,
+          clientName: billClient,
+          location: customLocation || "",
+          calculatedFeet: effectiveFeet
+        };
+        casingHistory = [...casingHistory, newRecord];
       }
 
       return {
         ...h,
         usageHistory: history,
-        casingType
+        casingUsageHistory: casingHistory,
       };
     });
 
@@ -2807,6 +2833,7 @@ export default function MobileBusiness({
     setHammerBrand("");
     setHammerDateEntry(new Date().toISOString().split("T")[0]);
     setHammerRate(0);
+    setHammerUsedFeet(0);
     setHammerCapableFeet(500);
     setHammerIsPaid(false);
     setIsHammerFormOpen(true);
@@ -2818,6 +2845,7 @@ export default function MobileBusiness({
     setHammerBrand(hammer.brand);
     setHammerDateEntry(hammer.dateEntry);
     setHammerRate(hammer.rate);
+    setHammerUsedFeet((hammer.usageHistory || []).reduce((s, r) => s + r.calculatedFeet, 0));
     setHammerCapableFeet(hammer.capableFeetDepth);
     setHammerIsPaid(hammer.isPaid);
     setIsHammerFormOpen(true);
@@ -2830,7 +2858,20 @@ export default function MobileBusiness({
     void (async () => {
       const existing = editingHammerId ? hammerEntries.find(h => h.id === editingHammerId) : undefined;
       const targetId = editingHammerId || `HMR-${Date.now()}`;
-      
+
+      // Build usage history: if adding new hammer with pre-existing used feet, create an initial record
+      let usageHistory = existing?.usageHistory || [];
+      if (!editingHammerId && hammerUsedFeet > 0) {
+        usageHistory = [{
+          id: `rec-init-${Date.now()}`,
+          billId: "initial",
+          date: hammerDateEntry,
+          clientName: "Initial Entry",
+          location: "",
+          calculatedFeet: Number(hammerUsedFeet)
+        }];
+      }
+
       const payloadHammer: HammerEntry = {
         id: targetId,
         hammerNo: hammerNo.trim(),
@@ -2840,7 +2881,12 @@ export default function MobileBusiness({
         capableFeetDepth: Number(hammerCapableFeet),
         isPaid: hammerIsPaid,
         casingType: existing?.casingType,
-        usageHistory: existing?.usageHistory || [],
+        status: existing?.status ?? "active",
+        soldDate: existing?.soldDate,
+        soldRate: existing?.soldRate,
+        casingUsageHistory: existing?.casingUsageHistory ?? [],
+        usageHistory,
+        payments: existing?.payments,
       };
 
       try {
@@ -2854,7 +2900,7 @@ export default function MobileBusiness({
           }
         );
         const savedHammer = mapHammerFromApi(response);
-        
+
         if (editingHammerId) {
           setHammerEntries(prev => prev.map(h => h.id === editingHammerId ? savedHammer : h));
           triggerOnlineSync(`UPDATED HAMMER: ${hammerNo}`);
@@ -2876,6 +2922,53 @@ export default function MobileBusiness({
       setIsHammerFormOpen(false);
       setEditingHammerId(null);
       await onSharedDataChanged?.();
+    })();
+  };
+
+  // Mark hammer with lifecycle status (7-inch casing / 10-inch casing / unusable)
+  const handleSetHammerStatus = (hammer: HammerEntry, casingType: "7 inch" | "10 inch" | null, makeUnusable: boolean) => {
+    void (async () => {
+      const updated: HammerEntry = {
+        ...hammer,
+        casingType: casingType ?? hammer.casingType,
+        status: makeUnusable ? "unusable" : "active",
+        casingUsageHistory: hammer.casingUsageHistory ?? [],
+      };
+      setHammerEntries(prev => prev.map(h => h.id === hammer.id ? updated : h));
+      try {
+        await requestJson(apiBaseUrl, `/api/v1/business/hammers/${hammer.id}`, {
+          method: "PUT",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(toHammerApiPayload(updated)),
+        });
+        await onSharedDataChanged?.();
+      } catch (e) {
+        console.error("Failed to update hammer status", e);
+      }
+    })();
+  };
+
+  // Mark hammer as sold
+  const handleSellHammer = (hammer: HammerEntry) => {
+    void (async () => {
+      const updated: HammerEntry = {
+        ...hammer,
+        status: "sold",
+        soldDate: hammerSellDate,
+        soldRate: Number(hammerSellRate),
+      };
+      setHammerEntries(prev => prev.map(h => h.id === hammer.id ? updated : h));
+      setHammerSellModalId(null);
+      try {
+        await requestJson(apiBaseUrl, `/api/v1/business/hammers/${hammer.id}`, {
+          method: "PUT",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(toHammerApiPayload(updated)),
+        });
+        await onSharedDataChanged?.();
+      } catch (e) {
+        console.error("Failed to sell hammer", e);
+      }
     })();
   };
 
@@ -4499,6 +4592,16 @@ export default function MobileBusiness({
 
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                     <div>
+                      <label className="text-[9px] text-slate-500 block font-mono">USED FEET</label>
+                      <input
+                        type="number"
+                        className="w-full bg-slate-950 p-1.5 rounded text-slate-100 border border-slate-850 font-bold font-mono"
+                        min="0"
+                        required
+                        {...numInputProps(hammerUsedFeet, setHammerUsedFeet, 0)}
+                      />
+                    </div>
+                    <div>
                       <label className="text-[9px] text-slate-500 block font-mono">CAPABLE FEET DEPTH</label>
                       <input
                         type="number"
@@ -4508,6 +4611,9 @@ export default function MobileBusiness({
                         {...numInputProps(hammerCapableFeet, setHammerCapableFeet, 1)}
                       />
                     </div>
+                  </div>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                     <div>
                       <label className="text-[9px] text-slate-500 block font-mono">PAYMENT STATUS</label>
                       <select
@@ -4539,7 +4645,43 @@ export default function MobileBusiness({
                 </form>
               )}
 
-              <div className="space-y-2">
+              {/* STATISTICS SUMMARY DASHBOARD */}
+              <div className="bg-slate-900 border border-slate-850 rounded-2xl p-3.5 space-y-3 shadow-sm">
+                <div className="grid grid-cols-2 gap-3 text-[11px]">
+                  <div className="bg-slate-950 p-2.5 rounded-xl border border-slate-850">
+                    <span className="text-[8.5px] uppercase tracking-wider text-slate-500 font-mono font-bold block">Total Number Hammers</span>
+                    <div className="text-xl font-black text-indigo-400 font-mono mt-0.5">{totalHammers}</div>
+                  </div>
+                  <div className="bg-slate-950 p-2.5 rounded-xl border border-slate-850">
+                    <span className="text-[8.5px] uppercase tracking-wider text-slate-500 font-mono font-bold block">Total Hammers Having</span>
+                    <div className="text-xl font-black text-emerald-400 font-mono mt-0.5">{totalHammersHaving}</div>
+                  </div>
+                </div>
+                <div className="grid grid-cols-2 sm:grid-cols-5 gap-2 text-[9px] font-mono font-bold text-slate-500">
+                  <div className="px-2.5 py-1.5 bg-slate-950 rounded-lg border border-slate-850 flex justify-between">
+                    <span>Drilling:</span>
+                    <span className="text-indigo-400">{countDrilling}</span>
+                  </div>
+                  <div className="px-2.5 py-1.5 bg-amber-500/10 text-amber-600 rounded-lg border border-amber-500/20 flex justify-between">
+                    <span>7" Casing:</span>
+                    <span className="text-amber-500">{countCasing7}</span>
+                  </div>
+                  <div className="px-2.5 py-1.5 bg-sky-500/10 text-sky-600 rounded-lg border border-sky-500/20 flex justify-between">
+                    <span>10" Casing:</span>
+                    <span className="text-sky-500">{countCasing10}</span>
+                  </div>
+                  <div className="px-2.5 py-1.5 bg-red-500/10 text-red-650 rounded-lg border border-red-500/20 flex justify-between">
+                    <span>Unusable:</span>
+                    <span className="text-red-500">{countUnusable}</span>
+                  </div>
+                  <div className="px-2.5 py-1.5 bg-slate-500/10 text-slate-400 rounded-lg border border-slate-500/20 flex justify-between col-span-2 sm:col-span-1">
+                    <span>Sold:</span>
+                    <span className="text-slate-500">{countSold}</span>
+                  </div>
+                </div>
+              </div>
+
+              <div className="space-y-3">
                 <div className="flex justify-between items-center">
                   <span className="text-xs font-mono font-bold text-slate-400 uppercase">Hammer Inventory</span>
                   <button
@@ -4551,199 +4693,431 @@ export default function MobileBusiness({
                   </button>
                 </div>
 
-                <div className="space-y-2.5">
-                  {hammerEntries.length === 0 ? (
-                    <div className="text-center p-6 bg-slate-900/30 rounded-xl text-[10px] text-slate-500">
-                      No hammers registered in database.
-                    </div>
-                  ) : (
-                    hammerEntries.map((hammer) => {
-                      const totalFeetUsed = (hammer.usageHistory || []).reduce((sum, item) => sum + item.calculatedFeet, 0);
-                      const isLimitReached = totalFeetUsed >= hammer.capableFeetDepth;
-                      const hasCasingType = !!hammer.casingType;
-
+                <div className="space-y-3">
+                  {/* helper functions and loops for each group */}
+                  {(() => {
+                    const renderSection = (
+                      title: string,
+                      key: string,
+                      hammers: HammerEntry[],
+                      bgColorClass: string,
+                      borderColorClass: string
+                    ) => {
+                      const isOpen = hammerSectionOpen[key];
                       return (
-                        <div key={hammer.id} className={`border rounded-2xl p-3 space-y-2 transition-colors duration-300 ${hammer.isPaid ? "bg-green-50 border-green-300" : "bg-slate-900 border-slate-850"}`}>
-                          <div className="flex items-center justify-between gap-3">
-                            <div className="min-w-0">
-                              <div className="flex flex-wrap items-center gap-1.5">
-                                <span className={`text-[8px] uppercase tracking-wider font-bold font-mono ${hammer.isPaid ? "text-green-700" : "text-indigo-400"}`}>{hammer.hammerNo}</span>
-                                <span className={`text-[8px] uppercase tracking-wider font-bold font-mono ${hammer.isPaid ? "text-green-600" : "text-slate-550"}`}>Cap: {hammer.capableFeetDepth} ft</span>
-                                <span className={`text-[8.5px] font-bold px-1.5 py-0.5 rounded ${hammer.isPaid ? "bg-green-200 text-green-800" : "bg-rose-950 text-rose-450"}`}>
-                                  {hammer.isPaid ? "Paid" : "Pending"}
-                                </span>
-                              </div>
-                              <h4 className="text-xs font-bold text-red-500 truncate mt-0.5">{hammer.brand}</h4>
-                              <p className={`text-[8.5px] font-mono ${hammer.isPaid ? "text-green-700" : "text-slate-500"}`}>Purchased: {hammer.dateEntry || "-"}</p>
-                              <p className={`text-[8.5px] font-mono ${hammer.isPaid ? "text-green-700" : "text-slate-500"}`}>Rate: ₹{Number(hammer.rate || 0).toLocaleString()}</p>
-                              {!hammer.isPaid && (
-                                <p className="text-[8.5px] font-mono mt-0.5 text-rose-455 font-black">
-                                  Pending Amount: ₹{Math.max(0, hammer.rate - (hammer.payments || []).reduce((s, p) => s + p.amount, 0)).toLocaleString()}
-                                </p>
-                              )}
-                              <p className={`text-[8.5px] font-mono font-bold mt-1 ${hammer.isPaid ? "text-green-600" : "text-indigo-400"}`}>
-                                Usage: {totalFeetUsed} / {hammer.capableFeetDepth} ft used
-                              </p>
-                            </div>
-
-                            <div className="flex flex-col items-end gap-1 shrink-0 justify-start">
-                              <span className="text-[11.5px] font-black text-black block">
-                                Total: ₹{Number(hammer.rate || 0).toLocaleString()}
+                        <div className="space-y-2">
+                          <button
+                            type="button"
+                            onClick={() => setHammerSectionOpen(prev => ({ ...prev, [key]: !isOpen }))}
+                            className="w-full flex justify-between items-center bg-slate-900 border border-slate-850 px-3 py-2 rounded-xl text-left hover:bg-slate-850/30 transition duration-200"
+                          >
+                            <span className="text-[10px] font-mono font-black text-slate-400 uppercase tracking-wider">
+                              {title}
+                            </span>
+                            <div className="flex items-center gap-1.5">
+                              <span className="text-[9px] font-bold font-mono text-slate-400 bg-slate-950 px-2 py-0.5 rounded-lg border border-slate-850">
+                                {hammers.length}
                               </span>
-                              {!hammer.isPaid && (
-                                <span className="text-[9.5px] font-black text-orange-500 block">
-                                  Pending: ₹{Math.max(0, hammer.rate - (hammer.payments || []).reduce((s, p) => s + p.amount, 0)).toLocaleString()}
-                                </span>
-                              )}
-                              <div className="flex items-center gap-1 mt-1">
-                                <button
-                                  type="button"
-                                  onClick={() => handleOpenEditHammer(hammer)}
-                                  className="p-1 bg-slate-950 text-slate-400 hover:text-white border border-slate-800 rounded"
-                                  title="Edit Hammer"
-                                >
-                                  <Edit className="w-3 h-3" />
-                                </button>
-                                <button
-                                  type="button"
-                                  onClick={() => handleDeleteHammer(hammer.id, hammer.hammerNo)}
-                                  className="p-1 bg-rose-950/40 text-rose-450 border border-rose-900/40 rounded"
-                                  title="Delete Hammer"
-                                >
-                                  <Trash2 className="w-3 h-3" />
-                                </button>
-                              </div>
-
-                              <button
-                                type="button"
-                                onClick={() => setSelectedHammerForHistory(selectedHammerForHistory === hammer.id ? null : hammer.id)}
-                                className="bg-slate-950 text-[8.5px] px-2 py-0.5 rounded border border-slate-800 text-indigo-400 hover:text-indigo-300 font-bold transition font-mono uppercase mt-1"
-                              >
-                                {selectedHammerForHistory === hammer.id ? "Hide History" : "Feet History"}
-                              </button>
-                            </div>
-                          </div>
-
-                          {isLimitReached && (
-                            <div className="bg-amber-955/20 border border-amber-900/30 rounded-xl p-2 text-[9px] text-amber-400 space-y-1">
-                              <span className="font-bold flex items-center gap-1 font-mono uppercase">
-                                ⚠️ Limit Reached ({totalFeetUsed} ft used)
-                              </span>
-                              {hasCasingType ? (
-                                <p className="font-mono">Configured as: <span className="font-bold text-indigo-400 uppercase">{hammer.casingType} Casing Hammer</span></p>
+                              {isOpen ? (
+                                <ArrowUp className="w-3.5 h-3.5 text-slate-400" />
                               ) : (
-                                <div className="space-y-1">
-                                  <p>Specify Casing Hammer designation:</p>
-                                  <div className="flex gap-2">
-                                    <button
-                                      type="button"
-                                      onClick={() => {
-                                        setHammerEntries(prev => prev.map(h => h.id === hammer.id ? { ...h, casingType: "7 inch" } : h));
-                                        triggerOnlineSync(`CONFIGURED HAMMER ${hammer.hammerNo} AS 7" CASING`);
-                                      }}
-                                      className="bg-indigo-650 hover:bg-indigo-600 text-white font-bold px-2 py-0.5 rounded font-mono text-[8px]"
-                                    >
-                                      7" Casing
-                                    </button>
-                                    <button
-                                      type="button"
-                                      onClick={() => {
-                                        setHammerEntries(prev => prev.map(h => h.id === hammer.id ? { ...h, casingType: "10 inch" } : h));
-                                        triggerOnlineSync(`CONFIGURED HAMMER ${hammer.hammerNo} AS 10" CASING`);
-                                      }}
-                                      className="bg-emerald-650 hover:bg-emerald-600 text-white font-bold px-2 py-0.5 rounded font-mono text-[8px]"
-                                    >
-                                      10" Casing
-                                    </button>
-                                  </div>
+                                <ArrowDown className="w-3.5 h-3.5 text-slate-400" />
+                              )}
+                            </div>
+                          </button>
+
+                          {isOpen && (
+                            <div className="space-y-2.5 pl-1.5 border-l-2 border-slate-850">
+                              {hammers.length === 0 ? (
+                                <div className="text-center py-4 bg-slate-900/10 rounded-xl text-[9px] text-slate-500 font-mono italic">
+                                  No hammers in this section.
                                 </div>
+                              ) : (
+                                hammers.map((hammer) => {
+                                  const totalDrillingUsed = (hammer.usageHistory || []).reduce((sum, item) => sum + item.calculatedFeet, 0);
+                                  const totalCasingUsed = (hammer.casingUsageHistory || []).reduce((sum, item) => sum + item.calculatedFeet, 0);
+                                  const totalFeetUsed = totalDrillingUsed + totalCasingUsed;
+                                  
+                                  const isLimitReached = totalFeetUsed >= hammer.capableFeetDepth;
+                                  const hasCasingType = !!hammer.casingType;
+
+                                  // Check extra usage condition
+                                  const showExtraUsage = totalFeetUsed > hammer.capableFeetDepth;
+                                  const extraUsageFeet = showExtraUsage ? totalFeetUsed - hammer.capableFeetDepth : 0;
+
+                                  return (
+                                    <div
+                                      key={hammer.id}
+                                      className={`relative border rounded-2xl p-3.5 space-y-2.5 transition duration-300 ${bgColorClass} ${borderColorClass}`}
+                                    >
+                                      {/* Extra Usage display in top right corner */}
+                                      {showExtraUsage && (
+                                        <div className="absolute -top-1.5 -right-1.5 bg-red-600 border border-red-500 text-white font-mono font-extrabold text-[8px] px-2 py-0.5 rounded-full shadow-md z-10 animate-bounce">
+                                          EXTRA: {extraUsageFeet} FT
+                                        </div>
+                                      )}
+
+                                      <div className="flex items-center justify-between gap-3">
+                                        <div className="min-w-0">
+                                          <div className="flex flex-wrap items-center gap-1.5">
+                                            <span className="text-[9px] uppercase tracking-wider font-extrabold font-mono text-slate-200">
+                                              {hammer.hammerNo}
+                                            </span>
+                                            <span className="text-[8.5px] uppercase tracking-wider font-bold font-mono text-slate-500">
+                                              Cap: {hammer.capableFeetDepth} ft
+                                            </span>
+                                            <span className={`text-[8.5px] font-bold px-1.5 py-0.5 rounded ${hammer.isPaid ? "bg-green-950/80 text-green-400 border border-green-900/40" : "bg-rose-950 text-rose-450"}`}>
+                                              {hammer.isPaid ? "Paid" : "Pending"}
+                                            </span>
+                                            {hammer.status === "unusable" && (
+                                              <span className="text-[8.5px] font-bold px-1.5 py-0.5 rounded bg-red-950 text-red-400 border border-red-900/30 uppercase font-mono">
+                                                Unusable
+                                              </span>
+                                            )}
+                                            {hammer.status === "sold" && (
+                                              <span className="text-[8.5px] font-bold px-1.5 py-0.5 rounded bg-slate-950 text-slate-400 border border-slate-800 uppercase font-mono">
+                                                Sold
+                                              </span>
+                                            )}
+                                          </div>
+                                          <h4 className="text-xs font-black text-red-500 truncate mt-0.5">
+                                            {hammer.brand}
+                                          </h4>
+                                          <p className="text-[8.5px] font-mono text-slate-500">
+                                            Purchased: {hammer.dateEntry || "-"}
+                                          </p>
+                                          <p className="text-[8.5px] font-mono text-slate-500">
+                                            Rate: ₹{Number(hammer.rate || 0).toLocaleString()}
+                                          </p>
+                                          {!hammer.isPaid && (
+                                            <p className="text-[8.5px] font-mono mt-0.5 text-rose-450 font-black">
+                                              Pending Amount: ₹{Math.max(0, hammer.rate - (hammer.payments || []).reduce((s, p) => s + p.amount, 0)).toLocaleString()}
+                                            </p>
+                                          )}
+                                          
+                                          {/* Drilling vs Casing usages breakdown */}
+                                          <div className="space-y-0.5 mt-1">
+                                            <p className="text-[8.5px] font-mono font-bold text-indigo-400">
+                                              Drilling Usage: {totalDrillingUsed} ft
+                                            </p>
+                                            {totalCasingUsed > 0 && (
+                                              <p className="text-[8.5px] font-mono font-bold text-amber-500">
+                                                Casing Usage: {totalCasingUsed} ft
+                                              </p>
+                                            )}
+                                            <p className="text-[9px] font-mono font-black text-teal-400 mt-0.5">
+                                              Total Usage: {totalFeetUsed} / {hammer.capableFeetDepth} ft
+                                            </p>
+                                          </div>
+
+                                          {hammer.status === "sold" && (
+                                            <div className="mt-2 bg-slate-950/40 p-1.5 rounded-lg border border-slate-850 text-[8.5px] font-mono text-emerald-400">
+                                              <p>Sold Out Details:</p>
+                                              <p>Date: {hammer.soldDate || "-"}</p>
+                                              <p>Rate: ₹{Number(hammer.soldRate || 0).toLocaleString()}</p>
+                                            </div>
+                                          )}
+                                        </div>
+
+                                        <div className="flex flex-col items-end gap-1.5 shrink-0 justify-start">
+                                          <span className="text-[11.5px] font-black text-slate-200 block">
+                                            Total: ₹{Number(hammer.rate || 0).toLocaleString()}
+                                          </span>
+                                          
+                                          <div className="flex items-center gap-1">
+                                            <button
+                                              type="button"
+                                              onClick={() => handleOpenEditHammer(hammer)}
+                                              className="p-1 bg-slate-950 text-slate-400 hover:text-white border border-slate-800 rounded-lg"
+                                              title="Edit Hammer"
+                                            >
+                                              <Edit className="w-3 h-3" />
+                                            </button>
+                                            <button
+                                              type="button"
+                                              onClick={() => handleDeleteHammer(hammer.id, hammer.hammerNo)}
+                                              className="p-1 bg-rose-950/40 text-rose-450 border border-rose-900/40 rounded-lg"
+                                              title="Delete Hammer"
+                                            >
+                                              <Trash2 className="w-3 h-3" />
+                                            </button>
+                                          </div>
+
+                                          <button
+                                            type="button"
+                                            onClick={() => setSelectedHammerForHistory(selectedHammerForHistory === hammer.id ? null : hammer.id)}
+                                            className="bg-slate-950 text-[8.5px] px-2 py-0.5 rounded border border-slate-800 text-indigo-400 hover:text-indigo-300 font-bold transition font-mono uppercase"
+                                          >
+                                            {selectedHammerForHistory === hammer.id ? "Hide History" : "Feet History"}
+                                          </button>
+                                        </div>
+                                      </div>
+
+                                      {/* THREE BUTTON OPTION (when drilling hammer goes >= capable) */}
+                                      {!hasCasingType && hammer.status === "active" && isLimitReached && (
+                                        <div className="bg-orange-950/20 border border-orange-900/30 rounded-xl p-2 text-[9px] text-orange-400 space-y-1">
+                                          <span className="font-bold flex items-center gap-1 font-mono uppercase">
+                                            ⚠️ Limit Reached ({totalFeetUsed} ft used)
+                                          </span>
+                                          <p>Specify Casing Hammer designation or retire:</p>
+                                          <div className="flex flex-wrap gap-1.5">
+                                            <button
+                                              type="button"
+                                              onClick={() => handleSetHammerStatus(hammer, "7 inch", false)}
+                                              className="bg-amber-600 hover:bg-amber-500 text-white font-black px-2 py-0.5 rounded font-mono text-[8px]"
+                                            >
+                                              7" Casing
+                                            </button>
+                                            <button
+                                              type="button"
+                                              onClick={() => handleSetHammerStatus(hammer, "10 inch", false)}
+                                              className="bg-sky-600 hover:bg-sky-500 text-white font-black px-2 py-0.5 rounded font-mono text-[8px]"
+                                            >
+                                              10" Casing
+                                            </button>
+                                            <button
+                                              type="button"
+                                              onClick={() => handleSetHammerStatus(hammer, null, true)}
+                                              className="bg-red-650 hover:bg-red-600 text-white font-black px-2 py-0.5 rounded font-mono text-[8px]"
+                                            >
+                                              Unusable
+                                            </button>
+                                          </div>
+                                        </div>
+                                      )}
+
+                                      {/* UNUSABLE BUTTON ON 7" / 10" ACTIVE CASING HAMMERS */}
+                                      {hasCasingType && hammer.status === "active" && (
+                                        <div className="flex gap-1.5 items-center justify-end mt-1.5 pt-1.5 border-t border-slate-850/60">
+                                          <span className="text-[8.5px] font-mono text-slate-500 mr-auto uppercase">
+                                            Role: {hammer.casingType} casing hammer
+                                          </span>
+                                          <button
+                                            type="button"
+                                            onClick={() => handleSetHammerStatus(hammer, null, true)}
+                                            className="bg-red-650/80 hover:bg-red-600 text-white font-bold px-2.5 py-0.5 rounded text-[8px] font-mono uppercase"
+                                          >
+                                            Make Unusable
+                                          </button>
+                                          
+                                          {/* Sell Option Button */}
+                                          {hammerSellModalId !== hammer.id ? (
+                                            <button
+                                              type="button"
+                                              onClick={() => {
+                                                setHammerSellModalId(hammer.id);
+                                                setHammerSellDate(new Date().toISOString().split("T")[0]);
+                                                setHammerSellRate(hammer.rate);
+                                              }}
+                                              className="bg-emerald-650 hover:bg-emerald-600 text-white font-bold px-2.5 py-0.5 rounded text-[8px] font-mono uppercase"
+                                            >
+                                              Sell
+                                            </button>
+                                          ) : null}
+                                        </div>
+                                      )}
+
+                                      {/* SELL BUTTON ON UNUSABLE HAMMERS */}
+                                      {hammer.status === "unusable" && hammerSellModalId !== hammer.id && (
+                                        <div className="flex justify-end pt-1.5 border-t border-slate-850/60">
+                                          <button
+                                            type="button"
+                                            onClick={() => {
+                                              setHammerSellModalId(hammer.id);
+                                              setHammerSellDate(new Date().toISOString().split("T")[0]);
+                                              setHammerSellRate(hammer.rate);
+                                            }}
+                                            className="bg-emerald-650 hover:bg-emerald-600 text-white font-bold px-2.5 py-0.5 rounded text-[8.5px] font-mono uppercase"
+                                          >
+                                            Sell
+                                          </button>
+                                        </div>
+                                      )}
+
+                                      {/* INLINE SELL PANEL REQUESTS DATE & RATE */}
+                                      {hammerSellModalId === hammer.id && (
+                                        <div className="bg-slate-950 p-2.5 rounded-xl border border-slate-850 space-y-2 mt-2 font-mono text-[9px] text-slate-300">
+                                          <span className="font-extrabold text-amber-500 uppercase block text-[8px]">
+                                            Enter Hammer Sale Record:
+                                          </span>
+                                          <div className="grid grid-cols-2 gap-2">
+                                            <div>
+                                              <label className="text-[8px] text-slate-500 block uppercase mb-0.5">Date</label>
+                                              <input
+                                                type="date"
+                                                value={hammerSellDate}
+                                                onChange={(e) => setHammerSellDate(e.target.value)}
+                                                className="w-full bg-slate-900 border border-slate-850 text-slate-100 p-1 rounded font-bold"
+                                              />
+                                            </div>
+                                            <div>
+                                              <label className="text-[8px] text-slate-500 block uppercase mb-0.5">Rate (₹)</label>
+                                              <input
+                                                type="number"
+                                                min="0"
+                                                value={hammerSellRate}
+                                                onChange={(e) => setHammerSellRate(Number(e.target.value))}
+                                                className="w-full bg-slate-900 border border-slate-850 text-slate-100 p-1 rounded font-bold"
+                                              />
+                                            </div>
+                                          </div>
+                                          <div className="flex justify-end gap-1.5 pt-1.5 border-t border-slate-900/60">
+                                            <button
+                                              type="button"
+                                              onClick={() => setHammerSellModalId(null)}
+                                              className="px-2 py-0.5 bg-slate-900 text-slate-400 rounded hover:text-slate-350"
+                                            >
+                                              Cancel
+                                            </button>
+                                            <button
+                                              type="button"
+                                              onClick={() => handleSellHammer(hammer)}
+                                              className="px-2.5 py-0.5 bg-green-650 hover:bg-green-600 text-white font-extrabold rounded uppercase tracking-wider"
+                                            >
+                                              Sold Out
+                                            </button>
+                                          </div>
+                                        </div>
+                                      )}
+
+                                      {/* Feet usage history log */}
+                                      {selectedHammerForHistory === hammer.id && (
+                                        <div className="bg-slate-950 p-2.5 rounded-xl border border-slate-850 space-y-2 text-[9px] font-mono">
+                                          <span className="font-bold uppercase text-slate-500 tracking-wider">Usage Records</span>
+                                          {(!hammer.usageHistory || hammer.usageHistory.length === 0) && (!hammer.casingUsageHistory || hammer.casingUsageHistory.length === 0) ? (
+                                            <p className="text-slate-500 italic">No usage history recorded.</p>
+                                          ) : (
+                                            <div className="overflow-x-auto">
+                                              <table className="w-full text-left border-collapse">
+                                                <thead>
+                                                  <tr className="border-b border-slate-850 text-slate-400">
+                                                    <th className="py-1">Date</th>
+                                                    <th className="py-1">Type</th>
+                                                    <th className="py-1">Client</th>
+                                                    <th className="py-1 text-right">Feet</th>
+                                                  </tr>
+                                                </thead>
+                                                <tbody>
+                                                  {(hammer.usageHistory || []).map((rec) => (
+                                                    <tr key={rec.id} className="border-b border-slate-900/60 text-slate-300">
+                                                      <td className="py-1">{rec.date}</td>
+                                                      <td className="py-1 text-indigo-400 font-bold uppercase">Drill</td>
+                                                      <td className="py-1 font-bold">{rec.clientName}</td>
+                                                      <td className="py-1 text-right text-indigo-400 font-bold">{rec.calculatedFeet} ft</td>
+                                                    </tr>
+                                                  ))}
+                                                  {(hammer.casingUsageHistory || []).map((rec) => (
+                                                    <tr key={rec.id} className="border-b border-slate-900/60 text-slate-300">
+                                                      <td className="py-1">{rec.date}</td>
+                                                      <td className="py-1 text-amber-400 font-bold uppercase">Casing</td>
+                                                      <td className="py-1 font-bold">{rec.clientName}</td>
+                                                      <td className="py-1 text-right text-amber-500 font-bold">{rec.calculatedFeet} ft</td>
+                                                    </tr>
+                                                  ))}
+                                                </tbody>
+                                              </table>
+                                            </div>
+                                          )}
+                                        </div>
+                                      )}
+
+                                      <PaymentTrackerSection
+                                        grandTotal={hammer.rate}
+                                        dateEntry={hammer.dateEntry || ""}
+                                        payments={hammer.payments || (hammer.isPaid ? [{ id: "init", date: hammer.dateEntry || "2026-06-18", amount: hammer.rate }] : [])}
+                                        onAddPayment={(amount, date) => {
+                                          void (async () => {
+                                            const current = hammer.payments || (hammer.isPaid ? [{ id: "init", date: hammer.dateEntry || "2026-06-18", amount: hammer.rate }] : []);
+                                            const nextPay = [...current, { id: `pay-${Date.now()}`, date, amount }];
+                                            const paid = nextPay.reduce((s, p) => s + p.amount, 0);
+                                            const isPaid = paid >= hammer.rate;
+                                            const nextRecord = { ...hammer, payments: nextPay, isPaid };
+
+                                            setHammerEntries(prev => prev.map(h => h.id === hammer.id ? nextRecord : h));
+                                            try {
+                                              await requestJson(apiBaseUrl, `/api/v1/business/hammers/${hammer.id}`, {
+                                                method: "PUT",
+                                                headers: { "Content-Type": "application/json" },
+                                                body: JSON.stringify(toHammerApiPayload(nextRecord))
+                                              });
+                                              await onSharedDataChanged?.();
+                                            } catch (e) {
+                                              console.error("Failed to sync hammer payment to database", e);
+                                            }
+                                          })();
+                                        }}
+                                        onDeletePayment={(payId) => {
+                                          void (async () => {
+                                            const current = hammer.payments || (hammer.isPaid ? [{ id: "init", date: hammer.dateEntry || "2026-06-18", amount: hammer.rate }] : []);
+                                            const nextPay = current.filter(p => p.id !== payId);
+                                            const paid = nextPay.reduce((s, p) => s + p.amount, 0);
+                                            const isPaid = paid >= hammer.rate;
+                                            const nextRecord = { ...hammer, payments: nextPay, isPaid };
+
+                                            setHammerEntries(prev => prev.map(h => h.id === hammer.id ? nextRecord : h));
+                                            try {
+                                              await requestJson(apiBaseUrl, `/api/v1/business/hammers/${hammer.id}`, {
+                                                method: "PUT",
+                                                headers: { "Content-Type": "application/json" },
+                                                body: JSON.stringify(toHammerApiPayload(nextRecord))
+                                              });
+                                              await onSharedDataChanged?.();
+                                            } catch (e) {
+                                              console.error("Failed to sync hammer payment to database", e);
+                                            }
+                                          })();
+                                        }}
+                                      />
+                                    </div>
+                                  );
+                                })
                               )}
                             </div>
                           )}
-
-                          {selectedHammerForHistory === hammer.id && (
-                            <div className="bg-slate-950 p-2.5 rounded-xl border border-slate-850 space-y-1.5 text-[9px] font-mono">
-                              <span className="font-bold uppercase text-slate-500 tracking-wider">Usage Records</span>
-                              {(!hammer.usageHistory || hammer.usageHistory.length === 0) ? (
-                                <p className="text-slate-500 italic">No usage history recorded.</p>
-                              ) : (
-                                <div className="overflow-x-auto">
-                                  <table className="w-full text-left border-collapse">
-                                    <thead>
-                                      <tr className="border-b border-slate-850 text-slate-400">
-                                        <th className="py-1">Date</th>
-                                        <th className="py-1">Client</th>
-                                        <th className="py-1">Location</th>
-                                        <th className="py-1 text-right">Feet</th>
-                                      </tr>
-                                    </thead>
-                                    <tbody>
-                                      {hammer.usageHistory.map((rec) => (
-                                        <tr key={rec.id} className="border-b border-slate-900/60 text-slate-300">
-                                          <td className="py-1">{rec.date}</td>
-                                          <td className="py-1 font-bold">{rec.clientName}</td>
-                                          <td className="py-1">{rec.location || "-"}</td>
-                                          <td className="py-1 text-right text-indigo-400 font-bold">{rec.calculatedFeet} ft</td>
-                                        </tr>
-                                      ))}
-                                    </tbody>
-                                  </table>
-                                </div>
-                              )}
-                            </div>
-                          )}
-
-                          <PaymentTrackerSection
-                            grandTotal={hammer.rate}
-                            dateEntry={hammer.dateEntry || ""}
-                            payments={hammer.payments || (hammer.isPaid ? [{ id: "init", date: hammer.dateEntry || "2026-06-18", amount: hammer.rate }] : [])}
-                            onAddPayment={(amount, date) => {
-                              void (async () => {
-                                const current = hammer.payments || (hammer.isPaid ? [{ id: "init", date: hammer.dateEntry || "2026-06-18", amount: hammer.rate }] : []);
-                                const nextPay = [...current, { id: `pay-${Date.now()}`, date, amount }];
-                                const paid = nextPay.reduce((s, p) => s + p.amount, 0);
-                                const isPaid = paid >= hammer.rate;
-                                const nextRecord = { ...hammer, payments: nextPay, isPaid };
-
-                                setHammerEntries(prev => prev.map(h => h.id === hammer.id ? nextRecord : h));
-                                try {
-                                  await requestJson(apiBaseUrl, `/api/v1/business/hammers/${hammer.id}`, {
-                                    method: "PUT",
-                                    headers: { "Content-Type": "application/json" },
-                                    body: JSON.stringify(toHammerApiPayload(nextRecord))
-                                  });
-                                  await onSharedDataChanged?.();
-                                } catch (e) {
-                                  console.error("Failed to sync hammer payment to database", e);
-                                }
-                              })();
-                            }}
-                            onDeletePayment={(payId) => {
-                              void (async () => {
-                                const current = hammer.payments || (hammer.isPaid ? [{ id: "init", date: hammer.dateEntry || "2026-06-18", amount: hammer.rate }] : []);
-                                const nextPay = current.filter(p => p.id !== payId);
-                                const paid = nextPay.reduce((s, p) => s + p.amount, 0);
-                                const isPaid = paid >= hammer.rate;
-                                const nextRecord = { ...hammer, payments: nextPay, isPaid };
-
-                                setHammerEntries(prev => prev.map(h => h.id === hammer.id ? nextRecord : h));
-                                try {
-                                  await requestJson(apiBaseUrl, `/api/v1/business/hammers/${hammer.id}`, {
-                                    method: "PUT",
-                                    headers: { "Content-Type": "application/json" },
-                                    body: JSON.stringify(toHammerApiPayload(nextRecord))
-                                  });
-                                  await onSharedDataChanged?.();
-                                } catch (e) {
-                                  console.error("Failed to sync hammer payment to database", e);
-                                }
-                              })();
-                            }}
-                          />
                         </div>
                       );
-                    })
-                  )}
+                    };
+
+                    return (
+                      <div className="space-y-3.5">
+                        {renderSection(
+                          "Drilling Hammers",
+                          "drilling",
+                          hammerEntries.filter(h => !h.casingType && h.status !== "unusable" && h.status !== "sold"),
+                          "bg-slate-900",
+                          "border-slate-850"
+                        )}
+                        {renderSection(
+                          "7\" Casing Hammers",
+                          "casing7",
+                          hammerEntries.filter(h => h.casingType === "7 inch" && h.status !== "unusable" && h.status !== "sold"),
+                          "bg-amber-100/30",
+                          "border-amber-500/30"
+                        )}
+                        {renderSection(
+                          "10\" Casing Hammers",
+                          "casing10",
+                          hammerEntries.filter(h => h.casingType === "10 inch" && h.status !== "unusable" && h.status !== "sold"),
+                          "bg-sky-100/30",
+                          "border-sky-500/30"
+                        )}
+                        {renderSection(
+                          "Unusable Hammers",
+                          "unusable",
+                          hammerEntries.filter(h => h.status === "unusable"),
+                          "bg-rose-100/30",
+                          "border-rose-500/30"
+                        )}
+                        {renderSection(
+                          "Sold Hammers",
+                          "sold",
+                          hammerEntries.filter(h => h.status === "sold"),
+                          "bg-white/40 backdrop-blur-sm",
+                          "border-slate-300/40"
+                        )}
+                      </div>
+                    );
+                  })()}
                 </div>
               </div>
             </div>
@@ -7807,7 +8181,7 @@ export default function MobileBusiness({
                         className="w-full bg-slate-950 p-1.5 rounded text-slate-200 border border-slate-850 font-mono text-[14px] focus:outline-none focus:border-indigo-500"
                       >
                         <option value="">No Hammer Selected</option>
-                        {hammerEntries.map((h) => {
+                        {hammerEntries.filter(h => h.status !== "unusable" && h.status !== "sold").map((h) => {
                           const totalUsed = (h.usageHistory || []).reduce((sum, item) => sum + item.calculatedFeet, 0);
                           return (
                             <option key={h.id} value={h.id}>
@@ -7900,7 +8274,7 @@ export default function MobileBusiness({
                         className="w-full bg-slate-950 p-1.5 rounded text-slate-200 border border-slate-850 font-mono text-[14px] focus:outline-none focus:border-pink-500"
                       >
                         <option value="">No 10" Casing Hammer Selected</option>
-                        {hammerEntries.filter(h => h.casingType === "10 inch").map((h) => {
+                        {hammerEntries.filter(h => h.casingType === "10 inch" && h.status !== "unusable" && h.status !== "sold").map((h) => {
                           const totalUsed = (h.usageHistory || []).reduce((sum, item) => sum + item.calculatedFeet, 0);
                           return (
                             <option key={h.id} value={h.id}>
@@ -7984,7 +8358,7 @@ export default function MobileBusiness({
                         />
                       </div>
                     </div>
-
+ 
                     <div className="pt-1.5 border-t border-slate-900/60 mt-1">
                       <div className="text-[14px] text-slate-400 font-mono font-bold uppercase block mb-1">7" Casing Hammer Used</div>
                       <select
@@ -7993,7 +8367,7 @@ export default function MobileBusiness({
                         className="w-full bg-slate-950 p-1.5 rounded text-slate-200 border border-slate-850 font-mono text-[14px] focus:outline-none focus:border-violet-500"
                       >
                         <option value="">No 7" Casing Hammer Selected</option>
-                        {hammerEntries.filter(h => h.casingType === "7 inch").map((h) => {
+                        {hammerEntries.filter(h => h.casingType === "7 inch" && h.status !== "unusable" && h.status !== "sold").map((h) => {
                           const totalUsed = (h.usageHistory || []).reduce((sum, item) => sum + item.calculatedFeet, 0);
                           return (
                             <option key={h.id} value={h.id}>

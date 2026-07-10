@@ -137,7 +137,11 @@ class Hammer(Base, TimestampMixin):
     capable_feet_depth: Mapped[int] = mapped_column(Integer, default=950)
     is_paid: Mapped[bool] = mapped_column(Boolean, default=False)
     casing_type: Mapped[str | None] = mapped_column(String(50))
+    status: Mapped[str] = mapped_column(String(20), default="active")
+    sold_date: Mapped[date | None] = mapped_column(Date)
+    sold_rate: Mapped[float | None] = mapped_column(Numeric(10, 2))
     usage_history: Mapped[list[dict[str, Any]] | None] = mapped_column(JSON)
+    casing_usage_history: Mapped[list[dict[str, Any]] | None] = mapped_column(JSON)
     payments: Mapped[list[dict[str, Any]] | None] = mapped_column(JSON)
 
 

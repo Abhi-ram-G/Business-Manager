@@ -132,7 +132,11 @@ export interface HammerEntry {
   rate: number;
   capableFeetDepth: number;  // max drilling capacity in feet
   isPaid: boolean;
-  casingType?: "7 inch" | "10 inch"; // set after limit is reached
+  casingType?: "7 inch" | "10 inch"; // set after limit is reached — drilling hammer becomes casing hammer
+  status?: "active" | "unusable" | "sold"; // lifecycle status
+  soldDate?: string;          // date when hammer was sold
+  soldRate?: number;          // rate at which it was sold
+  casingUsageHistory?: HammerUsageRecord[]; // separate usage history after becoming a casing hammer
   usageHistory: HammerUsageRecord[];
   payments?: { id: string; date: string; amount: number }[];
 }

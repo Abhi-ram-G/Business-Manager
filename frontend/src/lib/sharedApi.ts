@@ -108,6 +108,10 @@ export const mapHammerFromApi = (item: ApiRecord): HammerEntry => ({
   capableFeetDepth: toNumber(item.capable_feet_depth ?? 950),
   isPaid: !!item.is_paid,
   casingType: item.casing_type ? (item.casing_type as any) : undefined,
+  status: item.status ? (item.status as any) : "active",
+  soldDate: item.sold_date ? String(item.sold_date) : undefined,
+  soldRate: item.sold_rate != null ? toNumber(item.sold_rate) : undefined,
+  casingUsageHistory: Array.isArray(item.casing_usage_history) ? (item.casing_usage_history as any) : [],
   usageHistory: Array.isArray(item.usage_history) ? (item.usage_history as any) : [],
   payments: Array.isArray(item.payments) ? (item.payments as any) : [],
 });
@@ -428,6 +432,10 @@ export const toHammerApiPayload = (hammer: HammerEntry) => ({
   capable_feet_depth: hammer.capableFeetDepth,
   is_paid: hammer.isPaid,
   casing_type: hammer.casingType ?? null,
+  status: hammer.status ?? "active",
+  sold_date: hammer.soldDate ?? null,
+  sold_rate: hammer.soldRate ?? null,
+  casing_usage_history: hammer.casingUsageHistory ?? [],
   usage_history: hammer.usageHistory ?? [],
   payments: hammer.payments ?? [],
 });
