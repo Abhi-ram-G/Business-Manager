@@ -816,6 +816,9 @@ def delete_business_bill(bill_id: str, db: Session = Depends(get_db)):
     # Clean up hammer usage history records that refer to this bill_id
     hammers = db.execute(select(Hammer)).scalars().all()
     for hammer in hammers:
+        modified = False
+        
+        # Clean usage_history
         if hammer.usage_history:
             filtered_history = [
                 record for record in hammer.usage_history
@@ -823,9 +826,34 @@ def delete_business_bill(bill_id: str, db: Session = Depends(get_db)):
             ]
             if len(filtered_history) != len(hammer.usage_history):
                 hammer.usage_history = filtered_history
-                from sqlalchemy.orm.attributes import flag_modified
-                flag_modified(hammer, "usage_history")
-                db.add(hammer)
+                modified = True
+                
+        # Clean casing_usage_history
+        if hammer.casing_usage_history:
+            filtered_casing_history = [
+                record for record in hammer.casing_usage_history
+                if record.get("billId") != bill_id and record.get("bill_id") != bill_id
+            ]
+            if len(filtered_casing_history) != len(hammer.casing_usage_history):
+                hammer.casing_usage_history = filtered_casing_history
+                modified = True
+                
+        if modified:
+            from sqlalchemy.orm.attributes import flag_modified
+            flag_modified(hammer, "usage_history")
+            flag_modified(hammer, "casing_usage_history")
+            
+            # Check capacity to revert to drilling hammer
+            total_drilling = sum(float(r.get("calculatedFeet", 0) or r.get("calculated_feet", 0)) for r in (hammer.usage_history or []))
+            total_casing = sum(float(r.get("calculatedFeet", 0) or r.get("calculated_feet", 0)) for r in (hammer.casing_usage_history or []))
+            total_feet = total_drilling + total_casing
+            
+            if total_feet < hammer.capable_feet_depth:
+                hammer.casing_type = None
+                if hammer.status != "sold":
+                    hammer.status = "active"
+            
+            db.add(hammer)
 
     db.delete(bill)
     db.commit()

@@ -504,24 +504,45 @@ export default function MobileBusiness({
     if (type === "bill") {
       const billToDelete = businessBills.find((bill) => bill.id === id);
       
-      // Clean up hammer entries local state
-      const cleanedHammers = hammerEntries.map((h) => ({
-        ...h,
-        usageHistory: (h.usageHistory || []).filter((rec) => rec.billId !== id)
-      }));
+      // Clean up hammer entries local state and move back to drilling hammer if usage drops below capacity
+      const cleanedHammers = hammerEntries.map((h) => {
+        const nextUsageHistory = (h.usageHistory || []).filter((rec) => rec.billId !== id);
+        const nextCasingUsageHistory = (h.casingUsageHistory || []).filter((rec) => rec.billId !== id);
+        const totalFeet = nextUsageHistory.reduce((sum, r) => sum + r.calculatedFeet, 0) + 
+                          nextCasingUsageHistory.reduce((sum, r) => sum + r.calculatedFeet, 0);
+        
+        const belowCapable = totalFeet < h.capableFeetDepth;
+        return {
+          ...h,
+          usageHistory: nextUsageHistory,
+          casingUsageHistory: nextCasingUsageHistory,
+          casingType: belowCapable ? undefined : h.casingType,
+          status: belowCapable && h.status !== "sold" ? ("active" as const) : h.status
+        };
+      });
       setHammerEntries(cleanedHammers);
 
       // Find hammers that need database updates
       const hammersToUpdate = hammerEntries.filter(h => 
-        (h.usageHistory || []).some(rec => rec.billId === id)
+        (h.usageHistory || []).some(rec => rec.billId === id) ||
+        (h.casingUsageHistory || []).some(rec => rec.billId === id)
       );
 
       // Persist modified hammers to server
       await Promise.all(
         hammersToUpdate.map(async (h) => {
+          const nextUsageHistory = (h.usageHistory || []).filter((rec) => rec.billId !== id);
+          const nextCasingUsageHistory = (h.casingUsageHistory || []).filter((rec) => rec.billId !== id);
+          const totalFeet = nextUsageHistory.reduce((sum, r) => sum + r.calculatedFeet, 0) + 
+                            nextCasingUsageHistory.reduce((sum, r) => sum + r.calculatedFeet, 0);
+          
+          const belowCapable = totalFeet < h.capableFeetDepth;
           const cleanedHammer = {
             ...h,
-            usageHistory: (h.usageHistory || []).filter((rec) => rec.billId !== id)
+            usageHistory: nextUsageHistory,
+            casingUsageHistory: nextCasingUsageHistory,
+            casingType: belowCapable ? undefined : h.casingType,
+            status: belowCapable && h.status !== "sold" ? ("active" as const) : h.status
           };
           try {
             await requestJson(apiBaseUrl, `/api/v1/business/hammers/${h.id}`, {
