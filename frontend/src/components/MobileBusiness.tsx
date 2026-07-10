@@ -4608,6 +4608,113 @@ export default function MobileBusiness({
                   </button>
                 </div>
 
+                {(isHammerFormOpen || editingHammerId) && (
+                  <form onSubmit={handleSaveHammer} className="bg-slate-900 border border-slate-800 rounded-2xl p-3 space-y-3 text-xs">
+                    <span className="text-[10px] font-mono font-bold text-amber-500 uppercase tracking-widest block">
+                      {editingHammerId ? "Edit Hammer Profile" : "Register New Hammer"}
+                    </span>
+
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                      <div>
+                        <label className="text-[9px] text-slate-500 block font-mono">HAMMER NUMBER</label>
+                        <input
+                          type="text"
+                          className="w-full bg-slate-950 p-1.5 rounded text-slate-100 border border-slate-850 uppercase font-bold"
+                          placeholder="H-001"
+                          required
+                          {...strInputProps(hammerNo, setHammerNo)}
+                        />
+                      </div>
+                      <div>
+                        <label className="text-[9px] text-slate-500 block font-mono">BRAND</label>
+                        <input
+                          type="text"
+                          className="w-full bg-slate-950 p-1.5 rounded text-slate-100 border border-slate-850 uppercase font-bold"
+                          placeholder="Atlas Copco"
+                          required
+                          {...strInputProps(hammerBrand, setHammerBrand)}
+                        />
+                      </div>
+                    </div>
+
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                      <div>
+                        <label className="text-[9px] text-slate-500 block font-mono">DATE ENTRY</label>
+                        <input
+                          type="date"
+                          value={hammerDateEntry}
+                          onChange={(e) => setHammerDateEntry(e.target.value)}
+                          className="w-full bg-slate-950 p-1.5 rounded text-slate-100 border border-slate-850 font-bold"
+                          required
+                        />
+                      </div>
+                      <div>
+                        <label className="text-[9px] text-slate-500 block font-mono">RATE (₹)</label>
+                        <input
+                          type="number"
+                          className="w-full bg-slate-950 p-1.5 rounded text-slate-100 border border-slate-850 font-bold font-mono"
+                          min="0"
+                          required
+                          {...numInputProps(hammerRate, setHammerRate, 0)}
+                        />
+                      </div>
+                    </div>
+
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                      <div>
+                        <label className="text-[9px] text-slate-500 block font-mono">USED FEET</label>
+                        <input
+                          type="number"
+                          className="w-full bg-slate-950 p-1.5 rounded text-slate-100 border border-slate-850 font-bold font-mono"
+                          min="0"
+                          required
+                          {...numInputProps(hammerUsedFeet, setHammerUsedFeet, 0)}
+                        />
+                      </div>
+                      <div>
+                        <label className="text-[9px] text-slate-500 block font-mono">CAPABLE FEET DEPTH</label>
+                        <input
+                          type="number"
+                          className="w-full bg-slate-950 p-1.5 rounded text-slate-100 border border-slate-850 font-bold font-mono"
+                          min="1"
+                          required
+                          {...numInputProps(hammerCapableFeet, setHammerCapableFeet, 1)}
+                        />
+                      </div>
+                    </div>
+
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                      <div>
+                        <label className="text-[9px] text-slate-500 block font-mono">PAYMENT STATUS</label>
+                        <select
+                          value={hammerIsPaid ? "Paid" : "Pending"}
+                          onChange={(e) => setHammerIsPaid(e.target.value === "Paid")}
+                          className="w-full bg-slate-950 p-1.5 rounded text-slate-100 border border-slate-850 font-bold focus:outline-none"
+                        >
+                          <option value="Pending">Pending</option>
+                          <option value="Paid">Paid</option>
+                        </select>
+                      </div>
+                    </div>
+
+                    <div className="flex gap-2 justify-end pt-1">
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setIsHammerFormOpen(false);
+                          setEditingHammerId(null);
+                        }}
+                        className="px-3 bg-slate-950 text-slate-400 py-1 rounded"
+                      >
+                        Cancel
+                      </button>
+                      <button type="submit" className="px-4 bg-indigo-650 text-white font-bold py-1 rounded">
+                        {editingHammerId ? "Update Hammer" : "Save Hammer"}
+                      </button>
+                    </div>
+                  </form>
+                )}
+
                 <div className="space-y-3">
                   {/* helper functions and loops for each group */}
                   {(() => {
@@ -5035,115 +5142,9 @@ export default function MobileBusiness({
                   })()}
                 </div>
               </div>
-
-              {(isHammerFormOpen || editingHammerId) && (
-                <form onSubmit={handleSaveHammer} className="bg-slate-900 border border-slate-800 rounded-2xl p-3 space-y-3 text-xs">
-                  <span className="text-[10px] font-mono font-bold text-amber-500 uppercase tracking-widest block">
-                    {editingHammerId ? "Edit Hammer Profile" : "Register New Hammer"}
-                  </span>
-
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                    <div>
-                      <label className="text-[9px] text-slate-500 block font-mono">HAMMER NUMBER</label>
-                      <input
-                        type="text"
-                        className="w-full bg-slate-950 p-1.5 rounded text-slate-100 border border-slate-850 uppercase font-bold"
-                        placeholder="H-001"
-                        required
-                        {...strInputProps(hammerNo, setHammerNo)}
-                      />
-                    </div>
-                    <div>
-                      <label className="text-[9px] text-slate-500 block font-mono">BRAND</label>
-                      <input
-                        type="text"
-                        className="w-full bg-slate-950 p-1.5 rounded text-slate-100 border border-slate-850 uppercase font-bold"
-                        placeholder="Atlas Copco"
-                        required
-                        {...strInputProps(hammerBrand, setHammerBrand)}
-                      />
-                    </div>
-                  </div>
-
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                    <div>
-                      <label className="text-[9px] text-slate-500 block font-mono">DATE ENTRY</label>
-                      <input
-                        type="date"
-                        value={hammerDateEntry}
-                        onChange={(e) => setHammerDateEntry(e.target.value)}
-                        className="w-full bg-slate-950 p-1.5 rounded text-slate-100 border border-slate-850 font-bold"
-                        required
-                      />
-                    </div>
-                    <div>
-                      <label className="text-[9px] text-slate-500 block font-mono">RATE (₹)</label>
-                      <input
-                        type="number"
-                        className="w-full bg-slate-950 p-1.5 rounded text-slate-100 border border-slate-850 font-bold font-mono"
-                        min="0"
-                        required
-                        {...numInputProps(hammerRate, setHammerRate, 0)}
-                      />
-                    </div>
-                  </div>
-
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                    <div>
-                      <label className="text-[9px] text-slate-500 block font-mono">USED FEET</label>
-                      <input
-                        type="number"
-                        className="w-full bg-slate-950 p-1.5 rounded text-slate-100 border border-slate-850 font-bold font-mono"
-                        min="0"
-                        required
-                        {...numInputProps(hammerUsedFeet, setHammerUsedFeet, 0)}
-                      />
-                    </div>
-                    <div>
-                      <label className="text-[9px] text-slate-500 block font-mono">CAPABLE FEET DEPTH</label>
-                      <input
-                        type="number"
-                        className="w-full bg-slate-950 p-1.5 rounded text-slate-100 border border-slate-850 font-bold font-mono"
-                        min="1"
-                        required
-                        {...numInputProps(hammerCapableFeet, setHammerCapableFeet, 1)}
-                      />
-                    </div>
-                  </div>
-
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                    <div>
-                      <label className="text-[9px] text-slate-500 block font-mono">PAYMENT STATUS</label>
-                      <select
-                        value={hammerIsPaid ? "Paid" : "Pending"}
-                        onChange={(e) => setHammerIsPaid(e.target.value === "Paid")}
-                        className="w-full bg-slate-950 p-1.5 rounded text-slate-100 border border-slate-850 font-bold focus:outline-none"
-                      >
-                        <option value="Pending">Pending</option>
-                        <option value="Paid">Paid</option>
-                      </select>
-                    </div>
-                  </div>
-
-                  <div className="flex gap-2 justify-end pt-1">
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setIsHammerFormOpen(false);
-                        setEditingHammerId(null);
-                      }}
-                      className="px-3 bg-slate-950 text-slate-400 py-1 rounded"
-                    >
-                      Cancel
-                    </button>
-                    <button type="submit" className="px-4 bg-indigo-650 text-white font-bold py-1 rounded">
-                      {editingHammerId ? "Update Hammer" : "Save Hammer"}
-                    </button>
-                  </div>
-                </form>
-              )}
             </div>
           )}
+
 
           {bitHammerSubTab === "pipe" && (
             // ================== PIPE SUB-SECTION ==================
