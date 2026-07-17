@@ -8191,7 +8191,7 @@ export default function MobileBusiness({
                         <option value="">No Bit Selected</option>
                         {bitEntries.map((bit) => (
                           <option key={bit.id} value={bit.id}>
-                            {bit.bitNo} ({bit.brand} • {bit.sizeMm}mm)
+                            {bit.bitNo} ({bit.brand} • {bit.sizeMm}mm{bit.buttonSizeMm ? ` • ${bit.buttonSizeMm}mm btn` : ""})
                           </option>
                         ))}
                       </select>
