@@ -627,13 +627,7 @@ export default function MobileFinance({
         <div className="space-y-3">
           <div className="flex justify-between items-center px-1">
             <span className="text-xs font-mono font-bold text-slate-400 uppercase">Active Lending List</span>
-            <button
-              onClick={handleOpenAddLent}
-              style={{ fontFamily: '"Arial Rounded MT Bold", "Arial Rounded MT", Arial, sans-serif' }}
-              className="bg-emerald-600 hover:bg-emerald-500 py-1.5 px-3.5 rounded-full text-xs font-black text-white uppercase tracking-wider flex items-center gap-1 transition cursor-pointer"
-            >
-              <Plus className="w-4 h-4 font-bold" /> Lend Out (+)
-            </button>
+
           </div>
 
           {/* LENT FORM */}
@@ -1080,25 +1074,6 @@ export default function MobileFinance({
             <span className="text-xs font-mono font-bold text-slate-400 uppercase">
               {activeFinanceTab === "vehicle" ? "Vehicle Loans registry" : "Private Borrowing registry"}
             </span>
-            <div className="flex gap-1.5">
-              {activeFinanceTab === "vehicle" ? (
-                <button
-                  onClick={handleOpenAddVehicleLoan}
-                  style={{ fontFamily: '"Arial Rounded MT Bold", "Arial Rounded MT", Arial, sans-serif' }}
-                  className="bg-orange-700 hover:bg-orange-600 py-1.5 px-3.5 rounded-full text-xs font-black text-white uppercase tracking-wider flex items-center gap-1 transition cursor-pointer"
-                >
-                  <Plus className="w-4 h-4 font-bold" /> Vehicle Loan (+)
-                </button>
-              ) : (
-                <button
-                  onClick={handleOpenAddBorrowed}
-                  style={{ fontFamily: '"Arial Rounded MT Bold", "Arial Rounded MT", Arial, sans-serif' }}
-                  className="bg-amber-600 hover:bg-amber-550 py-1.5 px-3.5 rounded-full text-xs font-black text-white uppercase tracking-wider flex items-center gap-1 transition cursor-pointer"
-                >
-                  <Plus className="w-4 h-4 font-bold" /> Borrow (+)
-                </button>
-              )}
-            </div>
           </div>
 
           {/* BORROWED FORM */}
@@ -1683,6 +1658,40 @@ export default function MobileFinance({
           </div>
         </div>
       )}
+
+      {/* ===== GLOBAL FLOATING ACTION BUTTON (FAB) ===== */}
+      {(() => {
+        let fabOnClick: (() => void) | null = null;
+        let fabColor = "bg-indigo-600 hover:bg-indigo-500 shadow-indigo-900/60";
+        let fabTitle = "Add";
+
+        if (activeFinanceTab === "lent") {
+          fabOnClick = handleOpenAddLent;
+          fabColor = "bg-emerald-600 hover:bg-emerald-500 shadow-emerald-900/60";
+          fabTitle = "Lend Out";
+        } else if (activeFinanceTab === "borrowed") {
+          fabOnClick = handleOpenAddBorrowed;
+          fabColor = "bg-amber-600 hover:bg-amber-500 shadow-amber-900/60";
+          fabTitle = "Add Borrow";
+        } else if (activeFinanceTab === "vehicle") {
+          fabOnClick = handleOpenAddVehicleLoan;
+          fabColor = "bg-orange-700 hover:bg-orange-600 shadow-orange-900/60";
+          fabTitle = "Add Vehicle Loan";
+        }
+
+        if (!fabOnClick) return null;
+
+        return (
+          <button
+            type="button"
+            onClick={fabOnClick}
+            title={fabTitle}
+            className={`fixed bottom-6 left-6 z-40 w-14 h-14 rounded-full ${fabColor} active:scale-95 text-white shadow-lg flex items-center justify-center transition-all duration-200 hover:shadow-xl border-2 border-white/10`}
+          >
+            <Plus className="w-7 h-7" />
+          </button>
+        );
+      })()}
 
     </div>
   );

@@ -3766,12 +3766,7 @@ export default function MobileBusiness({
                   </button>
                 </div>
 
-                <button
-                  onClick={handleOpenAddLabour}
-                  className="bg-indigo-600 hover:bg-indigo-500 px-2.5 py-1 rounded-lg text-[9px] font-bold text-white uppercase tracking-wider flex items-center gap-0.5"
-                >
-                  <UserPlus className="w-3 h-3" /> Add Roster
-                </button>
+
               </div>
 
               {/* Roster Add / Edit Form Panel Overlay Overlay */}
@@ -4355,13 +4350,7 @@ export default function MobileBusiness({
               <div className="space-y-2">
                 <div className="flex justify-between items-center">
                   <span className="text-xs font-mono font-bold text-slate-400 uppercase">Bit Purchase Ledger</span>
-                  <button
-                    type="button"
-                    onClick={handleOpenAddBit}
-                    className="bg-indigo-650 hover:bg-indigo-500 py-1 px-2.5 rounded-lg text-[9px] font-bold text-white uppercase tracking-wider flex items-center gap-0.5"
-                  >
-                    <Plus className="w-3.5 h-3.5" /> Add Bit (+)
-                  </button>
+
                 </div>
 
                 <div className="space-y-2">
@@ -4599,13 +4588,7 @@ export default function MobileBusiness({
               <div className="space-y-3">
                 <div className="flex justify-between items-center">
                   <span className="text-xs font-mono font-bold text-slate-400 uppercase">Hammer Inventory</span>
-                  <button
-                    type="button"
-                    onClick={handleOpenAddHammer}
-                    className="bg-indigo-650 hover:bg-indigo-500 py-1 px-2.5 rounded-lg text-[9px] font-bold text-white uppercase tracking-wider flex items-center gap-0.5"
-                  >
-                    <Plus className="w-3.5 h-3.5" /> Add Hammer (+)
-                  </button>
+
                 </div>
 
                 {(isHammerFormOpen || editingHammerId) && (
@@ -5519,13 +5502,7 @@ export default function MobileBusiness({
               <div className="space-y-2">
                 <div className="flex justify-between items-center">
                   <span className="text-xs font-mono font-bold text-slate-400 uppercase">Pipe Suppliers & Stock</span>
-                  <button
-                    type="button"
-                    onClick={handleOpenAddPipe}
-                    className="bg-indigo-650 hover:bg-indigo-500 py-1 px-2.5 rounded-lg text-[9px] font-bold text-white uppercase tracking-wider flex items-center gap-0.5"
-                  >
-                    <Plus className="w-3.5 h-3.5" /> Add Casing Pipes (+)
-                  </button>
+
                 </div>
 
                 <div className="space-y-2">
@@ -6389,12 +6366,7 @@ export default function MobileBusiness({
             <div className="space-y-3">
               <div className="flex justify-between items-center">
                 <span className="text-xs font-mono font-bold text-slate-400 uppercase">Registered Fleet Log</span>
-                <button
-                  onClick={handleOpenAddVehicle}
-                  className="bg-indigo-650 hover:bg-indigo-500 py-1 px-2.5 rounded-lg text-[9px] font-bold text-white uppercase tracking-wider flex items-center gap-0.5"
-                >
-                  <Plus className="w-3.5 h-3.5" /> Register Fleet
-                </button>
+
               </div>
 
               {/* Add / Edit Vehicle Form in place */}
@@ -6742,13 +6714,7 @@ export default function MobileBusiness({
             <div className="space-y-4">
               <div className="flex justify-between items-center">
                 <span className="text-xs font-mono font-bold text-slate-400 uppercase">🛠️ Fleet Maintenance Logs</span>
-                <button
-                  type="button"
-                  onClick={handleOpenAddService}
-                  className="bg-indigo-650 hover:bg-indigo-500 py-1.5 px-3 rounded-lg text-[9px] font-bold text-white uppercase tracking-wider flex items-center gap-0.5"
-                >
-                  <Plus className="w-3.5 h-3.5" /> Add Service (+)
-                </button>
+
               </div>
 
               {/* Service Form container */}
@@ -6975,12 +6941,7 @@ export default function MobileBusiness({
             <div className="space-y-4">
               <div className="flex justify-between items-center">
                 <span className="text-xs font-mono font-bold text-slate-400 uppercase">Fuel Log Book</span>
-                <button
-                  onClick={handleOpenAddFuel}
-                  className="bg-indigo-650 hover:bg-indigo-500 py-1 px-2.5 rounded-lg text-[9px] font-bold text-white uppercase tracking-wider flex items-center gap-0.5"
-                >
-                  <Plus className="w-3.5 h-3.5 animate-bounce" /> Add Fuel Entry (+)
-                </button>
+
               </div>
 
               {/* Add Fuel Log in-place */}
@@ -7198,13 +7159,7 @@ export default function MobileBusiness({
             <div className="space-y-4">
               <div className="flex justify-between items-center">
                 <span className="text-xs font-mono font-bold text-slate-400 uppercase">📦 Materials Purchased entries</span>
-                <button
-                  type="button"
-                  onClick={handleOpenAddMaterial}
-                  className="bg-indigo-650 hover:bg-indigo-500 py-1.5 px-3 rounded-lg text-[9px] font-bold text-white uppercase tracking-wider flex items-center gap-0.5"
-                >
-                  <Plus className="w-3.5 h-3.5" /> Add Purchase (+)
-                </button>
+
               </div>
 
               {/* Material Form container */}
@@ -7868,27 +7823,7 @@ export default function MobileBusiness({
                   <span className="text-xs font-extrabold uppercase text-slate-200 tracking-wider">Customer Drilling Invoices</span>
                 </div>
               </div>
-              <button
-                onClick={() => {
-                  setEditingBillId(null);
-                  setBillClient("");
-                  setBillDescription("");
-                  setBorewellType("Tight Formation");
-                  setBillMode("New");
-                  setExistingDepth(0);
-                  setFinalDepth(950);
-                  setStartingPrice(100);
-                  setCasingType("7 inch");
-                  setCasingFeet(20);
-                  setCasingRate(350);
-                  setBatta(1500);
-                  setBillStatus("Pending");
-                  setIsBillFormOpen(true);
-                }}
-                className="px-2.5 py-1.5 bg-indigo-600 hover:bg-indigo-500 text-white font-extrabold text-[9px] uppercase tracking-wider rounded-lg flex items-center gap-1 transition cursor-pointer"
-              >
-                <Plus className="w-3 h-3" /> New Borewell Bill
-              </button>
+
             </div>
 
             {/* New / Edit Invoice Form */}
@@ -9439,6 +9374,75 @@ export default function MobileBusiness({
           </div>
         </div>
       )}
+
+      {/* ===== GLOBAL FLOATING ACTION BUTTON (FAB) ===== */}
+      {(() => {
+        let fabOnClick: (() => void) | null = null;
+        let fabTitle = "Add";
+
+        if (activeMainSection === "billing") {
+          fabOnClick = () => {
+            setEditingBillId(null);
+            setBillClient("");
+            setBillDescription("");
+            setBorewellType("Tight Formation");
+            setBillMode("New");
+            setExistingDepth(0);
+            setFinalDepth(950);
+            setStartingPrice(100);
+            setCasingType("7 inch");
+            setCasingFeet(20);
+            setCasingRate(350);
+            setBatta(1500);
+            setBillStatus("Pending");
+            setIsBillFormOpen(true);
+          };
+          fabTitle = "New Bill";
+        } else if (activeMainSection === "management") {
+          if (activeSubSection === "labour") {
+            fabOnClick = handleOpenAddLabour;
+            fabTitle = "Add Roster";
+          } else if (activeSubSection === "bit") {
+            if (bitHammerSubTab === "bit") {
+              fabOnClick = handleOpenAddBit;
+              fabTitle = "Add Bit";
+            } else if (bitHammerSubTab === "hammer") {
+              fabOnClick = handleOpenAddHammer;
+              fabTitle = "Add Hammer";
+            } else if (bitHammerSubTab === "pipe") {
+              fabOnClick = handleOpenAddPipe;
+              fabTitle = "Add Pipe";
+            }
+          } else if (activeSubSection === "vehicles") {
+            if (vehicleSubTab === "profiles") {
+              fabOnClick = handleOpenAddVehicle;
+              fabTitle = "Register Fleet";
+            } else if (vehicleSubTab === "fuel") {
+              fabOnClick = handleOpenAddFuel;
+              fabTitle = "Add Fuel";
+            } else if (vehicleSubTab === "service") {
+              fabOnClick = handleOpenAddService;
+              fabTitle = "Add Service";
+            } else if (vehicleSubTab === "materials") {
+              fabOnClick = handleOpenAddMaterial;
+              fabTitle = "Add Purchase";
+            }
+          }
+        }
+
+        if (!fabOnClick) return null;
+
+        return (
+          <button
+            type="button"
+            onClick={fabOnClick}
+            title={fabTitle}
+            className="fixed bottom-6 left-6 z-40 w-14 h-14 rounded-full bg-indigo-600 hover:bg-indigo-500 active:scale-95 text-white shadow-lg shadow-indigo-900/60 flex items-center justify-center transition-all duration-200 hover:shadow-xl border-2 border-indigo-400/30"
+          >
+            <Plus className="w-7 h-7" />
+          </button>
+        );
+      })()}
 
     </div>
   );
