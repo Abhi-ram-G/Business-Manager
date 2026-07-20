@@ -3747,7 +3747,7 @@ export default function MobileBusiness({
             <div className="space-y-3">
               <div className="flex justify-between items-center">
                 {/* Switcher Tab between Drivers & Helpers */}
-                <div className="flex rounded-lg bg-slate-950 border border-slate-850 p-0.5">
+                <div className="flex rounded-lg bg-slate-950 border border-slate-855 p-0.5">
                   <button
                     onClick={() => setActiveLabourTab("Driver")}
                     className={`px-3 py-1 text-[9px] font-mono font-bold uppercase rounded-md transition ${
@@ -3766,7 +3766,12 @@ export default function MobileBusiness({
                   </button>
                 </div>
 
-
+                <button
+                  onClick={handleOpenAddLabour}
+                  className="bg-indigo-600 hover:bg-indigo-500 px-3 py-1.5 rounded-lg text-[10px] font-bold text-white uppercase tracking-wider flex items-center gap-1 transition cursor-pointer shadow-md"
+                >
+                  <UserPlus className="w-3.5 h-3.5" /> + Add Roster
+                </button>
               </div>
 
               {/* Roster Add / Edit Form Panel Overlay Overlay */}
@@ -4350,7 +4355,13 @@ export default function MobileBusiness({
               <div className="space-y-2">
                 <div className="flex justify-between items-center">
                   <span className="text-xs font-mono font-bold text-slate-400 uppercase">Bit Purchase Ledger</span>
-
+                  <button
+                    type="button"
+                    onClick={handleOpenAddBit}
+                    className="bg-indigo-650 hover:bg-indigo-500 py-1.5 px-3 rounded-lg text-[10px] font-bold text-white uppercase tracking-wider flex items-center gap-1 transition cursor-pointer shadow-md"
+                  >
+                    <Plus className="w-3.5 h-3.5" /> + Add Bit
+                  </button>
                 </div>
 
                 <div className="space-y-2">
@@ -4588,7 +4599,13 @@ export default function MobileBusiness({
               <div className="space-y-3">
                 <div className="flex justify-between items-center">
                   <span className="text-xs font-mono font-bold text-slate-400 uppercase">Hammer Inventory</span>
-
+                  <button
+                    type="button"
+                    onClick={handleOpenAddHammer}
+                    className="bg-indigo-650 hover:bg-indigo-500 py-1.5 px-3 rounded-lg text-[10px] font-bold text-white uppercase tracking-wider flex items-center gap-1 transition cursor-pointer shadow-md"
+                  >
+                    <Plus className="w-3.5 h-3.5" /> + Add Hammer
+                  </button>
                 </div>
 
                 {(isHammerFormOpen || editingHammerId) && (
@@ -5502,7 +5519,13 @@ export default function MobileBusiness({
               <div className="space-y-2">
                 <div className="flex justify-between items-center">
                   <span className="text-xs font-mono font-bold text-slate-400 uppercase">Pipe Suppliers & Stock</span>
-
+                  <button
+                    type="button"
+                    onClick={handleOpenAddPipe}
+                    className="bg-indigo-650 hover:bg-indigo-500 py-1.5 px-3 rounded-lg text-[10px] font-bold text-white uppercase tracking-wider flex items-center gap-1 transition cursor-pointer shadow-md"
+                  >
+                    <Plus className="w-3.5 h-3.5" /> + Add Casing Pipes
+                  </button>
                 </div>
 
                 <div className="space-y-2">
@@ -6366,7 +6389,12 @@ export default function MobileBusiness({
             <div className="space-y-3">
               <div className="flex justify-between items-center">
                 <span className="text-xs font-mono font-bold text-slate-400 uppercase">Registered Fleet Log</span>
-
+                <button
+                  onClick={handleOpenAddVehicle}
+                  className="bg-indigo-650 hover:bg-indigo-500 py-1.5 px-3 rounded-lg text-[10px] font-bold text-white uppercase tracking-wider flex items-center gap-1 transition cursor-pointer shadow-md"
+                >
+                  <Plus className="w-3.5 h-3.5" /> + Register Fleet
+                </button>
               </div>
 
               {/* Add / Edit Vehicle Form in place */}
@@ -6714,7 +6742,13 @@ export default function MobileBusiness({
             <div className="space-y-4">
               <div className="flex justify-between items-center">
                 <span className="text-xs font-mono font-bold text-slate-400 uppercase">🛠️ Fleet Maintenance Logs</span>
-
+                <button
+                  type="button"
+                  onClick={handleOpenAddService}
+                  className="bg-indigo-650 hover:bg-indigo-500 py-1.5 px-3 rounded-lg text-[10px] font-bold text-white uppercase tracking-wider flex items-center gap-1 transition cursor-pointer shadow-md"
+                >
+                  <Plus className="w-3.5 h-3.5" /> + Add Service
+                </button>
               </div>
 
               {/* Service Form container */}
@@ -6941,7 +6975,12 @@ export default function MobileBusiness({
             <div className="space-y-4">
               <div className="flex justify-between items-center">
                 <span className="text-xs font-mono font-bold text-slate-400 uppercase">Fuel Log Book</span>
-
+                <button
+                  onClick={handleOpenAddFuel}
+                  className="bg-indigo-650 hover:bg-indigo-500 py-1.5 px-3 rounded-lg text-[10px] font-bold text-white uppercase tracking-wider flex items-center gap-1 transition cursor-pointer shadow-md"
+                >
+                  <Plus className="w-3.5 h-3.5 animate-bounce" /> + Add Fuel Entry
+                </button>
               </div>
 
               {/* Add Fuel Log in-place */}
@@ -7159,7 +7198,13 @@ export default function MobileBusiness({
             <div className="space-y-4">
               <div className="flex justify-between items-center">
                 <span className="text-xs font-mono font-bold text-slate-400 uppercase">📦 Materials Purchased entries</span>
-
+                <button
+                  type="button"
+                  onClick={handleOpenAddMaterial}
+                  className="bg-indigo-650 hover:bg-indigo-500 py-1.5 px-3 rounded-lg text-[10px] font-bold text-white uppercase tracking-wider flex items-center gap-1 transition cursor-pointer shadow-md"
+                >
+                  <Plus className="w-3.5 h-3.5" /> + Add Purchase
+                </button>
               </div>
 
               {/* Material Form container */}
@@ -7810,12 +7855,12 @@ export default function MobileBusiness({
               </div>
             </div>
 
-            <div className="flex justify-between items-center bg-slate-950 p-2.5 rounded-xl border border-slate-850">
-              <div className="flex items-center gap-2.5">
+            <div className="bg-slate-900 border border-slate-850 p-3 rounded-2xl flex items-center justify-between">
+              <div className="flex items-center gap-3">
                 <img 
                   src={borewellLogo} 
-                  className="w-10 h-10 object-cover rounded-lg border border-slate-800 bg-white" 
-                  alt="Borewell machine logo"
+                  className="w-8 h-8 object-cover rounded-lg border border-slate-800 bg-white" 
+                  alt="Borewell machine" 
                   referrerPolicy="no-referrer"
                 />
                 <div>
@@ -7823,7 +7868,27 @@ export default function MobileBusiness({
                   <span className="text-xs font-extrabold uppercase text-slate-200 tracking-wider">Customer Drilling Invoices</span>
                 </div>
               </div>
-
+              <button
+                onClick={() => {
+                  setEditingBillId(null);
+                  setBillClient("");
+                  setBillDescription("");
+                  setBorewellType("Tight Formation");
+                  setBillMode("New");
+                  setExistingDepth(0);
+                  setFinalDepth(950);
+                  setStartingPrice(100);
+                  setCasingType("7 inch");
+                  setCasingFeet(20);
+                  setCasingRate(350);
+                  setBatta(1500);
+                  setBillStatus("Pending");
+                  setIsBillFormOpen(true);
+                }}
+                className="px-3 py-1.5 bg-orange-600 hover:bg-orange-500 text-white font-extrabold text-[10px] uppercase tracking-wider rounded-lg flex items-center gap-1 transition cursor-pointer shadow-md shadow-orange-950/50"
+              >
+                <Plus className="w-3.5 h-3.5 font-black" /> + NEW BOREWELL BILL
+              </button>
             </div>
 
             {/* New / Edit Invoice Form */}
@@ -9379,8 +9444,9 @@ export default function MobileBusiness({
       {(() => {
         let fabOnClick: (() => void) | null = null;
         let fabTitle = "Add";
+        let fabBgColor = "bg-indigo-600 hover:bg-indigo-500 shadow-indigo-900/60";
 
-        if (activeMainSection === "billing") {
+        if (activeMainSection === "bill" || activeMainSection === "billing") {
           fabOnClick = () => {
             setEditingBillId(null);
             setBillClient("");
@@ -9398,6 +9464,7 @@ export default function MobileBusiness({
             setIsBillFormOpen(true);
           };
           fabTitle = "New Bill";
+          fabBgColor = "bg-orange-600 hover:bg-orange-500 shadow-orange-900/60";
         } else if (activeMainSection === "management") {
           if (activeSubSection === "labour") {
             fabOnClick = handleOpenAddLabour;
@@ -9437,9 +9504,9 @@ export default function MobileBusiness({
             type="button"
             onClick={fabOnClick}
             title={fabTitle}
-            className="fixed bottom-6 left-6 z-40 w-14 h-14 rounded-full bg-indigo-600 hover:bg-indigo-500 active:scale-95 text-white shadow-lg shadow-indigo-900/60 flex items-center justify-center transition-all duration-200 hover:shadow-xl border-2 border-indigo-400/30"
+            className={`fixed bottom-20 left-4 sm:left-6 z-[60] w-14 h-14 rounded-full ${fabBgColor} active:scale-95 text-white shadow-xl flex items-center justify-center transition-all duration-200 hover:scale-105 border-2 border-white/20`}
           >
-            <Plus className="w-7 h-7" />
+            <Plus className="w-7 h-7 stroke-[2.5]" />
           </button>
         );
       })()}
