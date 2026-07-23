@@ -439,7 +439,7 @@ export default function MobileDashboard({
     <div id="mobile-dashboard-scroll" className="space-y-5 pb-6 text-slate-100 bg-slate-950 min-h-screen">
       
       {/* 0. OVERALL DETAILS SUMMARY SECTION */}
-      <div className="space-y-3">
+      <div className="bg-slate-900/40 p-4 rounded-3xl border border-slate-800 shadow-sm space-y-3">
         
         {/* Section Header: Overall Details */}
         <div className="flex items-center gap-2 px-0.5 mb-1.5">
