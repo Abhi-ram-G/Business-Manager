@@ -644,10 +644,23 @@ export default function MobileFinance({
 
           {/* LENT FORM */}
           {isLentFormOpen && (
-            <form onSubmit={handleSaveLent} className="bg-slate-900 border border-slate-800 p-3 rounded-xl space-y-3 text-xs">
-              <span className="text-[10px] font-mono font-extrabold text-emerald-400 block uppercase">
-                {editingLentId ? "Modify Lending terms" : "Record Funds Given Out (Lel)"}
-              </span>
+            <form onSubmit={handleSaveLent} className="fixed inset-0 bg-slate-950/98 backdrop-blur-md z-[120] overflow-y-auto flex items-center justify-center p-0 sm:p-4 animate-fade-in text-xs">
+              <div className="bg-slate-900 border-none sm:border border-slate-800 w-full max-w-2xl min-h-screen sm:min-h-0 sm:rounded-2xl shadow-2xl p-5 space-y-4 text-slate-200 flex flex-col justify-start">
+                <div className="flex justify-between items-center border-b border-slate-800 pb-3">
+                  <span className="text-sm font-mono font-bold text-indigo-400 uppercase tracking-wider">
+                    {editingLentId ? "Modify Lending terms" : "Record Funds Given Out (Lel)"}
+                  </span>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setIsLentFormOpen(false);
+                      setEditingLentId(null);
+                    }}
+                    className="text-slate-400 hover:text-slate-200 p-1.5 rounded-lg bg-slate-800 border border-slate-700/60 transition cursor-pointer text-xs font-bold"
+                  >
+                    ✕
+                  </button>
+                </div>
 
               <div className="space-y-2 font-mono text-slate-350">
                 <div className="grid grid-cols-2 gap-2">
@@ -754,6 +767,7 @@ export default function MobileFinance({
               <div className="flex gap-2 justify-end pt-1">
                 <button type="button" onClick={() => setIsLentFormOpen(false)} className="px-3 bg-slate-950 text-slate-400 py-1 rounded">Cancel</button>
                 <button type="submit" className="px-4 bg-emerald-600 text-white font-bold py-1 rounded">Record Lent Ledger</button>
+              </div>
               </div>
             </form>
           )}
@@ -1109,10 +1123,23 @@ export default function MobileFinance({
 
           {/* BORROWED FORM */}
           {isBorrowedFormOpen && (
-            <form onSubmit={handleSaveBorrowed} className="bg-slate-900 border border-slate-800 p-3 rounded-xl space-y-3 text-xs">
-              <span className="text-[10px] font-mono font-extrabold text-amber-500 block uppercase">
-                {editingBorrowedId ? "Modify Borrowed ledger terms" : "Record Borrowed Funds"}
-              </span>
+            <form onSubmit={handleSaveBorrowed} className="fixed inset-0 bg-slate-950/98 backdrop-blur-md z-[120] overflow-y-auto flex items-center justify-center p-0 sm:p-4 animate-fade-in text-xs">
+              <div className="bg-slate-900 border-none sm:border border-slate-800 w-full max-w-2xl min-h-screen sm:min-h-0 sm:rounded-2xl shadow-2xl p-5 space-y-4 text-slate-200 flex flex-col justify-start">
+                <div className="flex justify-between items-center border-b border-slate-800 pb-3">
+                  <span className="text-sm font-mono font-bold text-indigo-400 uppercase tracking-wider">
+                    {editingBorrowedId ? "Modify Borrowed ledger terms" : "Record Borrowed Funds"}
+                  </span>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setIsBorrowedFormOpen(false);
+                      setEditingBorrowedId(null);
+                    }}
+                    className="text-slate-400 hover:text-slate-200 p-1.5 rounded-lg bg-slate-800 border border-slate-700/60 transition cursor-pointer text-xs font-bold"
+                  >
+                    ✕
+                  </button>
+                </div>
 
               <div className="space-y-2 font-mono text-slate-350">
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
@@ -1322,6 +1349,7 @@ export default function MobileFinance({
               <div className="flex gap-2 justify-end pt-1">
                 <button type="button" onClick={() => setIsBorrowedFormOpen(false)} className="px-3 bg-slate-950 text-slate-400 py-1 rounded">Cancel</button>
                 <button type="submit" className="px-4 bg-amber-650 text-white font-extrabold py-1 rounded">Record Funds Received</button>
+              </div>
               </div>
             </form>
           )}

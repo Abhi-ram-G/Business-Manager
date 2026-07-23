@@ -2352,7 +2352,7 @@ export default function App() {
                         </button>
                       </div>
                     ) : (
-                      <div className="bg-slate-900 p-3 sm:p-4 md:p-6 rounded-none border-none space-y-4 md:space-y-6">
+                      <div className="bg-slate-900 p-3 sm:p-4 md:p-6 rounded-2xl border border-slate-850/10 shadow-2xl space-y-4 md:space-y-6">
                         <div className="w-full">
                           {selectedMobileModule === "dashboard" && (
                             <MobileDashboard

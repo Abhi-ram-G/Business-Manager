@@ -3800,10 +3800,23 @@ export default function MobileBusiness({
 
               {/* Roster Add / Edit Form Panel Overlay Overlay */}
               {isLabourFormOpen && (
-                <form ref={labourFormRef} onSubmit={handleSaveLabour} className="bg-slate-900 p-4 border border-slate-800 rounded-xl space-y-3">
-                  <span className="text-[10px] font-mono font-bold text-amber-500 uppercase block">
-                    {editingLabourId ? "Modify Registered Profile" : `Register New ${activeLabourTab}`}
-                  </span>
+                <form ref={labourFormRef} onSubmit={handleSaveLabour} className="fixed inset-0 bg-slate-950/98 backdrop-blur-md z-[120] overflow-y-auto flex items-center justify-center p-0 sm:p-4 animate-fade-in">
+                  <div className="bg-slate-900 border-none sm:border border-slate-800 w-full max-w-2xl min-h-screen sm:min-h-0 sm:rounded-2xl shadow-2xl p-5 space-y-4 text-slate-200 flex flex-col justify-start">
+                    <div className="flex justify-between items-center border-b border-slate-800 pb-3">
+                      <span className="text-sm font-mono font-bold text-indigo-400 uppercase tracking-wider">
+                        {editingLabourId ? "Modify Registered Profile" : `Register New ${activeLabourTab}`}
+                      </span>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setIsLabourFormOpen(false);
+                          setEditingLabourId(null);
+                        }}
+                        className="text-slate-400 hover:text-slate-200 p-1.5 rounded-lg bg-slate-800 border border-slate-700/60 transition cursor-pointer text-xs font-bold"
+                      >
+                        ✕
+                      </button>
+                    </div>
 
                   <div className="space-y-2.5 text-xs text-slate-300">
 
@@ -4122,8 +4135,9 @@ export default function MobileBusiness({
                       {editingLabourId ? "Save Changes" : "Register Worker"}
                     </button>
                   </div>
-                </form>
-              )}
+                </div>
+              </form>
+            )}
 
               {/* Roster Cards Flow */}
               <div className="space-y-2">
@@ -4273,10 +4287,23 @@ export default function MobileBusiness({
               </div>
 
               {(isBitFormOpen || editingBitId) && (
-                <form onSubmit={handleSaveBit} className="bg-slate-900 border border-slate-800 rounded-2xl p-3 space-y-3 text-xs">
-                  <span className="text-[10px] font-mono font-bold text-amber-500 uppercase tracking-widest block">
-                    {editingBitId ? "Edit Bit Entry" : "Add New Bit Entry"}
-                  </span>
+                <form onSubmit={handleSaveBit} className="fixed inset-0 bg-slate-950/98 backdrop-blur-md z-[120] overflow-y-auto flex items-center justify-center p-0 sm:p-4 animate-fade-in">
+                  <div className="bg-slate-900 border-none sm:border border-slate-800 w-full max-w-2xl min-h-screen sm:min-h-0 sm:rounded-2xl shadow-2xl p-5 space-y-4 text-slate-200 flex flex-col justify-start">
+                    <div className="flex justify-between items-center border-b border-slate-800 pb-3">
+                      <span className="text-sm font-mono font-bold text-indigo-400 uppercase tracking-wider">
+                        {editingBitId ? "Edit Bit Entry" : "Add New Bit Entry"}
+                      </span>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setIsBitFormOpen(false);
+                          setEditingBitId(null);
+                        }}
+                        className="text-slate-400 hover:text-slate-200 p-1.5 rounded-lg bg-slate-800 border border-slate-700/60 transition cursor-pointer text-xs font-bold"
+                      >
+                        ✕
+                      </button>
+                    </div>
 
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                     <div>
@@ -4373,8 +4400,9 @@ export default function MobileBusiness({
                       {editingBitId ? "Update Bit" : "Save Bit"}
                     </button>
                   </div>
-                </form>
-              )}
+                </div>
+              </form>
+            )}
 
               <div className="space-y-2">
                 <div className="flex justify-between items-center">
@@ -4633,10 +4661,23 @@ export default function MobileBusiness({
                 </div>
 
                 {(isHammerFormOpen || editingHammerId) && (
-                  <form onSubmit={handleSaveHammer} className="bg-slate-900 border border-slate-800 rounded-2xl p-3 space-y-3 text-xs">
-                    <span className="text-[10px] font-mono font-bold text-amber-500 uppercase tracking-widest block">
-                      {editingHammerId ? "Edit Hammer Profile" : "Register New Hammer"}
-                    </span>
+                  <form onSubmit={handleSaveHammer} className="fixed inset-0 bg-slate-950/98 backdrop-blur-md z-[120] overflow-y-auto flex items-center justify-center p-0 sm:p-4 animate-fade-in">
+                    <div className="bg-slate-900 border-none sm:border border-slate-800 w-full max-w-2xl min-h-screen sm:min-h-0 sm:rounded-2xl shadow-2xl p-5 space-y-4 text-slate-200 flex flex-col justify-start">
+                      <div className="flex justify-between items-center border-b border-slate-800 pb-3">
+                        <span className="text-sm font-mono font-bold text-indigo-400 uppercase tracking-wider">
+                          {editingHammerId ? "Edit Hammer Profile" : "Register New Hammer"}
+                        </span>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setIsHammerFormOpen(false);
+                            setEditingHammerId(null);
+                          }}
+                          className="text-slate-400 hover:text-slate-200 p-1.5 rounded-lg bg-slate-800 border border-slate-700/60 transition cursor-pointer text-xs font-bold"
+                        >
+                          ✕
+                        </button>
+                      </div>
 
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                       <div>
@@ -4736,8 +4777,9 @@ export default function MobileBusiness({
                         {editingHammerId ? "Update Hammer" : "Save Hammer"}
                       </button>
                     </div>
-                  </form>
-                )}
+                  </div>
+                </form>
+              )}
 
                 <div className="space-y-3">
                   {/* helper functions and loops for each group */}
@@ -5304,10 +5346,23 @@ export default function MobileBusiness({
               })()}
 
               {(isPipeFormOpen || editingPipeId) && (
-                <form onSubmit={handleSavePipe} className="bg-slate-900 border border-slate-800 rounded-2xl p-3 space-y-3 text-xs">
-                  <span className="text-[10px] font-mono font-bold text-amber-500 uppercase tracking-widest block">
-                    {editingPipeId ? "Edit Pipe Entry / Supplier" : "Register Pipe Purchase Entry"}
-                  </span>
+                <form onSubmit={handleSavePipe} className="fixed inset-0 bg-slate-950/98 backdrop-blur-md z-[120] overflow-y-auto flex items-center justify-center p-0 sm:p-4 animate-fade-in">
+                  <div className="bg-slate-900 border-none sm:border border-slate-800 w-full max-w-2xl min-h-screen sm:min-h-0 sm:rounded-2xl shadow-2xl p-5 space-y-4 text-slate-200 flex flex-col justify-start">
+                    <div className="flex justify-between items-center border-b border-slate-800 pb-3">
+                      <span className="text-sm font-mono font-bold text-indigo-400 uppercase tracking-wider">
+                        {editingPipeId ? "Edit Pipe Entry / Supplier" : "Register Pipe Purchase Entry"}
+                      </span>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setIsPipeFormOpen(false);
+                          setEditingPipeId(null);
+                        }}
+                        className="text-slate-400 hover:text-slate-200 p-1.5 rounded-lg bg-slate-800 border border-slate-700/60 transition cursor-pointer text-xs font-bold"
+                      >
+                        ✕
+                      </button>
+                    </div>
 
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                     <div>
@@ -5537,8 +5592,9 @@ export default function MobileBusiness({
                       {editingPipeId ? "Update Entry" : "Save Entry"}
                     </button>
                   </div>
-                </form>
-              )}
+                </div>
+              </form>
+            )}
 
               <div className="space-y-2">
                 <div className="flex justify-between items-center">
@@ -6423,10 +6479,23 @@ export default function MobileBusiness({
 
               {/* Add / Edit Vehicle Form in place */}
               {isVehicleFormOpen && (
-                <form onSubmit={handleSaveVehicle} className="bg-slate-900 p-3 rounded-xl border border-slate-800 space-y-3 text-xs">
-                  <span className="text-[10px] font-mono font-bold text-amber-500 block uppercase">
-                    {editingVehicleId ? "Edit Registered Carrier" : "Register Core Business Carrier"}
-                  </span>
+                <form onSubmit={handleSaveVehicle} className="fixed inset-0 bg-slate-950/98 backdrop-blur-md z-[120] overflow-y-auto flex items-center justify-center p-0 sm:p-4 animate-fade-in">
+                  <div className="bg-slate-900 border-none sm:border border-slate-800 w-full max-w-2xl min-h-screen sm:min-h-0 sm:rounded-2xl shadow-2xl p-5 space-y-4 text-slate-200 flex flex-col justify-start">
+                    <div className="flex justify-between items-center border-b border-slate-800 pb-3">
+                      <span className="text-sm font-mono font-bold text-indigo-400 uppercase tracking-wider">
+                        {editingVehicleId ? "Edit Registered Carrier" : "Register Core Business Carrier"}
+                      </span>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setIsVehicleFormOpen(false);
+                          setEditingVehicleId(null);
+                        }}
+                        className="text-slate-400 hover:text-slate-200 p-1.5 rounded-lg bg-slate-800 border border-slate-700/60 transition cursor-pointer text-xs font-bold"
+                      >
+                        ✕
+                      </button>
+                    </div>
 
                   <div className="space-y-2 font-mono text-slate-300">
                     <div className="grid grid-cols-2 gap-2">
@@ -6616,8 +6685,9 @@ export default function MobileBusiness({
                     <button type="button" onClick={() => setIsVehicleFormOpen(false)} className="px-3 bg-slate-950 text-slate-400 py-1 rounded">Cancel</button>
                     <button type="submit" className="px-4 bg-indigo-650 text-white font-bold py-1 rounded">Save</button>
                   </div>
-                </form>
-              )}
+                </div>
+              </form>
+            )}
 
               {/* Vehicle profiles container */}
               <div className="space-y-3">
@@ -6777,10 +6847,23 @@ export default function MobileBusiness({
 
               {/* Service Form container */}
               {isServiceFormOpen && (
-                <form onSubmit={handleSaveService} className="bg-slate-900 border border-slate-800 p-3 rounded-xl space-y-3 text-xs">
-                  <span className="text-[10px] font-mono font-black text-amber-500 block uppercase">
-                    {editingServiceId ? "Edit Maintenance Service Log" : "Log New Service / Repair Event"}
-                  </span>
+                <form onSubmit={handleSaveService} className="fixed inset-0 bg-slate-950/98 backdrop-blur-md z-[120] overflow-y-auto flex items-center justify-center p-0 sm:p-4 animate-fade-in">
+                  <div className="bg-slate-900 border-none sm:border border-slate-800 w-full max-w-2xl min-h-screen sm:min-h-0 sm:rounded-2xl shadow-2xl p-5 space-y-4 text-slate-200 flex flex-col justify-start">
+                    <div className="flex justify-between items-center border-b border-slate-800 pb-3">
+                      <span className="text-sm font-mono font-bold text-indigo-400 uppercase tracking-wider">
+                        {editingServiceId ? "Edit Maintenance Service Log" : "Log New Service / Repair Event"}
+                      </span>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setIsServiceFormOpen(false);
+                          setEditingServiceId(null);
+                        }}
+                        className="text-slate-400 hover:text-slate-200 p-1.5 rounded-lg bg-slate-800 border border-slate-700/60 transition cursor-pointer text-xs font-bold"
+                      >
+                        ✕
+                      </button>
+                    </div>
 
                   <div className="space-y-2 font-mono">
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
@@ -6868,8 +6951,9 @@ export default function MobileBusiness({
                     <button type="button" onClick={() => setIsServiceFormOpen(false)} className="px-3 bg-slate-950 text-slate-400 py-1 rounded">Cancel</button>
                     <button type="submit" className="px-4 bg-indigo-650 text-white font-bold py-1 rounded">Save Log</button>
                   </div>
-                </form>
-              )}
+                </div>
+              </form>
+            )}
 
               {/* Maintenance Ledger List */}
               <div className="bg-slate-900 border border-slate-850 rounded-2xl p-3 space-y-2.5">
@@ -7009,8 +7093,23 @@ export default function MobileBusiness({
 
               {/* Add Fuel Log in-place */}
               {isFuelFormOpen && (
-                <form onSubmit={handleSaveFuel} className="bg-slate-900 border border-slate-800 p-3 rounded-xl space-y-3 text-xs">
-                  <span className="text-[10px] font-mono font-black text-amber-500 block uppercase">Log Fuel Top-up</span>
+                <form onSubmit={handleSaveFuel} className="fixed inset-0 bg-slate-950/98 backdrop-blur-md z-[120] overflow-y-auto flex items-center justify-center p-0 sm:p-4 animate-fade-in">
+                  <div className="bg-slate-900 border-none sm:border border-slate-800 w-full max-w-2xl min-h-screen sm:min-h-0 sm:rounded-2xl shadow-2xl p-5 space-y-4 text-slate-200 flex flex-col justify-start">
+                    <div className="flex justify-between items-center border-b border-slate-800 pb-3">
+                      <span className="text-sm font-mono font-bold text-indigo-400 uppercase tracking-wider">
+                        Log Fuel Top-up
+                      </span>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setIsFuelFormOpen(false);
+                          setEditingFuelId(null);
+                        }}
+                        className="text-slate-400 hover:text-slate-200 p-1.5 rounded-lg bg-slate-800 border border-slate-700/60 transition cursor-pointer text-xs font-bold"
+                      >
+                        ✕
+                      </button>
+                    </div>
 
                   <div className="space-y-2 font-mono">
                     <div>
@@ -7094,8 +7193,9 @@ export default function MobileBusiness({
                     <button type="button" onClick={() => setIsFuelFormOpen(false)} className="px-3 bg-slate-950 text-slate-400 py-1 rounded">Cancel</button>
                     <button type="submit" className="px-4 bg-indigo-650 text-white font-bold py-1 rounded">Log Top-up</button>
                   </div>
-                </form>
-              )}
+                </div>
+              </form>
+            )}
 
               {/* Fuel List Entries with Details */}
               <div className="bg-slate-900 border border-slate-850 rounded-2xl p-3 space-y-2.5">
@@ -7233,10 +7333,23 @@ export default function MobileBusiness({
 
               {/* Material Form container */}
               {isMatFormOpen && (
-                <form onSubmit={handleSaveMaterial} className="bg-slate-900 border border-slate-800 p-3 rounded-xl space-y-3 text-xs">
-                  <span className="text-[10px] font-mono font-black text-amber-500 block uppercase">
-                    {editingMatId ? "Edit Material Purchased Entry" : "Log New Materials/Spares Purchase"}
-                  </span>
+                <form onSubmit={handleSaveMaterial} className="fixed inset-0 bg-slate-950/98 backdrop-blur-md z-[120] overflow-y-auto flex items-center justify-center p-0 sm:p-4 animate-fade-in">
+                  <div className="bg-slate-900 border-none sm:border border-slate-800 w-full max-w-2xl min-h-screen sm:min-h-0 sm:rounded-2xl shadow-2xl p-5 space-y-4 text-slate-200 flex flex-col justify-start">
+                    <div className="flex justify-between items-center border-b border-slate-800 pb-3">
+                      <span className="text-sm font-mono font-bold text-indigo-400 uppercase tracking-wider">
+                        {editingMatId ? "Edit Material Purchased Entry" : "Log New Materials/Spares Purchase"}
+                      </span>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setIsMatFormOpen(false);
+                          setEditingMatId(null);
+                        }}
+                        className="text-slate-400 hover:text-slate-200 p-1.5 rounded-lg bg-slate-800 border border-slate-700/60 transition cursor-pointer text-xs font-bold"
+                      >
+                        ✕
+                      </button>
+                    </div>
 
                   <div className="space-y-2 font-mono">
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
@@ -7405,8 +7518,9 @@ export default function MobileBusiness({
                     <button type="button" onClick={() => setIsMatFormOpen(false)} className="px-3 bg-slate-950 text-slate-400 py-1 rounded">Cancel</button>
                     <button type="submit" className="px-4 bg-indigo-650 text-white font-bold py-1 rounded">Save Purchase</button>
                   </div>
-                </form>
-              )}
+                </div>
+              </form>
+            )}
 
               {/* Materials Ledger List */}
               <div className="bg-slate-900 border border-slate-850 rounded-2xl p-3 space-y-2.5">
@@ -7917,21 +8031,34 @@ export default function MobileBusiness({
 
             {/* New / Edit Invoice Form */}
             {isBillFormOpen && (
-              <form onSubmit={handleSaveBill} className="bg-slate-900 border border-slate-800 p-4 rounded-2xl space-y-3.5 animate-fade-in text-[10px]">
-                <div className="flex items-center gap-2.5 border-b border-slate-800 pb-2.5 mb-2">
-                  <img 
-                    src={borewellLogo} 
-                    className="w-10 h-10 object-cover rounded-lg border border-slate-800 bg-white shrink-0" 
-                    alt="Borewell machine" 
-                    referrerPolicy="no-referrer"
-                  />
-                  <div>
-                    <h3 className="text-xs font-extrabold text-white uppercase tracking-wider">
-                      {editingBillId ? "Edit Custom Borewell Bill" : "Generate Borewell Drilling Invoice"}
-                    </h3>
-                    <p className="text-[8px] text-slate-400 font-mono uppercase tracking-widest">Sri Selvanyagi Rig Service</p>
+              <form onSubmit={handleSaveBill} className="fixed inset-0 bg-slate-950/98 backdrop-blur-md z-[120] overflow-y-auto flex items-center justify-center p-0 sm:p-4 animate-fade-in text-[10px]">
+                <div className="bg-slate-900 border-none sm:border border-slate-800 w-full max-w-2xl min-h-screen sm:min-h-0 sm:rounded-2xl shadow-2xl p-5 space-y-4 text-slate-200 flex flex-col justify-start">
+                  <div className="flex justify-between items-center border-b border-slate-800 pb-2.5 mb-2">
+                    <div className="flex items-center gap-2.5">
+                      <img 
+                        src={borewellLogo} 
+                        className="w-10 h-10 object-cover rounded-lg border border-slate-800 bg-white shrink-0" 
+                        alt="Borewell machine" 
+                        referrerPolicy="no-referrer"
+                      />
+                      <div>
+                        <h3 className="text-xs font-extrabold text-white uppercase tracking-wider">
+                          {editingBillId ? "Edit Custom Borewell Bill" : "Generate Borewell Drilling Invoice"}
+                        </h3>
+                        <p className="text-[8px] text-slate-400 font-mono uppercase tracking-widest">Sri Selvanyagi Rig Service</p>
+                      </div>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setIsBillFormOpen(false);
+                        setEditingBillId(null);
+                      }}
+                      className="text-slate-400 hover:text-slate-200 p-1.5 rounded-lg bg-slate-800 border border-slate-700/60 transition cursor-pointer text-xs font-bold"
+                    >
+                      ✕
+                    </button>
                   </div>
-                </div>
 
                 <div className="space-y-1">
                   <label className="text-[9px] text-slate-500 block uppercase font-mono tracking-wider">CUSTOMER / CLIENT NAME</label>
@@ -8677,8 +8804,9 @@ export default function MobileBusiness({
                     {editingBillId ? "Update Borewell Bill" : "Save & Post Bill"}
                   </button>
                 </div>
-              </form>
-            )}
+              </div>
+            </form>
+          )}
 
             {/* Business Bills/Invoice list */}
             <div className="space-y-3">
