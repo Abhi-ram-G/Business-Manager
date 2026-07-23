@@ -483,3 +483,14 @@ span.stock-card-label {
   margin: 0 !important;
   list-style: none !important;
 }
+
+/* Stacking context override to raise the form container above top header and sidebar when modal is active */
+body:has(.fixed.inset-0.z-\[120\]) #primary-content-grid {
+  position: relative !important;
+  z-index: 99999 !important;
+}
+body:has(.fixed.inset-0.z-\[120\]) #master-header,
+body:has(.fixed.inset-0.z-\[120\]) .lg\:fixed {
+  z-index: 10 !important;
+}
+
