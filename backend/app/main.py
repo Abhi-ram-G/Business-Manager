@@ -10,16 +10,18 @@ from .core.db import Base, engine, get_db
 from .core.security import hash_password
 from .models import User
 from .utils import purge_legacy_demo_business_bills, resequence_all_bills
-from .routers import (
-    auth,
-    labours,
-    vehicles,
-    business,
-    loans,
-    family,
-    documents,
-    notifications,
-)
+
+# Modular structured imports
+from .auth import auth
+from .business.management.labour.labours import add_drivers, add_helper, attendance, salary
+from .business.management.bit_hammer_pipe import bit, hammer, pipe
+from .business.management.vehicle import vehicles, fuel, service, materials, trips
+from .business.bill import bills
+from .business.report import reports
+from .finance.loans import lent, got
+from .family import members, income, expense, budget
+from .vault import documents
+from .notifications import notifications
 
 settings = get_settings()
 
@@ -193,12 +195,27 @@ def health(db: Session = Depends(get_db)) -> dict[str, Any]:
     }
 
 
-# Include Routers
+# Include Modular Routers
 app.include_router(auth.router)
-app.include_router(labours.router)
+app.include_router(add_drivers.router)
+app.include_router(add_helper.router)
+app.include_router(attendance.router)
+app.include_router(salary.router)
+app.include_router(bit.router)
+app.include_router(hammer.router)
+app.include_router(pipe.router)
 app.include_router(vehicles.router)
-app.include_router(business.router)
-app.include_router(loans.router)
-app.include_router(family.router)
+app.include_router(fuel.router)
+app.include_router(service.router)
+app.include_router(materials.router)
+app.include_router(trips.router)
+app.include_router(bills.router)
+app.include_router(reports.router)
+app.include_router(lent.router)
+app.include_router(got.router)
+app.include_router(members.router)
+app.include_router(income.router)
+app.include_router(expense.router)
+app.include_router(budget.router)
 app.include_router(documents.router)
 app.include_router(notifications.router)

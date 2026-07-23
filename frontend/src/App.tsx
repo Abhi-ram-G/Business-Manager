@@ -44,9 +44,9 @@ import {
 
 // Imports of Modular Technical Blueprint components
 import MobileDashboard from "./components/MobileDashboard";
-import MobileBusiness from "./components/MobileBusiness";
-import MobileFinance from "./components/MobileFinance";
-import MobileFamily from "./components/MobileFamily";
+import MobileBusiness from "./business/MobileBusiness";
+import MobileFinance from "./finance/MobileFinance";
+import MobileFamily from "./family/MobileFamily";
 
 // Importing types and SQL schemas
 import { 
@@ -643,7 +643,13 @@ export default function App() {
 
 
   // Phone view sub-screen state
-  const [selectedMobileModule, setSelectedMobileModule] = useState<"dashboard" | "business" | "finance" | "expenses" | "documents" | "notifications" | "labour" | "vehicle" | "settings">("dashboard");
+  const [selectedMobileModule, setSelectedMobileModule] = useState<"dashboard" | "business" | "finance" | "expenses" | "documents" | "notifications" | "labour" | "vehicle" | "settings">(() => {
+    return (localStorage.getItem("srs_selected_mobile_module") as any) || "dashboard";
+  });
+
+  useEffect(() => {
+    localStorage.setItem("srs_selected_mobile_module", selectedMobileModule);
+  }, [selectedMobileModule]);
 
   // View Mode: Widescreen Web App vs Mobile Simulator
   const [viewMode, setViewMode] = useState<"web" | "mobile">("web");
@@ -2144,7 +2150,7 @@ export default function App() {
 
       {/* 1. TOP MASTER ENTERPRISE HEADER BAR */}
       <header id="master-header" className="bg-slate-900 border-b border-slate-800 px-3 sm:px-4 md:px-6 py-3 fixed top-0 left-0 right-0 z-40 shadow-xl backdrop-blur-md bg-opacity-95">
-        <div className="max-w-7xl mx-auto flex items-center justify-between gap-2">
+        <div className="w-full max-w-none flex items-center justify-between gap-2">
           
           {/* Left: Hamburger (mobile only) + Logo */}
           <div className="flex items-center gap-2 sm:gap-3 min-w-0">
@@ -2317,7 +2323,7 @@ export default function App() {
       </div>
 
       {/* 3. PRIMARY CONTENT PANEL - DESKTOP LAYOUT SHIFT CONTROLS */}
-      <main id="primary-content-grid" className={`flex-1 w-full max-w-7xl mx-auto px-0 sm:px-4 md:px-6 py-2 sm:py-4 md:py-6 flex flex-col gap-4 md:gap-6 transition-all duration-300 mt-[65px] ${isSidebarCollapsed ? 'lg:pl-20' : 'lg:pl-72'}`}>
+      <main id="primary-content-grid" className={`flex-1 w-full max-w-none mx-0 px-0 py-0 flex flex-col transition-all duration-300 mt-[65px] ${isSidebarCollapsed ? 'lg:pl-20' : 'lg:pl-72'}`}>
         
         {/* WORKSPACE CONTENT BODY */}
         <section id="workspace-container" className="flex-1 w-full">
@@ -2346,7 +2352,7 @@ export default function App() {
                         </button>
                       </div>
                     ) : (
-                      <div className="bg-slate-900 p-3 sm:p-4 md:p-6 rounded-none sm:rounded-2xl border-y sm:border border-slate-800 space-y-4 md:space-y-6">
+                      <div className="bg-slate-900 p-3 sm:p-4 md:p-6 rounded-none border-none space-y-4 md:space-y-6">
                         <div className="w-full">
                           {selectedMobileModule === "dashboard" && (
                             <MobileDashboard

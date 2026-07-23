@@ -3,49 +3,15 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
-from ..core.db import get_db
-from ..models import Vehicle, FuelEntry, TripRecord
-from ..schemas import (
-    VehicleCreate,
-    VehicleUpdate,
-    FuelEntryCreate,
-    FuelEntryUpdate,
-    TripCreate,
-)
-from ..utils import create_or_400, serialize_model, update_instance
+from ....core.db import get_db
+from ....models import FuelEntry
+from ....schemas import FuelEntryCreate, FuelEntryUpdate
+from ....utils import serialize_model, update_instance
 
-router = APIRouter(prefix="/api/v1/vehicles", tags=["vehicles"])
-
-
-@router.get("")
-def list_vehicles(db: Session = Depends(get_db)):
-    return [serialize_model(item) for item in db.execute(select(Vehicle).order_by(Vehicle.created_at.desc())).scalars()]
+router = APIRouter(prefix="/api/v1/vehicles/fuel", tags=["vehicles"])
 
 
 @router.post("", status_code=status.HTTP_201_CREATED)
-def create_vehicle(payload: VehicleCreate, db: Session = Depends(get_db)):
-    vehicle = Vehicle(**payload.model_dump())
-    return serialize_model(create_or_400(db, Vehicle, vehicle, "Unable to create vehicle"))
-
-
-@router.put("/{vehicle_id}")
-def update_vehicle(vehicle_id: str, payload: VehicleUpdate, db: Session = Depends(get_db)):
-    vehicle = db.get(Vehicle, vehicle_id)
-    if not vehicle:
-        raise HTTPException(status_code=404, detail="Vehicle not found")
-    return serialize_model(update_instance(db, vehicle, payload.model_dump(exclude_unset=True)))
-
-
-@router.delete("/{vehicle_id}", status_code=status.HTTP_204_NO_CONTENT)
-def delete_vehicle(vehicle_id: str, db: Session = Depends(get_db)):
-    vehicle = db.get(Vehicle, vehicle_id)
-    if not vehicle:
-        raise HTTPException(status_code=404, detail="Vehicle not found")
-    db.delete(vehicle)
-    db.commit()
-
-
-@router.post("/fuel", status_code=status.HTTP_201_CREATED)
 def create_fuel_entry(payload: FuelEntryCreate, db: Session = Depends(get_db)):
     payload_data = payload.model_dump()
     date_time_value = payload_data.pop("date_time", None)
@@ -64,12 +30,12 @@ def create_fuel_entry(payload: FuelEntryCreate, db: Session = Depends(get_db)):
     return serialize_model(entry)
 
 
-@router.get("/fuel")
+@router.get("")
 def list_fuel_entries(db: Session = Depends(get_db)):
     return [serialize_model(item) for item in db.execute(select(FuelEntry).order_by(FuelEntry.created_at.desc())).scalars()]
 
 
-@router.put("/fuel/{fuel_id}")
+@router.put("/{fuel_id}")
 def update_fuel_entry(fuel_id: str, payload: FuelEntryUpdate, db: Session = Depends(get_db)):
     entry = db.get(FuelEntry, fuel_id)
     if not entry:
@@ -89,24 +55,10 @@ def update_fuel_entry(fuel_id: str, payload: FuelEntryUpdate, db: Session = Depe
     return serialize_model(update_instance(db, entry, payload_data))
 
 
-@router.delete("/fuel/{fuel_id}", status_code=status.HTTP_204_NO_CONTENT)
+@router.delete("/{fuel_id}", status_code=status.HTTP_204_NO_CONTENT)
 def delete_fuel_entry(fuel_id: str, db: Session = Depends(get_db)):
     entry = db.get(FuelEntry, fuel_id)
     if not entry:
         raise HTTPException(status_code=404, detail="Fuel entry not found")
     db.delete(entry)
     db.commit()
-
-
-@router.post("/trips", status_code=status.HTTP_201_CREATED)
-def create_trip(payload: TripCreate, db: Session = Depends(get_db)):
-    trip = TripRecord(**payload.model_dump())
-    db.add(trip)
-    db.commit()
-    db.refresh(trip)
-    return serialize_model(trip)
-
-
-@router.get("/trips")
-def list_trips(db: Session = Depends(get_db)):
-    return [serialize_model(item) for item in db.execute(select(TripRecord).order_by(TripRecord.created_at.desc())).scalars()]

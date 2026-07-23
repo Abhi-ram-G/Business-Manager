@@ -356,7 +356,13 @@ export default function MobileBusiness({
   initialSubSection = "labour"
 }: MobileBusinessProps) {
   // Navigation tabs inside Business Section
-  const [activeSubSection, setActiveSubSection] = React.useState<"labour" | "bit" | "attendance" | "vehicles" | "salaries">(initialSubSection);
+  const [activeSubSection, setActiveSubSection] = React.useState<"labour" | "bit" | "attendance" | "vehicles" | "salaries">(() => {
+    return (localStorage.getItem("srs_active_sub_section") as any) || initialSubSection;
+  });
+
+  React.useEffect(() => {
+    localStorage.setItem("srs_active_sub_section", activeSubSection);
+  }, [activeSubSection]);
 
   // Helper for number inputs: clears default 0 on focus, restores on blur
   const numInputProps = (val: any, setter: any, defaultVal = 0) => ({
@@ -383,7 +389,13 @@ export default function MobileBusiness({
       setter(e.target.value.toUpperCase());
     }
   });
-  const [activeMainSection, setActiveMainSection] = React.useState<"management" | "bill" | "reports">("management");
+  const [activeMainSection, setActiveMainSection] = React.useState<"management" | "bill" | "reports">(() => {
+    return (localStorage.getItem("srs_active_main_section") as any) || "management";
+  });
+
+  React.useEffect(() => {
+    localStorage.setItem("srs_active_main_section", activeMainSection);
+  }, [activeMainSection]);
   // Reports section: month/year state
   const [reportMonth, setReportMonth] = React.useState(new Date().getMonth());
   const [reportYear, setReportYear] = React.useState(new Date().getFullYear());
@@ -418,7 +430,13 @@ export default function MobileBusiness({
   const [deleteConfirmation, setDeleteConfirmation] = useState<{ id: string; name: string; type: "bill" | "bit" | "hammer" | "pipe" | "labour" | "vehicle" | "fuel" | "service" | "material"; } | null>(null);
 
   // Bit/Hammer sub-tab switcher inside the bit section
-  const [bitHammerSubTab, setBitHammerSubTab] = useState<"bit" | "hammer" | "pipe">("bit");
+  const [bitHammerSubTab, setBitHammerSubTab] = useState<"bit" | "hammer" | "pipe">(() => {
+    return (localStorage.getItem("srs_bit_hammer_sub_tab") as any) || "bit";
+  });
+
+  React.useEffect(() => {
+    localStorage.setItem("srs_bit_hammer_sub_tab", bitHammerSubTab);
+  }, [bitHammerSubTab]);
 
   // Hammer form states
   const [isHammerFormOpen, setIsHammerFormOpen] = useState(false);
@@ -1807,7 +1825,13 @@ export default function MobileBusiness({
   const [fuelIsPaid, setFuelIsPaid] = useState<boolean>(false);
 
   // 4-Way subfolder switcher under Vehicle Management
-  const [vehicleSubTab, setVehicleSubTab] = useState<"profiles" | "fuel" | "service" | "materials">("profiles");
+  const [vehicleSubTab, setVehicleSubTab] = useState<"profiles" | "fuel" | "service" | "materials">(() => {
+    return (localStorage.getItem("srs_vehicle_sub_tab") as any) || "profiles";
+  });
+
+  React.useEffect(() => {
+    localStorage.setItem("srs_vehicle_sub_tab", vehicleSubTab);
+  }, [vehicleSubTab]);
 
   // Services State initialized to empty, hydrated from DB
   const [services, setServices] = useState<ServiceRecord[]>([]);

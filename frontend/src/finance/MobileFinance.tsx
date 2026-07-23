@@ -55,7 +55,13 @@ export default function MobileFinance({
   onSharedDataChanged
 }: MobileFinanceProps) {
   // Toggle between LENT (Given) and BORROWED (Got) and VEHICLE LOANS
-  const [activeFinanceTab, setActiveFinanceTab] = useState<"lent" | "borrowed" | "vehicle">("lent");
+  const [activeFinanceTab, setActiveFinanceTab] = useState<"lent" | "borrowed" | "vehicle">(() => {
+    return (localStorage.getItem("srs_active_finance_tab") as any) || "lent";
+  });
+
+  React.useEffect(() => {
+    localStorage.setItem("srs_active_finance_tab", activeFinanceTab);
+  }, [activeFinanceTab]);
 
   // Form states for LENT (Given)
   const [isLentFormOpen, setIsLentFormOpen] = useState(false);
