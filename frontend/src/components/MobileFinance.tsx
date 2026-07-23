@@ -1711,7 +1711,7 @@ export default function MobileFinance({
             type="button"
             onClick={fabOnClick}
             title={fabTitle}
-            className={`fixed bottom-20 left-4 sm:left-6 z-[60] w-14 h-14 rounded-full ${fabColor} active:scale-95 text-white shadow-xl flex items-center justify-center transition-all duration-200 hover:scale-105 border-2 border-white/20`}
+            className={`fixed bottom-20 right-4 sm:right-6 z-[60] w-14 h-14 rounded-full ${fabColor} active:scale-95 text-white shadow-xl flex items-center justify-center transition-all duration-200 hover:scale-105 border-2 border-white/20`}
           >
             <Plus className="w-7 h-7 stroke-[2.5]" />
           </button>
