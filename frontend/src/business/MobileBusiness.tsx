@@ -3800,8 +3800,8 @@ export default function MobileBusiness({
 
               {/* Roster Add / Edit Form Panel Overlay Overlay */}
               {isLabourFormOpen && (
-                <form ref={labourFormRef} onSubmit={handleSaveLabour} className="fixed inset-0 bg-slate-950/98 backdrop-blur-md z-[120] overflow-y-auto flex flex-col items-center justify-start p-4 sm:p-6 animate-fade-in">
-                  <div className="bg-slate-900 border border-slate-800 w-full max-w-2xl rounded-2xl shadow-2xl p-5 space-y-4 text-slate-200 flex flex-col justify-start my-auto">
+                <form ref={labourFormRef} onSubmit={handleSaveLabour} className="fixed inset-0 bg-slate-950 z-[120] overflow-y-auto p-4 sm:p-8 animate-fade-in">
+                  <div className="w-full max-w-3xl mx-auto space-y-6 text-slate-200 flex flex-col justify-start pb-16">
                     <div className="flex justify-between items-center border-b border-slate-800 pb-3">
                       <span className="text-sm font-mono font-bold text-indigo-400 uppercase tracking-wider">
                         {editingLabourId ? "Modify Registered Profile" : `Register New ${activeLabourTab}`}
@@ -4287,8 +4287,8 @@ export default function MobileBusiness({
               </div>
 
               {(isBitFormOpen || editingBitId) && (
-                <form onSubmit={handleSaveBit} className="fixed inset-0 bg-slate-950/98 backdrop-blur-md z-[120] overflow-y-auto flex flex-col items-center justify-start p-4 sm:p-6 animate-fade-in">
-                  <div className="bg-slate-900 border border-slate-800 w-full max-w-2xl rounded-2xl shadow-2xl p-5 space-y-4 text-slate-200 flex flex-col justify-start my-auto">
+                <form onSubmit={handleSaveBit} className="fixed inset-0 bg-slate-950 z-[120] overflow-y-auto p-4 sm:p-8 animate-fade-in">
+                  <div className="w-full max-w-3xl mx-auto space-y-6 text-slate-200 flex flex-col justify-start pb-16">
                     <div className="flex justify-between items-center border-b border-slate-800 pb-3">
                       <span className="text-sm font-mono font-bold text-indigo-400 uppercase tracking-wider">
                         {editingBitId ? "Edit Bit Entry" : "Add New Bit Entry"}
@@ -4661,8 +4661,8 @@ export default function MobileBusiness({
                 </div>
 
                 {(isHammerFormOpen || editingHammerId) && (
-                  <form onSubmit={handleSaveHammer} className="fixed inset-0 bg-slate-950/98 backdrop-blur-md z-[120] overflow-y-auto flex flex-col items-center justify-start p-4 sm:p-6 animate-fade-in">
-                    <div className="bg-slate-900 border border-slate-800 w-full max-w-2xl rounded-2xl shadow-2xl p-5 space-y-4 text-slate-200 flex flex-col justify-start my-auto">
+                  <form onSubmit={handleSaveHammer} className="fixed inset-0 bg-slate-950 z-[120] overflow-y-auto p-4 sm:p-8 animate-fade-in">
+                    <div className="w-full max-w-3xl mx-auto space-y-6 text-slate-200 flex flex-col justify-start pb-16">
                       <div className="flex justify-between items-center border-b border-slate-800 pb-3">
                         <span className="text-sm font-mono font-bold text-indigo-400 uppercase tracking-wider">
                           {editingHammerId ? "Edit Hammer Profile" : "Register New Hammer"}
@@ -5346,8 +5346,8 @@ export default function MobileBusiness({
               })()}
 
               {(isPipeFormOpen || editingPipeId) && (
-                <form onSubmit={handleSavePipe} className="fixed inset-0 bg-slate-950/98 backdrop-blur-md z-[120] overflow-y-auto flex flex-col items-center justify-start p-4 sm:p-6 animate-fade-in">
-                  <div className="bg-slate-900 border border-slate-800 w-full max-w-2xl rounded-2xl shadow-2xl p-5 space-y-4 text-slate-200 flex flex-col justify-start my-auto">
+                <form onSubmit={handleSavePipe} className="fixed inset-0 bg-slate-950 z-[120] overflow-y-auto p-4 sm:p-8 animate-fade-in">
+                  <div className="w-full max-w-3xl mx-auto space-y-6 text-slate-200 flex flex-col justify-start pb-16">
                     <div className="flex justify-between items-center border-b border-slate-800 pb-3">
                       <span className="text-sm font-mono font-bold text-indigo-400 uppercase tracking-wider">
                         {editingPipeId ? "Edit Pipe Entry / Supplier" : "Register Pipe Purchase Entry"}
@@ -6479,8 +6479,8 @@ export default function MobileBusiness({
 
               {/* Add / Edit Vehicle Form in place */}
               {isVehicleFormOpen && (
-                <form onSubmit={handleSaveVehicle} className="fixed inset-0 bg-slate-950/98 backdrop-blur-md z-[120] overflow-y-auto flex flex-col items-center justify-start p-4 sm:p-6 animate-fade-in">
-                  <div className="bg-slate-900 border border-slate-800 w-full max-w-2xl rounded-2xl shadow-2xl p-5 space-y-4 text-slate-200 flex flex-col justify-start my-auto">
+                <form onSubmit={handleSaveVehicle} className="fixed inset-0 bg-slate-950 z-[120] overflow-y-auto p-4 sm:p-8 animate-fade-in">
+                  <div className="w-full max-w-3xl mx-auto space-y-6 text-slate-200 flex flex-col justify-start pb-16">
                     <div className="flex justify-between items-center border-b border-slate-800 pb-3">
                       <span className="text-sm font-mono font-bold text-indigo-400 uppercase tracking-wider">
                         {editingVehicleId ? "Edit Registered Carrier" : "Register Core Business Carrier"}
@@ -6847,8 +6847,8 @@ export default function MobileBusiness({
 
               {/* Service Form container */}
               {isServiceFormOpen && (
-                <form onSubmit={handleSaveService} className="fixed inset-0 bg-slate-950/98 backdrop-blur-md z-[120] overflow-y-auto flex flex-col items-center justify-start p-4 sm:p-6 animate-fade-in">
-                  <div className="bg-slate-900 border border-slate-800 w-full max-w-2xl rounded-2xl shadow-2xl p-5 space-y-4 text-slate-200 flex flex-col justify-start my-auto">
+                <form onSubmit={handleSaveService} className="fixed inset-0 bg-slate-950 z-[120] overflow-y-auto p-4 sm:p-8 animate-fade-in">
+                  <div className="w-full max-w-3xl mx-auto space-y-6 text-slate-200 flex flex-col justify-start pb-16">
                     <div className="flex justify-between items-center border-b border-slate-800 pb-3">
                       <span className="text-sm font-mono font-bold text-indigo-400 uppercase tracking-wider">
                         {editingServiceId ? "Edit Maintenance Service Log" : "Log New Service / Repair Event"}
@@ -7093,8 +7093,8 @@ export default function MobileBusiness({
 
               {/* Add Fuel Log in-place */}
               {isFuelFormOpen && (
-                <form onSubmit={handleSaveFuel} className="fixed inset-0 bg-slate-950/98 backdrop-blur-md z-[120] overflow-y-auto flex flex-col items-center justify-start p-4 sm:p-6 animate-fade-in">
-                  <div className="bg-slate-900 border border-slate-800 w-full max-w-2xl rounded-2xl shadow-2xl p-5 space-y-4 text-slate-200 flex flex-col justify-start my-auto">
+                <form onSubmit={handleSaveFuel} className="fixed inset-0 bg-slate-950 z-[120] overflow-y-auto p-4 sm:p-8 animate-fade-in">
+                  <div className="w-full max-w-3xl mx-auto space-y-6 text-slate-200 flex flex-col justify-start pb-16">
                     <div className="flex justify-between items-center border-b border-slate-800 pb-3">
                       <span className="text-sm font-mono font-bold text-indigo-400 uppercase tracking-wider">
                         Log Fuel Top-up
@@ -7333,8 +7333,8 @@ export default function MobileBusiness({
 
               {/* Material Form container */}
               {isMatFormOpen && (
-                <form onSubmit={handleSaveMaterial} className="fixed inset-0 bg-slate-950/98 backdrop-blur-md z-[120] overflow-y-auto flex flex-col items-center justify-start p-4 sm:p-6 animate-fade-in">
-                  <div className="bg-slate-900 border border-slate-800 w-full max-w-2xl rounded-2xl shadow-2xl p-5 space-y-4 text-slate-200 flex flex-col justify-start my-auto">
+                <form onSubmit={handleSaveMaterial} className="fixed inset-0 bg-slate-950 z-[120] overflow-y-auto p-4 sm:p-8 animate-fade-in">
+                  <div className="w-full max-w-3xl mx-auto space-y-6 text-slate-200 flex flex-col justify-start pb-16">
                     <div className="flex justify-between items-center border-b border-slate-800 pb-3">
                       <span className="text-sm font-mono font-bold text-indigo-400 uppercase tracking-wider">
                         {editingMatId ? "Edit Material Purchased Entry" : "Log New Materials/Spares Purchase"}
@@ -8031,8 +8031,8 @@ export default function MobileBusiness({
 
             {/* New / Edit Invoice Form */}
             {isBillFormOpen && (
-              <form onSubmit={handleSaveBill} className="fixed inset-0 bg-slate-950/98 backdrop-blur-md z-[120] overflow-y-auto flex flex-col items-center justify-start p-4 sm:p-6 animate-fade-in text-[10px]">
-                <div className="bg-slate-900 border border-slate-800 w-full max-w-2xl rounded-2xl shadow-2xl p-5 space-y-4 text-slate-200 flex flex-col justify-start my-auto">
+              <form onSubmit={handleSaveBill} className="fixed inset-0 bg-slate-950 z-[120] overflow-y-auto p-4 sm:p-8 animate-fade-in text-[10px]">
+                <div className="w-full max-w-3xl mx-auto space-y-6 text-slate-200 flex flex-col justify-start pb-16">
                   <div className="flex justify-between items-center border-b border-slate-800 pb-2.5 mb-2">
                     <div className="flex items-center gap-2.5">
                       <img 
