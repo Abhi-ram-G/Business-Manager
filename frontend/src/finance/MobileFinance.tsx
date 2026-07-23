@@ -207,6 +207,29 @@ export default function MobileFinance({
   const [borrowedTenureType, setBorrowedTenureType] = useState<"Month" | "Year">("Year");
   const [borrowedIntInputMode, setBorrowedIntInputMode] = useState<"Percent" | "Flat">("Percent");
   const [borrowedIntFlatAmt, setBorrowedIntFlatAmt] = useState<number>(1000);
+  React.useEffect(() => {
+    const isAnyFormOpen = isLentFormOpen || isBorrowedFormOpen;
+
+    if (isAnyFormOpen) {
+      window.history.pushState({ modalOpen: true, module: "finance" }, "");
+
+      const handlePopState = () => {
+        setIsLentFormOpen(false);
+        setEditingLentId(null);
+        setIsBorrowedFormOpen(false);
+        setEditingBorrowedId(null);
+      };
+
+      window.addEventListener("popstate", handlePopState);
+      return () => {
+        window.removeEventListener("popstate", handlePopState);
+      };
+    } else {
+      if (window.history.state?.modalOpen && window.history.state?.module === "finance") {
+        window.history.back();
+      }
+    }
+  }, [isLentFormOpen, isBorrowedFormOpen]);
 
   // Auto calculate interest amounts for display or save
   const calculateInterestVal = (amount: number, pct: number, type: string) => {

@@ -1920,6 +1920,63 @@ export default function MobileBusiness({
   const [deductAmountInput, setDeductAmountInput] = useState(2000);
   const [payoutStatus, setPayoutStatus] = useState<"Paid" | "Pending">("Pending");
 
+  React.useEffect(() => {
+    const isAnyFormOpen = 
+      isLabourFormOpen || 
+      isBitFormOpen || 
+      isHammerFormOpen || 
+      isPipeFormOpen || 
+      isVehicleFormOpen || 
+      isServiceFormOpen || 
+      isFuelFormOpen || 
+      isMatFormOpen || 
+      isBillFormOpen;
+
+    if (isAnyFormOpen) {
+      window.history.pushState({ modalOpen: true, module: "business" }, "");
+
+      const handlePopState = () => {
+        setIsLabourFormOpen(false);
+        setEditingLabourId(null);
+        setIsBitFormOpen(false);
+        setEditingBitId(null);
+        setIsHammerFormOpen(false);
+        setEditingHammerId(null);
+        setIsPipeFormOpen(false);
+        setEditingPipeId(null);
+        setIsVehicleFormOpen(false);
+        setEditingVehicleId(null);
+        setIsServiceFormOpen(false);
+        setEditingServiceId(null);
+        setIsFuelFormOpen(false);
+        setEditingFuelId(null);
+        setIsMatFormOpen(false);
+        setEditingMatId(null);
+        setIsBillFormOpen(false);
+        setEditingBillId(null);
+      };
+
+      window.addEventListener("popstate", handlePopState);
+      return () => {
+        window.removeEventListener("popstate", handlePopState);
+      };
+    } else {
+      if (window.history.state?.modalOpen && window.history.state?.module === "business") {
+        window.history.back();
+      }
+    }
+  }, [
+    isLabourFormOpen, 
+    isBitFormOpen, 
+    isHammerFormOpen, 
+    isPipeFormOpen, 
+    isVehicleFormOpen, 
+    isServiceFormOpen, 
+    isFuelFormOpen, 
+    isMatFormOpen, 
+    isBillFormOpen
+  ]);
+
   // --- ACTIONS LABOUR CRUD ---
   const handleOpenAddLabour = () => {
     setEditingLabourId(null);
