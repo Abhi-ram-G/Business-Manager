@@ -651,6 +651,48 @@ export default function App() {
     localStorage.setItem("srs_selected_mobile_module", selectedMobileModule);
   }, [selectedMobileModule]);
 
+  // Synchronize browser back/forward buttons with tab navigation and login lock
+  useEffect(() => {
+    if (!isMobileLoggedIn) return;
+
+    // Push initial dashboard state if history state is empty
+    if (!window.history.state || !window.history.state.appLoggedIn) {
+      window.history.pushState({ appLoggedIn: true, tab: selectedMobileModule }, "");
+    }
+
+    const handleGlobalPopState = (event: PopStateEvent) => {
+      // If the state popped to is a modal state, do nothing and let the modal handle it
+      if (event.state?.modalOpen) {
+        return;
+      }
+
+      if (event.state && event.state.appLoggedIn) {
+        // Change the active tab to match the popped history state
+        if (event.state.tab && event.state.tab !== selectedMobileModule) {
+          setSelectedMobileModule(event.state.tab);
+        }
+      } else {
+        // No appLoggedIn state means we popped back past the dashboard/login transition, so lock the app
+        setIsMobileLoggedIn(false);
+      }
+    };
+
+    window.addEventListener("popstate", handleGlobalPopState);
+    return () => {
+      window.removeEventListener("popstate", handleGlobalPopState);
+    };
+  }, [isMobileLoggedIn, selectedMobileModule]);
+
+  // Push new history state when user explicitly clicks on a tab
+  useEffect(() => {
+    if (!isMobileLoggedIn) return;
+
+    const currentState = window.history.state;
+    if (!currentState || currentState.tab !== selectedMobileModule || !currentState.appLoggedIn) {
+      window.history.pushState({ appLoggedIn: true, tab: selectedMobileModule }, "");
+    }
+  }, [selectedMobileModule, isMobileLoggedIn]);
+
   // View Mode: Widescreen Web App vs Mobile Simulator
   const [viewMode, setViewMode] = useState<"web" | "mobile">("web");
 
