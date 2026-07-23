@@ -644,8 +644,8 @@ export default function MobileFinance({
 
           {/* LENT FORM */}
           {isLentFormOpen && (
-            <form onSubmit={handleSaveLent} className="fixed inset-0 bg-slate-950/98 backdrop-blur-md z-[120] overflow-y-auto flex items-center justify-center p-0 sm:p-4 animate-fade-in text-xs">
-              <div className="bg-slate-900 border-none sm:border border-slate-800 w-full max-w-2xl min-h-screen sm:min-h-0 sm:rounded-2xl shadow-2xl p-5 space-y-4 text-slate-200 flex flex-col justify-start">
+            <form onSubmit={handleSaveLent} className="fixed inset-0 bg-slate-950/98 backdrop-blur-md z-[120] overflow-y-auto flex flex-col items-center justify-start p-4 sm:p-6 animate-fade-in text-xs">
+              <div className="bg-slate-900 border border-slate-800 w-full max-w-2xl rounded-2xl shadow-2xl p-5 space-y-4 text-slate-200 flex flex-col justify-start my-auto">
                 <div className="flex justify-between items-center border-b border-slate-800 pb-3">
                   <span className="text-sm font-mono font-bold text-indigo-400 uppercase tracking-wider">
                     {editingLentId ? "Modify Lending terms" : "Record Funds Given Out (Lel)"}
@@ -1123,8 +1123,8 @@ export default function MobileFinance({
 
           {/* BORROWED FORM */}
           {isBorrowedFormOpen && (
-            <form onSubmit={handleSaveBorrowed} className="fixed inset-0 bg-slate-950/98 backdrop-blur-md z-[120] overflow-y-auto flex items-center justify-center p-0 sm:p-4 animate-fade-in text-xs">
-              <div className="bg-slate-900 border-none sm:border border-slate-800 w-full max-w-2xl min-h-screen sm:min-h-0 sm:rounded-2xl shadow-2xl p-5 space-y-4 text-slate-200 flex flex-col justify-start">
+            <form onSubmit={handleSaveBorrowed} className="fixed inset-0 bg-slate-950/98 backdrop-blur-md z-[120] overflow-y-auto flex flex-col items-center justify-start p-4 sm:p-6 animate-fade-in text-xs">
+              <div className="bg-slate-900 border border-slate-800 w-full max-w-2xl rounded-2xl shadow-2xl p-5 space-y-4 text-slate-200 flex flex-col justify-start my-auto">
                 <div className="flex justify-between items-center border-b border-slate-800 pb-3">
                   <span className="text-sm font-mono font-bold text-indigo-400 uppercase tracking-wider">
                     {editingBorrowedId ? "Modify Borrowed ledger terms" : "Record Borrowed Funds"}
