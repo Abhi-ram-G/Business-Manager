@@ -4531,31 +4531,32 @@ export default function MobileBusiness({
                               )}
                               <p className={`text-[8.5px] font-mono mt-0.5 font-bold ${bit.isPaid ? "text-green-600" : "text-indigo-400"}`}>Usage: {totalFeetUsed} ft used</p>
                             </div>
+
                             <div className="flex flex-col items-end gap-1 shrink-0 justify-start">
-                              <span className="text-[11.5px] font-black text-black block">
+                              <span className={`text-[11.5px] font-black block ${bit.isPaid ? "text-green-950" : "text-slate-200"}`}>
                                 Total: ₹{Number(bit.rate || 0).toLocaleString()}
                               </span>
                               {!bit.isPaid && (
-                                <span className="text-[9.5px] font-black text-orange-500 block">
+                                <span className={`text-[9.5px] font-black block ${bit.isPaid ? "text-green-800" : "text-orange-500"}`}>
                                   Pending: ₹{Math.max(0, bit.rate - (bit.payments || []).reduce((s, p) => s + p.amount, 0)).toLocaleString()}
                                 </span>
                               )}
-                              <div className="flex items-center gap-1.5 mt-1.5">
+                              <div className="flex items-center gap-3 mt-1.5">
                                 <button
                                   type="button"
                                   onClick={() => handleOpenEditBit(bit)}
-                                  className="p-1 bg-slate-950 text-slate-400 hover:text-white border border-slate-800 rounded"
+                                  className="p-1.5 bg-slate-950 text-slate-400 hover:text-white border border-slate-800 rounded"
                                   title="Edit bit"
                                 >
-                                  <Edit className="w-3 h-3" />
+                                  <Edit className="w-4 h-4" />
                                 </button>
                                 <button
                                   type="button"
                                   onClick={() => handleDeleteBit(bit.id, bit.bitNo)}
-                                  className="p-1 bg-rose-950/40 text-rose-450 border border-rose-900/40 rounded"
+                                  className="p-1.5 bg-rose-950/40 text-rose-455 border border-rose-900/40 rounded"
                                   title="Delete bit"
                                 >
-                                  <Trash2 className="w-3 h-3" />
+                                  <Trash2 className="w-4 h-4" />
                                 </button>
                               </div>
                             </div>
@@ -4969,22 +4970,22 @@ export default function MobileBusiness({
                                             Total: ₹{Number(hammer.rate || 0).toLocaleString()}
                                           </span>
                                           
-                                          <div className="flex items-center gap-1">
+                                          <div className="flex items-center gap-3">
                                             <button
                                               type="button"
                                               onClick={() => handleOpenEditHammer(hammer)}
-                                              className="p-1 bg-slate-950 text-slate-400 hover:text-white border border-slate-800 rounded-lg"
+                                              className="p-1.5 bg-slate-950 text-slate-400 hover:text-white border border-slate-800 rounded-lg"
                                               title="Edit Hammer"
                                             >
-                                              <Edit className="w-3 h-3" />
+                                              <Edit className="w-4 h-4" />
                                             </button>
                                             <button
                                               type="button"
                                               onClick={() => handleDeleteHammer(hammer.id, hammer.hammerNo)}
-                                              className="p-1 bg-rose-950/40 text-rose-450 border border-rose-900/40 rounded-lg"
+                                              className="p-1.5 bg-rose-950/40 text-rose-450 border border-rose-900/40 rounded-lg"
                                               title="Delete Hammer"
                                             >
-                                              <Trash2 className="w-3 h-3" />
+                                              <Trash2 className="w-4 h-4" />
                                             </button>
                                           </div>
 
@@ -5720,14 +5721,14 @@ export default function MobileBusiness({
                               </span>
                             </div>
                             <div className="flex flex-col items-end gap-1.5">
-                              <div className="flex items-center gap-1.5">
+                              <div className="flex items-center gap-3">
                                 <button
                                   type="button"
                                   onClick={() => handleEditPipe(supplier)}
-                                  className="p-1 bg-slate-950 text-slate-400 hover:text-white border border-slate-850 rounded"
+                                  className="p-1.5 bg-slate-950 text-slate-400 hover:text-white border border-slate-850 rounded"
                                   title="Edit Supplier"
                                 >
-                                  <Edit className="w-3 h-3" />
+                                  <Edit className="w-4 h-4" />
                                 </button>
                                 <button
                                   type="button"
@@ -6760,12 +6761,12 @@ export default function MobileBusiness({
                         </span>
                       </div>
                       
-                      <div className="flex gap-1.5">
-                        <button onClick={() => handleOpenEditVehicle(v)} className="p-1 bg-slate-950 text-slate-400 hover:text-white border border-slate-800 rounded">
-                          <Edit className="w-3 h-3" />
+                      <div className="flex gap-3">
+                        <button onClick={() => handleOpenEditVehicle(v)} className="p-1.5 bg-slate-950 text-slate-400 hover:text-white border border-slate-800 rounded">
+                          <Edit className="w-4 h-4" />
                         </button>
-                        <button onClick={() => handleDeleteVehicle(v.id)} className="p-1 bg-rose-950/40 text-rose-450 border border-rose-900/40 rounded">
-                          <Trash2 className="w-3 h-3" />
+                        <button onClick={() => handleDeleteVehicle(v.id)} className="p-1.5 bg-rose-950/40 text-rose-450 border border-rose-900/40 rounded">
+                          <Trash2 className="w-4 h-4" />
                         </button>
                       </div>
                     </div>
@@ -7286,22 +7287,22 @@ export default function MobileBusiness({
                                 Pending: ₹{Math.max(0, displayAmount - (f.payments || []).reduce((sum, p) => sum + p.amount, 0)).toLocaleString()}
                               </span>
                             )}
-                            <div className="flex items-center gap-1.5 mt-1.5">
+                            <div className="flex items-center gap-3 mt-1.5">
                               <button
                                 type="button"
                                 onClick={() => handleOpenEditFuel(f)}
-                                className="p-1 rounded bg-slate-900 border border-slate-800 text-slate-400 hover:text-white hover:bg-slate-800"
+                                className="p-1.5 rounded bg-slate-900 border border-slate-800 text-slate-400 hover:text-white hover:bg-slate-800"
                                 title="Edit fuel entry"
                               >
-                                <Edit className="w-3 h-3" />
+                                <Edit className="w-4 h-4" />
                               </button>
                               <button
                                 type="button"
                                 onClick={() => handleDeleteFuel(f)}
-                                className="p-1 rounded bg-rose-950/40 border border-rose-900/40 text-rose-400 hover:text-rose-300"
+                                className="p-1.5 rounded bg-rose-950/40 border border-rose-900/40 text-rose-400 hover:text-rose-300"
                                 title="Delete fuel entry"
                               >
-                                <Trash2 className="w-3 h-3" />
+                                <Trash2 className="w-4 h-4" />
                               </button>
                             </div>
                           </div>
@@ -7687,12 +7688,12 @@ export default function MobileBusiness({
                                   Pending: ₹{Math.max(0, m.totalAmount - (m.payments || []).reduce((sum, p) => sum + p.amount, 0)).toLocaleString()}
                                 </span>
                               )}
-                              <div className="flex gap-1.5 mt-1.5">
-                                <button type="button" onClick={() => handleOpenEditMaterial(m)} className="p-1 px-1.5 bg-slate-900 border border-slate-800 text-slate-400 hover:text-white rounded">
-                                  <Edit className="w-2.5 h-2.5" />
+                              <div className="flex gap-3 mt-1.5">
+                                <button type="button" onClick={() => handleOpenEditMaterial(m)} className="p-1.5 bg-slate-900 border border-slate-800 text-slate-400 hover:text-white rounded">
+                                  <Edit className="w-4 h-4" />
                                 </button>
-                                <button type="button" onClick={() => handleDeleteMaterial(m.id)} className="p-1 px-1.5 bg-rose-950/40 border border-rose-900/40 text-rose-455 rounded">
-                                  <Trash2 className="w-2.5 h-2.5" />
+                                <button type="button" onClick={() => handleDeleteMaterial(m.id)} className="p-1.5 bg-rose-950/40 border border-rose-900/40 text-rose-455 rounded">
+                                  <Trash2 className="w-4 h-4" />
                                 </button>
                               </div>
                             </div>
@@ -9077,10 +9078,10 @@ export default function MobileBusiness({
                         <Download className="w-3.5 h-3.5" /> Download Bill
                       </button>
 
-                      <div className="flex gap-1.5 font-bold">
+                      <div className="flex gap-3 font-bold items-center">
                         <button
                           type="button"
-    onClick={() => {
+                          onClick={() => {
                             void (async () => {
                               const nextStatus = b.status === "Paid" ? "Pending" : "Paid";
                               let updatedFields: Partial<BusinessBill> = { status: nextStatus };
@@ -9151,16 +9152,16 @@ export default function MobileBusiness({
                         <button
                           type="button"
                           onClick={() => handleEditBillClick(b)}
-                          className="p-1 bg-slate-950 hover:bg-slate-850 text-slate-400 hover:text-white rounded border border-slate-850 cursor-pointer"
+                          className="p-1.5 bg-slate-950 hover:bg-slate-850 text-slate-400 hover:text-white rounded border border-slate-850 cursor-pointer"
                         >
-                          <Edit className="w-3 h-3" />
+                          <Edit className="w-4 h-4" />
                         </button>
                         <button
                           type="button"
                           onClick={() => handleDeleteBill(b.id, b.clientName)}
-                          className="p-1 bg-rose-950/30 text-rose-450 rounded border border-rose-900/40 cursor-pointer"
+                          className="p-1.5 bg-rose-950/30 text-rose-455 rounded border border-rose-900/40 cursor-pointer"
                         >
-                          <Trash2 className="w-3 h-3" />
+                          <Trash2 className="w-4 h-4" />
                         </button>
                       </div>
                     </div>

@@ -1035,12 +1035,12 @@ export default function MobileFinance({
                       </span>
                     </div>
                     
-                    <div className="flex gap-1.5 self-center">
-                      <button onClick={() => handleOpenEditLent(l)} className="p-1 bg-slate-950 hover:bg-slate-850 text-slate-400 hover:text-white rounded border border-slate-850">
-                        <Edit className="w-3 h-3" />
+                    <div className="flex gap-3 self-center">
+                      <button onClick={() => handleOpenEditLent(l)} className="p-1.5 bg-slate-950 hover:bg-slate-850 text-slate-400 hover:text-white rounded border border-slate-850">
+                        <Edit className="w-4 h-4" />
                       </button>
-                      <button onClick={() => handleDeleteLent(l.id, l.personName || l.borrowerName || "Lent Loan")} className="p-1 bg-rose-950/30 text-rose-450 rounded border border-rose-900/40">
-                        <Trash2 className="w-3 h-3" />
+                      <button onClick={() => handleDeleteLent(l.id, l.personName || l.borrowerName || "Lent Loan")} className="p-1.5 bg-rose-950/30 text-rose-455 rounded border border-rose-900/40">
+                        <Trash2 className="w-4 h-4" />
                       </button>
                     </div>
                   </div>
@@ -1623,12 +1623,12 @@ export default function MobileFinance({
                       </span>
                     </div>
                     
-                    <div className="flex gap-1.5 self-center">
-                      <button onClick={() => handleOpenEditBorrowed(l)} className="p-1 bg-slate-950 hover:bg-slate-950 text-slate-400 hover:text-white rounded border border-slate-850">
-                        <Edit className="w-3 h-3" />
+                    <div className="flex gap-3 self-center">
+                      <button onClick={() => handleOpenEditBorrowed(l)} className="p-1.5 bg-slate-950 hover:bg-slate-950 text-slate-400 hover:text-white rounded border border-slate-850">
+                        <Edit className="w-4 h-4" />
                       </button>
-                      <button onClick={() => handleDeleteBorrowed(l.id, l.personName || l.lenderName || "Received Loan")} className="p-1 bg-rose-950/30 text-rose-450 rounded border border-rose-900/40">
-                        <Trash2 className="w-3 h-3" />
+                      <button onClick={() => handleDeleteBorrowed(l.id, l.personName || l.lenderName || "Received Loan")} className="p-1.5 bg-rose-950/30 text-rose-455 rounded border border-rose-900/40">
+                        <Trash2 className="w-4 h-4" />
                       </button>
                     </div>
                   </div>

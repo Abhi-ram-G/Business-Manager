@@ -297,12 +297,12 @@ export default function MobileFamily({
               <div className="flex items-center gap-3">
                 <span className="font-black text-rose-400 font-mono">₹{e.amount}</span>
                 
-                <div className="flex gap-1">
-                  <button onClick={() => handleOpenEditExpense(e)} className="p-1 bg-slate-950 text-slate-500 hover:text-white rounded">
-                    <Edit className="w-3 h-3" />
+                <div className="flex gap-3">
+                  <button onClick={() => handleOpenEditExpense(e)} className="p-1.5 bg-slate-950 text-slate-500 hover:text-white rounded">
+                    <Edit className="w-4 h-4" />
                   </button>
-                  <button onClick={() => handleDeleteExpense(e.id, `${e.reason} (₹${e.amount})`)} className="p-1 bg-rose-950/20 text-rose-455 rounded">
-                    <Trash2 className="w-3 h-3" />
+                  <button onClick={() => handleDeleteExpense(e.id, `${e.reason} (₹${e.amount})`)} className="p-1.5 bg-rose-950/20 text-rose-455 rounded">
+                    <Trash2 className="w-4 h-4" />
                   </button>
                 </div>
               </div>
