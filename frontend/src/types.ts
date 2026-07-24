@@ -113,6 +113,11 @@ export interface BitEntry {
   rate: number;
   isPaid?: boolean;
   payments?: { id: string; date: string; amount: number }[];
+  capableFeetDepth?: number;
+  status?: "active" | "unusable" | "sold";
+  soldDate?: string;
+  soldRate?: number;
+  usageHistory?: HammerUsageRecord[];
 }
 
 export interface HammerUsageRecord {

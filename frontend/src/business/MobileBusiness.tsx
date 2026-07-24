@@ -486,6 +486,9 @@ export default function MobileBusiness({
   const [selectedPipeForHistory, setSelectedPipeForHistory] = useState<string | null>(null);
   const [showGlobalPipeHistory, setShowGlobalPipeHistory] = useState(false);
   const [selectedBitForHistory, setSelectedBitForHistory] = useState<string | null>(null);
+  const [bitSellModalId, setBitSellModalId] = useState<string | null>(null);
+  const [bitSellDate, setBitSellDate] = useState(() => new Date().toISOString().split("T")[0]);
+  const [bitSellRate, setBitSellRate] = useState<number>(0);
 
   // Bill form: bit/hammer selection (internal use only — NOT printed in PDF)
   const [selectedBitId, setSelectedBitId] = useState<string>("");
@@ -576,6 +579,46 @@ export default function MobileBusiness({
         })
       );
 
+      // Clean up bit entries local state
+      const cleanedBits = bitEntries.map((bEntry) => {
+        const nextUsageHistory = (bEntry.usageHistory || []).filter((rec) => rec.billId !== id);
+        const totalFeet = nextUsageHistory.reduce((sum, r) => sum + r.calculatedFeet, 0);
+        const belowCapable = totalFeet < (bEntry.capableFeetDepth ?? 950);
+        return {
+          ...bEntry,
+          usageHistory: nextUsageHistory,
+          status: belowCapable && bEntry.status !== "sold" ? ("active" as const) : bEntry.status
+        };
+      });
+      setBitEntries(cleanedBits);
+
+      // Find bits that need database updates
+      const bitsToUpdate = bitEntries.filter(b => 
+        (b.usageHistory || []).some(rec => rec.billId === id)
+      );
+
+      // Persist modified bits to server
+      await Promise.all(
+        bitsToUpdate.map(async (b) => {
+          const nextUsageHistory = (b.usageHistory || []).filter((rec) => rec.billId !== id);
+          const totalFeet = nextUsageHistory.reduce((sum, r) => sum + r.calculatedFeet, 0);
+          const belowCapable = totalFeet < (b.capableFeetDepth ?? 950);
+          const cleanedBit = {
+            ...b,
+            usageHistory: nextUsageHistory,
+            status: belowCapable && b.status !== "sold" ? ("active" as const) : b.status
+          };
+          try {
+            await requestJson(apiBaseUrl, `/api/v1/business/bits/${b.id}`, {
+              method: "PUT",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify(toBitApiPayload(cleanedBit)),
+            });
+          } catch (err) {
+            console.error("Failed to clean bit usage on server:", err);
+          }
+        })
+      );
       if (!billToDelete || billToDelete.source !== "server") {
         setBusinessBills((prev) => prev.filter((bill) => bill.id !== id));
         triggerOnlineSync(`DELETED BILL FOR ${name}`);
@@ -1161,7 +1204,30 @@ export default function MobileBusiness({
       };
     });
 
+    const updatedBits = bitEntries.map((bEntry) => {
+      const isSelectedBit = bEntry.id === selectedBitId && drillingFeet > 0;
+      let history = (bEntry.usageHistory || []).filter((rec) => rec.billId !== payloadBill.id && rec.id !== payloadBill.id);
+
+      if (isSelectedBit) {
+        const newRecord: HammerUsageRecord = {
+          id: `rec-${Date.now()}-${bEntry.id}`,
+          billId: payloadBill.id,
+          date: billDate,
+          clientName: billClient,
+          location: customLocation || "",
+          calculatedFeet: drillingFeet
+        };
+        history = [...history, newRecord];
+      }
+
+      return {
+        ...bEntry,
+        usageHistory: history
+      };
+    });
+
     setHammerEntries(updatedHammers);
+    setBitEntries(updatedBits);
 
     if (!shouldPersistToServer) {
         setBusinessBills((prev) => {
@@ -1246,6 +1312,22 @@ export default function MobileBusiness({
             });
           } catch (err) {
             console.error(`Failed to update hammer ${h.id} on server`, err);
+          }
+        })
+      );
+
+      // Persist modified bits to server
+      const bitsToUpdate = updatedBits.filter(b => b.id === selectedBitId && drillingFeet > 0);
+      await Promise.all(
+        bitsToUpdate.map(async (b) => {
+          try {
+            await requestJson(apiBaseUrl, `/api/v1/business/bits/${b.id}`, {
+              method: "PUT",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify(toBitApiPayload(b)),
+            });
+          } catch (err) {
+            console.error(`Failed to update bit ${b.id} on server`, err);
           }
         })
       );
@@ -1806,6 +1888,7 @@ export default function MobileBusiness({
   });
   const [bitRate, setBitRate] = useState(0);
   const [bitIsPaid, setBitIsPaid] = useState<boolean>(false);
+  const [bitCapableFeet, setBitCapableFeet] = useState<number>(950);
 
   // Core state for active file preview modal
   const [selectedFileToView, setSelectedFileToView] = useState<{
@@ -2364,6 +2447,7 @@ export default function MobileBusiness({
     setBitDateEntry(`${yyyy}-${mm}-${dd}`);
     setBitRate(0);
     setBitIsPaid(false);
+    setBitCapableFeet(950);
     setIsBitFormOpen(true);
   };
 
@@ -2382,6 +2466,7 @@ export default function MobileBusiness({
     })());
     setBitRate(bit.rate);
     setBitIsPaid(!!bit.isPaid);
+    setBitCapableFeet(bit.capableFeetDepth ?? 950);
     setIsBitFormOpen(true);
   };
 
@@ -2399,6 +2484,9 @@ export default function MobileBusiness({
       dateEntry: bitDateEntry,
       rate: Number(bitRate),
       isPaid: bitIsPaid,
+      capableFeetDepth: Number(bitCapableFeet),
+      status: existing?.status || "active",
+      usageHistory: existing?.usageHistory || [],
       payments: existing?.payments || (bitIsPaid ? [{ id: "init", date: bitDateEntry || "2026-06-18", amount: Number(bitRate) }] : [])
     };
 
@@ -2422,6 +2510,7 @@ export default function MobileBusiness({
       setBitDateEntry(`${yyyy}-${mm}-${dd}`);
       setBitRate(0);
       setBitIsPaid(false);
+      setBitCapableFeet(950);
     } catch (error) {
       console.error(error);
       alert("Unable to save the bit entry right now.");
@@ -3297,6 +3386,51 @@ export default function MobileBusiness({
         await onSharedDataChanged?.();
       } catch (e) {
         console.error("Failed to sell hammer", e);
+      }
+    })();
+  };
+
+  // Mark bit with lifecycle status (active / unusable)
+  const handleSetBitStatus = (bit: BitEntry, makeUnusable: boolean) => {
+    void (async () => {
+      const updated: BitEntry = {
+        ...bit,
+        status: makeUnusable ? "unusable" : "active",
+      };
+      setBitEntries(prev => prev.map(b => b.id === bit.id ? updated : b));
+      try {
+        await requestJson(apiBaseUrl, `/api/v1/business/bits/${bit.id}`, {
+          method: "PUT",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(toBitApiPayload(updated)),
+        });
+        await onSharedDataChanged?.();
+      } catch (e) {
+        console.error("Failed to update bit status", e);
+      }
+    })();
+  };
+
+  // Mark bit as sold
+  const handleSellBit = (bit: BitEntry) => {
+    void (async () => {
+      const updated: BitEntry = {
+        ...bit,
+        status: "sold",
+        soldDate: bitSellDate,
+        soldRate: Number(bitSellRate),
+      };
+      setBitEntries(prev => prev.map(b => b.id === bit.id ? updated : b));
+      setBitSellModalId(null);
+      try {
+        await requestJson(apiBaseUrl, `/api/v1/business/bits/${bit.id}`, {
+          method: "PUT",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(toBitApiPayload(updated)),
+        });
+        await onSharedDataChanged?.();
+      } catch (e) {
+        console.error("Failed to sell bit", e);
       }
     })();
   };
@@ -4635,7 +4769,7 @@ export default function MobileBusiness({
                     </div>
                   </div>
 
-                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+                  <div className="grid grid-cols-1 sm:grid-cols-4 gap-2">
                     <div>
                       <label className="text-[9px] text-slate-500 block font-mono">DATE ENTRY</label>
                       <input
@@ -4654,6 +4788,16 @@ export default function MobileBusiness({
                         min="0"
                         required
                         {...numInputProps(bitRate, setBitRate, 0)}
+                      />
+                    </div>
+                    <div>
+                      <label className="text-[9px] text-slate-500 block font-mono">CAPABLE FEET (FT)</label>
+                      <input
+                        type="number"
+                        className="w-full bg-slate-950 p-1.5 rounded text-slate-100 border border-slate-850 font-bold font-mono"
+                        min="1"
+                        required
+                        {...numInputProps(bitCapableFeet, setBitCapableFeet, 950)}
                       />
                     </div>
                     <div>
@@ -4738,15 +4882,35 @@ export default function MobileBusiness({
 
                       const totalFeetUsed = usageRecords.reduce((sum, r) => sum + r.calculatedFeet, 0);
 
+                      const showExtraUsage = totalFeetUsed > (bit.capableFeetDepth ?? 950);
+                      const extraUsageFeet = showExtraUsage ? totalFeetUsed - (bit.capableFeetDepth ?? 950) : 0;
+
                       return (
-                        <div key={bit.id} className={`border rounded-2xl p-3.5 space-y-3 transition-colors duration-300 ${bit.isPaid ? "bg-green-50 border-green-300" : "bg-slate-900 border-slate-850"}`}>
+                        <div key={bit.id} className={`relative border rounded-2xl p-3.5 space-y-3 transition-colors duration-300 ${bit.isPaid ? "bg-green-50 border-green-300" : "bg-slate-900 border-slate-850"}`}>
+                          {showExtraUsage && (
+                            <div className="absolute -top-1.5 -right-1.5 bg-red-600 border border-red-500 text-white font-mono font-extrabold text-[8px] px-2 py-0.5 rounded-full shadow-md z-10 animate-bounce">
+                              EXTRA: {extraUsageFeet} FT
+                            </div>
+                          )}
+
                           <div className="flex items-center justify-between gap-3">
                             <div className="min-w-0">
                               <div className="flex flex-wrap items-center gap-1.5">
                                 <span className={`text-[8px] uppercase tracking-wider font-bold font-mono ${bit.isPaid ? "text-green-700" : "text-indigo-400"}`}>{bit.bitNo}</span>
                                 <span className={`text-[8px] uppercase tracking-wider font-bold font-mono ${bit.isPaid ? "text-green-600" : "text-slate-500"}`}>Size: {bit.sizeMm} mm</span>
                                 <span className={`text-[8px] uppercase tracking-wider font-bold font-mono ${bit.isPaid ? "text-green-600" : "text-slate-500"}`}>Button: {bit.buttonSizeMm ?? "-"} mm</span>
-                                <span className={`text-[8px] font-bold px-1.5 py-0.5 rounded ${bit.isPaid ? "bg-green-200 text-green-800" : "bg-rose-950 text-rose-400"}`}>{bit.isPaid ? "Paid" : "Pending"}</span>
+                                <span className={`text-[8px] uppercase tracking-wider font-bold font-mono text-slate-500`}>Cap: {bit.capableFeetDepth ?? 950} ft</span>
+                                <span className={`text-[8px] font-bold px-1.5 py-0.5 rounded border ${bit.isPaid ? "bg-black text-emerald-400 border-emerald-900/50" : "bg-red-950 text-rose-200 border-red-900/40"}`}>{bit.isPaid ? "Paid" : "Pending"}</span>
+                                {bit.status === "unusable" && (
+                                  <span className="text-[8px] font-bold px-1.5 py-0.5 rounded bg-red-950 text-red-400 border border-red-900/30 uppercase font-mono">
+                                    Unused
+                                  </span>
+                                )}
+                                {bit.status === "sold" && (
+                                  <span className="text-[8px] font-bold px-1.5 py-0.5 rounded bg-slate-950 text-slate-400 border border-slate-800 uppercase font-mono">
+                                    Sold
+                                  </span>
+                                )}
                               </div>
                               <h4 className="text-xs font-bold text-red-500 truncate mt-0.5">{bit.brand}</h4>
                               <p className={`text-[8.5px] font-mono mt-1 ${bit.isPaid ? "text-green-700" : "text-slate-500"}`}>Date: {bit.dateEntry || "-"}</p>
@@ -4756,7 +4920,7 @@ export default function MobileBusiness({
                                   Pending Amount: ₹{Math.max(0, bit.rate - (bit.payments || []).reduce((s, p) => s + p.amount, 0)).toLocaleString()}
                                 </p>
                               )}
-                              <p className={`text-[8.5px] font-mono mt-0.5 font-bold ${bit.isPaid ? "text-green-600" : "text-indigo-400"}`}>Usage: {totalFeetUsed} ft used</p>
+                              <p className={`text-[8.5px] font-mono mt-0.5 font-bold ${bit.isPaid ? "text-green-600" : "text-indigo-400"}`}>Usage: {totalFeetUsed} / {bit.capableFeetDepth ?? 950} ft used</p>
                             </div>
 
                             <div className="flex flex-col items-end gap-1 shrink-0 justify-start">
@@ -4797,6 +4961,80 @@ export default function MobileBusiness({
                               </div>
                             </div>
                           </div>
+
+                          {/* Lifecycle options */}
+                          {bit.status === "active" && (
+                            <div className="flex gap-1.5 justify-end mt-1.5 pt-1.5 border-t border-slate-850/60">
+                              <button
+                                type="button"
+                                onClick={() => handleSetBitStatus(bit, true)}
+                                className="bg-red-600 hover:bg-red-750 text-white font-bold px-2.5 py-0.5 rounded text-[8px] font-mono uppercase cursor-pointer"
+                              >
+                                Make Unused
+                              </button>
+                            </div>
+                          )}
+
+                          {bit.status === "unusable" && bitSellModalId !== bit.id && (
+                            <div className="flex gap-1.5 justify-end mt-1.5 pt-1.5 border-t border-slate-850/60">
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  setBitSellModalId(bit.id);
+                                  setBitSellDate(new Date().toISOString().split("T")[0]);
+                                  setBitSellRate(bit.rate);
+                                }}
+                                className="bg-emerald-600 hover:bg-emerald-700 text-white font-bold px-2.5 py-0.5 rounded text-[8px] font-mono uppercase cursor-pointer"
+                              >
+                                Sell
+                              </button>
+                            </div>
+                          )}
+
+                          {bitSellModalId === bit.id && (
+                            <div className="bg-slate-950 p-2.5 rounded-xl border border-slate-850 space-y-2 mt-2 font-mono text-[9px] text-slate-300 animate-fade-in">
+                              <span className="font-extrabold text-amber-500 uppercase block text-[8px]">
+                                Enter Bit Sale Record:
+                              </span>
+                              <div className="grid grid-cols-2 gap-2">
+                                <div>
+                                  <label className="text-[8px] text-slate-500 block uppercase mb-0.5">Date</label>
+                                  <input
+                                    type="date"
+                                    value={bitSellDate}
+                                    onChange={(e) => setBitSellDate(e.target.value)}
+                                    className="w-full bg-slate-900 border border-slate-850 text-slate-100 p-1 rounded font-bold"
+                                  />
+                                </div>
+                                <div>
+                                  <label className="text-[8px] text-slate-500 block uppercase mb-0.5">Sale Amount (₹)</label>
+                                  <input
+                                    type="number"
+                                    min="0"
+                                    value={bitSellRate}
+                                    onChange={(e) => setBitSellRate(Number(e.target.value))}
+                                    className="w-full bg-slate-900 border border-slate-850 text-slate-100 p-1 rounded font-bold"
+                                  />
+                                </div>
+                              </div>
+                              <div className="flex justify-end gap-1.5 pt-1.5 border-t border-slate-900/60">
+                                <button
+                                  type="button"
+                                  onClick={() => setBitSellModalId(null)}
+                                  className="px-2 py-0.5 bg-slate-900 text-slate-400 rounded hover:text-slate-350"
+                                >
+                                  Cancel
+                                </button>
+                                <button
+                                  type="button"
+                                  onClick={() => handleSellBit(bit)}
+                                  className="px-2.5 py-0.5 bg-green-600 hover:bg-green-700 text-white font-extrabold rounded uppercase tracking-wider cursor-pointer"
+                                >
+                                  Sold Out
+                                </button>
+                              </div>
+                            </div>
+                          )}
 
                           {/* View Usage History Log */}
                           <div className="pt-0.5">
@@ -5148,7 +5386,7 @@ export default function MobileBusiness({
                                             <span className="text-[8.5px] uppercase tracking-wider font-bold font-mono text-slate-500">
                                               Cap: {hammer.capableFeetDepth} ft
                                             </span>
-                                            <span className={`text-[8.5px] font-bold px-1.5 py-0.5 rounded ${hammer.isPaid ? "bg-green-950/80 text-green-400 border border-green-900/40" : "bg-rose-950 text-rose-450"}`}>
+                                            <span className={`text-[8.5px] font-bold px-1.5 py-0.5 rounded border ${hammer.isPaid ? "bg-black text-emerald-400 border-emerald-900/50" : "bg-red-950 text-rose-200 border-red-900/40"}`}>
                                               {hammer.isPaid ? "Paid" : "Pending"}
                                             </span>
                                             {hammer.status === "unusable" && (
@@ -5990,7 +6228,7 @@ export default function MobileBusiness({
                                   Pending Amount: ₹{Math.max(0, (supplier.grandPrice || supplier.grandTotal || 0) - (supplier.payments || []).reduce((s, p) => s + p.amount, 0)).toLocaleString()}
                                 </p>
                               )}
-                              <span className={`inline-block text-[8px] font-bold px-1.5 py-0.5 rounded mt-1 ${supplier.isPaid ? "bg-green-200 text-green-800" : "bg-rose-950 text-rose-450"}`}>
+                              <span className={`inline-block text-[8px] font-bold px-1.5 py-0.5 rounded mt-1 border ${supplier.isPaid ? "bg-black text-emerald-400 border-emerald-900/50" : "bg-red-950 text-rose-200 border-red-900/40"}`}>
                                 {supplier.isPaid ? "Paid" : "Pending"}
                               </span>
                             </div>
@@ -7323,7 +7561,7 @@ export default function MobileBusiness({
                                   <span className={`text-[8.5px] font-semibold truncate max-w-[100px] ${s.isPaid ? "text-green-700" : "text-slate-400"}`}>({associatedVehicle.vehicleName})</span>
                                 )}
                                 <span className={`text-[8.5px] ${s.isPaid ? "text-green-600" : "text-slate-500"}`}>{s.date}</span>
-                                <span className={`text-[8px] font-bold px-1.5 py-0.2 rounded ${s.isPaid ? "bg-green-200 text-green-800" : "bg-rose-950 text-rose-455"}`}>
+                                <span className={`text-[8px] font-bold px-1.5 py-0.2 rounded border ${s.isPaid ? "bg-black text-emerald-400 border-emerald-900/50" : "bg-red-950 text-rose-200 border-red-900/40"}`}>
                                   {s.isPaid ? "Paid" : "Pending"}
                                 </span>
                               </div>
@@ -7566,7 +7804,7 @@ export default function MobileBusiness({
                               <span className="truncate">{f.vehicleName}</span>
                             </span>
                             <span className={`font-bold block truncate ${f.isPaid ? "text-green-800" : "text-slate-350"}`}>{f.fuelType} ₹ {f.liters} Liters ({f.perLiterCost}/L)</span>
-                            <span className={`inline-block text-[8px] font-bold px-1.5 py-0.2 rounded mt-0.5 ${f.isPaid ? "bg-green-200 text-green-800" : "bg-rose-950 text-rose-455"}`}>
+                            <span className={`inline-block text-[8px] font-bold px-1.5 py-0.2 rounded mt-0.5 border ${f.isPaid ? "bg-black text-emerald-400 border-emerald-900/50" : "bg-red-950 text-rose-200 border-red-900/40"}`}>
                               {f.isPaid ? "Paid" : "Pending"}
                             </span>
                           </div>
@@ -7910,7 +8148,7 @@ export default function MobileBusiness({
                                   <span className={`text-[8.5px] font-semibold truncate max-w-[100px] ${m.isPaid ? "text-green-700" : "text-slate-400"}`}>({associatedVehicle.vehicleName})</span>
                                 )}
                                 <span className={`text-[8.5px] ${m.isPaid ? "text-green-600" : "text-slate-500"}`}>{m.date}</span>
-                                <span className={`text-[8px] font-bold px-1.5 py-0.2 rounded ${m.isPaid ? "bg-green-200 text-green-800" : "bg-rose-950 text-rose-455"}`}>
+                                <span className={`text-[8px] font-bold px-1.5 py-0.2 rounded border ${m.isPaid ? "bg-black text-emerald-400 border-emerald-900/50" : "bg-red-950 text-rose-200 border-red-900/40"}`}>
                                   {m.isPaid ? "Paid" : "Pending"}
                                 </span>
                               </div>
@@ -8253,8 +8491,8 @@ export default function MobileBusiness({
                         {/* Status tag indicator */}
                         <span className={`text-[8.5px] font-mono font-bold uppercase px-2 py-0.5 rounded border ${
                           hasPayment?.status === "Paid" 
-                            ? "bg-emerald-950 text-emerald-400 border-emerald-950" 
-                            : "bg-amber-950 text-orange-300 border-amber-950"
+                            ? "bg-black text-emerald-400 border-emerald-900/50" 
+                            : "bg-red-950 text-rose-200 border-red-900/40"
                         }`}>
                           {hasPayment?.status || "Pending"}
                         </span>
@@ -8719,11 +8957,36 @@ export default function MobileBusiness({
                         className="w-full bg-slate-950 p-1.5 rounded text-slate-200 border border-slate-850 font-mono text-[14px] focus:outline-none focus:border-indigo-500"
                       >
                         <option value="">No Bit Selected</option>
-                        {bitEntries.map((bit) => (
-                          <option key={bit.id} value={bit.id}>
-                            {bit.bitNo} ({bit.brand} • {bit.sizeMm}mm{bit.buttonSizeMm ? ` • ${bit.buttonSizeMm}mm btn` : ""})
-                          </option>
-                        ))}
+                        {bitEntries.filter(b => b.status !== "unusable" && b.status !== "sold").map((bit) => {
+                          const billsForThisBit = businessBills.filter(bill => bill.usedBitId === bit.id);
+                          const totalUsed = billsForThisBit.reduce((sum, b) => {
+                            const isCustom = b.isCustomBill;
+                            const endFeet = isCustom ? (b.customEndingFeet || 950) : (b.finalDepth || 0);
+                            const c7 = b.casing7Feet || 0;
+                            const c10 = b.casing10Feet || 0;
+                            
+                            let casingToSubtract = 0;
+                            if (c7 > 0 && c10 > 0) {
+                              casingToSubtract = c7;
+                            } else if (c7 > 0) {
+                              casingToSubtract = c7;
+                            } else if (c10 > 0) {
+                              casingToSubtract = c10;
+                            }
+
+                            let feet = 0;
+                            if (b.billMode === "New") {
+                              feet = Math.max(0, endFeet - casingToSubtract);
+                            }
+                            return sum + feet;
+                          }, 0);
+
+                          return (
+                            <option key={bit.id} value={bit.id}>
+                              {bit.bitNo} • {bit.brand} ({totalUsed}/{bit.capableFeetDepth ?? 950} ft)
+                            </option>
+                          );
+                        })}
                       </select>
                     </div>
                     <div>
@@ -9249,7 +9512,7 @@ export default function MobileBusiness({
                       </div>
 
                       <span className={`text-[8.5px] font-mono font-bold uppercase px-2 py-0.5 rounded border ${
-                        b.status === "Paid" ? "bg-green-200 text-green-800 border-green-300" : "bg-rose-950 text-rose-450 border-rose-900"
+                        b.status === "Paid" ? "bg-black text-emerald-400 border-emerald-900/50" : "bg-red-950 text-rose-200 border-red-900/40"
                       }`}>
                         {b.status || "Pending"}
                       </span>

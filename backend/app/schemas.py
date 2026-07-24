@@ -152,6 +152,11 @@ class BitEntryCreate(BaseModel):
     rate: float
     is_paid: bool = False
     payments: list[dict[str, Any]] | None = None
+    capable_feet_depth: int | None = 950
+    status: str | None = "active"
+    sold_date: dt_date | None = None
+    sold_rate: float | None = None
+    usage_history: list[dict[str, Any]] | None = None
 
 
 class BitEntryUpdate(BaseModel):
@@ -163,6 +168,11 @@ class BitEntryUpdate(BaseModel):
     rate: float | None = None
     is_paid: bool | None = None
     payments: list[dict[str, Any]] | None = None
+    capable_feet_depth: int | None = None
+    status: str | None = None
+    sold_date: dt_date | None = None
+    sold_rate: float | None = None
+    usage_history: list[dict[str, Any]] | None = None
 
 
 class HammerCreate(BaseModel):

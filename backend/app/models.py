@@ -124,6 +124,12 @@ class BitEntry(Base, TimestampMixin):
     rate: Mapped[float] = mapped_column(Numeric(12, 2), nullable=False)
     is_paid: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
     payments: Mapped[list[dict[str, Any]] | None] = mapped_column(JSON)
+    capable_feet_depth: Mapped[int] = mapped_column(Integer, default=950)
+    status: Mapped[str] = mapped_column(String(20), default="active")
+    sold_date: Mapped[date | None] = mapped_column(Date)
+    sold_rate: Mapped[float | None] = mapped_column(Numeric(12, 2))
+    usage_history: Mapped[list[dict[str, Any]] | None] = mapped_column(JSON)
+
 
 
 class Hammer(Base, TimestampMixin):

@@ -97,6 +97,11 @@ export const mapBitFromApi = (item: ApiRecord): BitEntry => ({
   rate: toNumber(item.rate ?? 0),
   isPaid: !!item.is_paid,
   payments: Array.isArray(item.payments) ? (item.payments as any) : [],
+  capableFeetDepth: toNumber(item.capable_feet_depth ?? 950),
+  status: item.status ? (item.status as any) : "active",
+  soldDate: item.sold_date ? String(item.sold_date) : undefined,
+  soldRate: item.sold_rate != null ? toNumber(item.sold_rate) : undefined,
+  usageHistory: Array.isArray(item.usage_history) ? (item.usage_history as any) : [],
 });
 
 export const mapHammerFromApi = (item: ApiRecord): HammerEntry => ({
@@ -421,6 +426,11 @@ export const toBitApiPayload = (bit: BitEntry) => ({
   rate: bit.rate,
   is_paid: bit.isPaid ?? false,
   payments: bit.payments ?? [],
+  capable_feet_depth: bit.capableFeetDepth ?? 950,
+  status: bit.status ?? "active",
+  sold_date: bit.soldDate ?? null,
+  sold_rate: bit.soldRate ?? null,
+  usage_history: bit.usageHistory ?? [],
 });
 
 export const toHammerApiPayload = (hammer: HammerEntry) => ({

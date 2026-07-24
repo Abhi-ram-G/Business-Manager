@@ -4,7 +4,7 @@ from sqlalchemy.orm import Session
 from sqlalchemy.orm.attributes import flag_modified
 
 from ...core.db import get_db
-from ...models import BusinessBill, Hammer
+from ...models import BusinessBill, Hammer, BitEntry
 from ...schemas import BusinessBillCreate, BusinessBillUpdate
 from ...utils import (
     create_or_400,
@@ -107,6 +107,27 @@ def delete_business_bill(bill_id: str, db: Session = Depends(get_db)):
                     hammer.status = "active"
             
             db.add(hammer)
+
+    # Clean up bit usage history records that refer to this bill_id
+    bits = db.execute(select(BitEntry)).scalars().all()
+    for bit in bits:
+        modified = False
+        if bit.usage_history:
+            filtered_history = [
+                record for record in bit.usage_history
+                if record.get("billId") != bill_id and record.get("bill_id") != bill_id
+            ]
+            if len(filtered_history) != len(bit.usage_history):
+                bit.usage_history = filtered_history
+                modified = True
+        if modified:
+            from sqlalchemy.orm.attributes import flag_modified
+            flag_modified(bit, "usage_history")
+            total_feet = sum(float(r.get("calculatedFeet", 0) or r.get("calculated_feet", 0)) for r in (bit.usage_history or []))
+            if total_feet < (bit.capable_feet_depth or 950):
+                if bit.status != "sold":
+                    bit.status = "active"
+            db.add(bit)
 
     db.delete(bill)
     db.commit()
