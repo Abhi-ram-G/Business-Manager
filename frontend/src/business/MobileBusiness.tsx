@@ -4886,7 +4886,7 @@ export default function MobileBusiness({
                       const extraUsageFeet = showExtraUsage ? totalFeetUsed - (bit.capableFeetDepth ?? 950) : 0;
 
                       return (
-                        <div key={bit.id} className={`relative border rounded-2xl p-3.5 space-y-3 transition-colors duration-300 ${bit.isPaid ? "bg-green-50 border-green-300" : "bg-slate-900 border-slate-850"}`}>
+                        <div key={bit.id} className={`relative border rounded-2xl p-3.5 space-y-3 transition-colors duration-300 ${bit.isPaid ? "bg-emerald-950/30 border-emerald-900/50" : "bg-slate-900 border-slate-850"}`}>
                           {showExtraUsage && (
                             <div className="absolute -top-1.5 -right-1.5 bg-red-600 border border-red-500 text-white font-mono font-extrabold text-[8px] px-2 py-0.5 rounded-full shadow-md z-10 animate-bounce">
                               EXTRA: {extraUsageFeet} FT
@@ -4896,11 +4896,11 @@ export default function MobileBusiness({
                           <div className="flex items-center justify-between gap-3">
                             <div className="min-w-0">
                               <div className="flex flex-wrap items-center gap-1.5">
-                                <span className={`text-[8px] uppercase tracking-wider font-bold font-mono ${bit.isPaid ? "text-green-700" : "text-indigo-400"}`}>{bit.bitNo}</span>
-                                <span className={`text-[8px] uppercase tracking-wider font-bold font-mono ${bit.isPaid ? "text-green-600" : "text-slate-500"}`}>Size: {bit.sizeMm} mm</span>
-                                <span className={`text-[8px] uppercase tracking-wider font-bold font-mono ${bit.isPaid ? "text-green-600" : "text-slate-500"}`}>Button: {bit.buttonSizeMm ?? "-"} mm</span>
+                                <span className={`text-[8px] uppercase tracking-wider font-bold font-mono ${bit.isPaid ? "text-emerald-400" : "text-indigo-400"}`}>{bit.bitNo}</span>
+                                <span className={`text-[8px] uppercase tracking-wider font-bold font-mono ${bit.isPaid ? "text-slate-400" : "text-slate-500"}`}>Size: {bit.sizeMm} mm</span>
+                                <span className={`text-[8px] uppercase tracking-wider font-bold font-mono ${bit.isPaid ? "text-slate-400" : "text-slate-500"}`}>Button: {bit.buttonSizeMm ?? "-"} mm</span>
                                 <span className={`text-[8px] uppercase tracking-wider font-bold font-mono text-slate-500`}>Cap: {bit.capableFeetDepth ?? 950} ft</span>
-                                <span className={`text-[8px] font-bold px-1.5 py-0.5 rounded border ${bit.isPaid ? "bg-black text-emerald-400 border-emerald-900/50" : "bg-red-950 text-rose-200 border-red-900/40"}`}>{bit.isPaid ? "Paid" : "Pending"}</span>
+                                <span className={`text-[8px] font-bold px-1.5 py-0.5 rounded border ${bit.isPaid ? "bg-emerald-950 text-emerald-400 border-emerald-900/50" : "bg-red-950 text-rose-200 border-red-900/40"}`}>{bit.isPaid ? "Paid" : "Pending"}</span>
                                 {bit.status === "unusable" && (
                                   <span className="text-[8px] font-bold px-1.5 py-0.5 rounded bg-red-950 text-red-400 border border-red-900/30 uppercase font-mono">
                                     Unused
@@ -4913,18 +4913,18 @@ export default function MobileBusiness({
                                 )}
                               </div>
                               <h4 className="text-xs font-bold text-red-500 truncate mt-0.5">{bit.brand}</h4>
-                              <p className={`text-[8.5px] font-mono mt-1 ${bit.isPaid ? "text-green-700" : "text-slate-500"}`}>Date: {bit.dateEntry || "-"}</p>
-                              <p className={`text-[8.5px] font-mono mt-0.5 ${bit.isPaid ? "text-green-700" : "text-slate-500"}`}>Rate: ₹{Number(bit.rate || 0).toLocaleString()}</p>
+                              <p className={`text-[8.5px] font-mono mt-1 ${bit.isPaid ? "text-slate-450" : "text-slate-500"}`}>Date: {bit.dateEntry || "-"}</p>
+                              <p className={`text-[8.5px] font-mono mt-0.5 ${bit.isPaid ? "text-slate-450" : "text-slate-500"}`}>Rate: ₹{Number(bit.rate || 0).toLocaleString()}</p>
                               {!bit.isPaid && (
                                 <p className="text-[8.5px] font-mono mt-0.5 text-rose-455 font-black">
                                   Pending Amount: ₹{Math.max(0, bit.rate - (bit.payments || []).reduce((s, p) => s + p.amount, 0)).toLocaleString()}
                                 </p>
                               )}
-                              <p className={`text-[8.5px] font-mono mt-0.5 font-bold ${bit.isPaid ? "text-green-600" : "text-indigo-400"}`}>Usage: {totalFeetUsed} / {bit.capableFeetDepth ?? 950} ft used</p>
+                              <p className={`text-[8.5px] font-mono mt-0.5 font-bold ${bit.isPaid ? "text-emerald-400" : "text-indigo-400"}`}>Usage: {totalFeetUsed} / {bit.capableFeetDepth ?? 950} ft used</p>
                             </div>
 
                             <div className="flex flex-col items-end gap-1 shrink-0 justify-start">
-                              <span className={`text-[11.5px] font-black block ${bit.isPaid ? "text-green-950" : "text-slate-200"}`}>
+                              <span className={`text-[11.5px] font-black block ${bit.isPaid ? "text-slate-200" : "text-slate-200"}`}>
                                 Total: ₹{Number(bit.rate || 0).toLocaleString()}
                               </span>
                               {!bit.isPaid && (
@@ -5368,7 +5368,7 @@ export default function MobileBusiness({
                                   return (
                                     <div
                                       key={hammer.id}
-                                      className={`relative border rounded-2xl p-3.5 space-y-2.5 transition duration-300 ${bgColorClass} ${borderColorClass}`}
+                                      className={`relative border rounded-2xl p-3.5 space-y-2.5 transition duration-300 ${hammer.isPaid ? "bg-emerald-950/30 border-emerald-900/50" : `${bgColorClass} ${borderColorClass}`}`}
                                     >
                                       {/* Extra Usage display in top right corner */}
                                       {showExtraUsage && (
@@ -5386,7 +5386,7 @@ export default function MobileBusiness({
                                             <span className="text-[8.5px] uppercase tracking-wider font-bold font-mono text-slate-500">
                                               Cap: {hammer.capableFeetDepth} ft
                                             </span>
-                                            <span className={`text-[8.5px] font-bold px-1.5 py-0.5 rounded border ${hammer.isPaid ? "bg-black text-emerald-400 border-emerald-900/50" : "bg-red-950 text-rose-200 border-red-900/40"}`}>
+                                            <span className={`text-[8.5px] font-bold px-1.5 py-0.5 rounded border ${hammer.isPaid ? "bg-emerald-950 text-emerald-400 border-emerald-900/50" : "bg-red-950 text-rose-200 border-red-900/40"}`}>
                                               {hammer.isPaid ? "Paid" : "Pending"}
                                             </span>
                                             {hammer.status === "unusable" && (
@@ -5528,21 +5528,6 @@ export default function MobileBusiness({
                                           >
                                             Make Unusable
                                           </button>
-                                          
-                                          {/* Sell Option Button */}
-                                          {hammerSellModalId !== hammer.id ? (
-                                            <button
-                                              type="button"
-                                              onClick={() => {
-                                                setHammerSellModalId(hammer.id);
-                                                setHammerSellDate(new Date().toISOString().split("T")[0]);
-                                                setHammerSellRate(hammer.rate);
-                                              }}
-                                              className="bg-emerald-600 hover:bg-emerald-700 text-white font-bold px-2.5 py-0.5 rounded text-[8px] font-mono uppercase cursor-pointer"
-                                            >
-                                              Sell
-                                            </button>
-                                          ) : null}
                                         </div>
                                       )}
 
@@ -6211,16 +6196,16 @@ export default function MobileBusiness({
                       const totalPending = pending7High + pending7Medium + pending10High + pending10Medium;
 
                       return (
-                        <div key={supplier.id} className={`border rounded-2xl p-3.5 space-y-3 transition-colors duration-300 ${supplier.isPaid ? "bg-green-50 border-green-300" : "bg-slate-900 border-slate-850"}`}>
+                        <div key={supplier.id} className={`border rounded-2xl p-3.5 space-y-3 transition-colors duration-300 ${supplier.isPaid ? "bg-emerald-950/30 border-emerald-900/50" : "bg-slate-900 border-slate-850"}`}>
                           {/* Supplier Header */}
                           <div className="flex justify-between items-start">
                             <div>
-                              <h4 className={`text-sm font-black ${supplier.isPaid ? "text-green-800" : "text-white"}`}>{supplier.companyName}</h4>
-                              <p className={`text-[9px] font-mono mt-0.5 ${supplier.isPaid ? "text-green-700" : "text-indigo-400"}`}>Location: {supplier.location}</p>
+                              <h4 className={`text-sm font-black ${supplier.isPaid ? "text-slate-200" : "text-white"}`}>{supplier.companyName}</h4>
+                              <p className={`text-[9px] font-mono mt-0.5 ${supplier.isPaid ? "text-emerald-400" : "text-indigo-400"}`}>Location: {supplier.location}</p>
                               {supplier.dateEntry && (
-                                <p className={`text-[8px] font-mono ${supplier.isPaid ? "text-green-700" : "text-slate-500"}`}>Date Purchased: {supplier.dateEntry}</p>
+                                <p className={`text-[8px] font-mono ${supplier.isPaid ? "text-slate-400" : "text-slate-500"}`}>Date Purchased: {supplier.dateEntry}</p>
                               )}
-                              <p className={`text-[9px] font-mono font-black mt-1 ${supplier.isPaid ? "text-green-700" : "text-emerald-400"}`}>
+                              <p className={`text-[9px] font-mono font-black mt-1 ${supplier.isPaid ? "text-emerald-400 font-bold" : "text-emerald-400"}`}>
                                 Total Amount: ₹{Number(supplier.grandPrice || supplier.grandTotal || 0).toLocaleString()}
                               </p>
                               {!supplier.isPaid && (
@@ -6228,7 +6213,7 @@ export default function MobileBusiness({
                                   Pending Amount: ₹{Math.max(0, (supplier.grandPrice || supplier.grandTotal || 0) - (supplier.payments || []).reduce((s, p) => s + p.amount, 0)).toLocaleString()}
                                 </p>
                               )}
-                              <span className={`inline-block text-[8px] font-bold px-1.5 py-0.5 rounded mt-1 border ${supplier.isPaid ? "bg-black text-emerald-400 border-emerald-900/50" : "bg-red-950 text-rose-200 border-red-900/40"}`}>
+                              <span className={`inline-block text-[8px] font-bold px-1.5 py-0.5 rounded mt-1 border ${supplier.isPaid ? "bg-emerald-950 text-emerald-400 border-emerald-900/50" : "bg-red-950 text-rose-200 border-red-900/40"}`}>
                                 {supplier.isPaid ? "Paid" : "Pending"}
                               </span>
                             </div>
@@ -7549,33 +7534,33 @@ export default function MobileBusiness({
                       const associatedVehicle = vehicles.find(v => v.id === s.vehicleId);
                       return (
                         <div key={s.id} className={`p-2.5 rounded-xl text-[10px] font-mono border transition-colors duration-300 relative ${
-                          s.isPaid ? "bg-green-50 border-green-300" : "bg-slate-950 border-slate-850/50"
+                          s.isPaid ? "bg-emerald-950/30 border-emerald-900/50" : "bg-slate-955 border-slate-850/50"
                         }`}>
                           <div className="flex justify-between items-start">
                             <div className="min-w-0 flex-1 pr-4">
                               <div className="flex items-center gap-1.5 flex-wrap">
-                                <span className={`vehicle-number-badge text-[8.5px] px-1.5 py-0.2 rounded font-bold uppercase ${
-                                  s.isPaid ? "bg-green-200 text-green-800" : "bg-indigo-950 text-indigo-400"
+                                <span className={`vehicle-number-badge text-[8.5px] px-1.5 py-0.2 rounded font-bold uppercase border ${
+                                  s.isPaid ? "bg-emerald-950 text-emerald-400 border-emerald-900/40" : "bg-indigo-950 text-indigo-400 border-indigo-900/20"
                                 }`}>{s.vehicleId}</span>
                                 {associatedVehicle && (
-                                  <span className={`text-[8.5px] font-semibold truncate max-w-[100px] ${s.isPaid ? "text-green-700" : "text-slate-400"}`}>({associatedVehicle.vehicleName})</span>
+                                  <span className={`text-[8.5px] font-semibold truncate max-w-[100px] ${s.isPaid ? "text-emerald-400" : "text-slate-400"}`}>({associatedVehicle.vehicleName})</span>
                                 )}
-                                <span className={`text-[8.5px] ${s.isPaid ? "text-green-600" : "text-slate-500"}`}>{s.date}</span>
-                                <span className={`text-[8px] font-bold px-1.5 py-0.2 rounded border ${s.isPaid ? "bg-black text-emerald-400 border-emerald-900/50" : "bg-red-950 text-rose-200 border-red-900/40"}`}>
+                                <span className={`text-[8.5px] ${s.isPaid ? "text-slate-450" : "text-slate-500"}`}>{s.date}</span>
+                                <span className={`text-[8px] font-bold px-1.5 py-0.2 rounded border ${s.isPaid ? "bg-emerald-950 text-emerald-400 border-emerald-900/50" : "bg-red-950 text-rose-200 border-red-900/40"}`}>
                                   {s.isPaid ? "Paid" : "Pending"}
                                 </span>
                               </div>
-                              <h4 className={`font-bold mt-1 flex items-center gap-1 ${s.isPaid ? "text-green-800" : "text-slate-200"}`}>
-                                <Wrench className={`w-3 h-3 shrink-0 ${s.isPaid ? "text-green-600" : "text-indigo-400"}`} />
+                              <h4 className={`font-bold mt-1 flex items-center gap-1 ${s.isPaid ? "text-slate-200" : "text-slate-200"}`}>
+                                <Wrench className={`w-3 h-3 shrink-0 ${s.isPaid ? "text-emerald-400" : "text-indigo-400"}`} />
                                 {s.serviceType}
                               </h4>
                               {s.spareParts && (
-                                <p className={`text-[8px] mt-1 ${s.isPaid ? "text-green-700" : "text-slate-400"}`}>
-                                  <span className={s.isPaid ? "text-green-600" : "text-slate-500"}>Parts:</span> {s.spareParts}
+                                <p className={`text-[8px] mt-1 ${s.isPaid ? "text-slate-400" : "text-slate-400"}`}>
+                                  <span className={s.isPaid ? "text-slate-500" : "text-slate-500"}>Parts:</span> {s.spareParts}
                                 </p>
                               )}
                               {s.remarks && (
-                                <p className={`text-[8px] italic mt-0.5 ${s.isPaid ? "text-green-600" : "text-slate-500"}`}>
+                                <p className={`text-[8px] italic mt-0.5 ${s.isPaid ? "text-slate-500" : "text-slate-500"}`}>
                                   "{s.remarks}"
                                 </p>
                               )}
@@ -7794,22 +7779,22 @@ export default function MobileBusiness({
                     const displayAmount = Number(f.totalAmount ?? f.cost ?? ((f.liters ?? 0) * (f.perLiterCost ?? 0)));
                     return (
                       <div key={f.id} className={`p-2.5 rounded-xl text-[10px] font-mono border transition-colors duration-300 ${
-                        f.isPaid ? "bg-green-50 border-green-300" : "bg-slate-950 border-slate-850/50"
+                        f.isPaid ? "bg-emerald-950/30 border-emerald-900/50" : "bg-slate-955 border-slate-850/50"
                       }`}>
                         <div className="flex justify-between items-center gap-2">
                           <div className="min-w-0">
-                            <span className={`text-[8.5px] block truncate flex items-center gap-1 ${f.isPaid ? "text-green-700" : "text-slate-500"}`}>
+                            <span className={`text-[8.5px] block truncate flex items-center gap-1 ${f.isPaid ? "text-slate-455" : "text-slate-500"}`}>
                               <span>{f.dateTime}</span>
-                              <Car className={`w-3 h-3 shrink-0 ${f.isPaid ? "text-green-600" : "text-emerald-500"}`} />
+                              <Car className={`w-3 h-3 shrink-0 ${f.isPaid ? "text-emerald-400" : "text-emerald-500"}`} />
                               <span className="truncate">{f.vehicleName}</span>
                             </span>
-                            <span className={`font-bold block truncate ${f.isPaid ? "text-green-800" : "text-slate-350"}`}>{f.fuelType} ₹ {f.liters} Liters ({f.perLiterCost}/L)</span>
-                            <span className={`inline-block text-[8px] font-bold px-1.5 py-0.2 rounded mt-0.5 border ${f.isPaid ? "bg-black text-emerald-400 border-emerald-900/50" : "bg-red-950 text-rose-200 border-red-900/40"}`}>
+                            <span className={`font-bold block truncate ${f.isPaid ? "text-slate-200" : "text-slate-350"}`}>{f.fuelType} ₹ {f.liters} Liters ({f.perLiterCost}/L)</span>
+                            <span className={`inline-block text-[8px] font-bold px-1.5 py-0.2 rounded mt-0.5 border ${f.isPaid ? "bg-emerald-950 text-emerald-400 border-emerald-900/50" : "bg-red-950 text-rose-200 border-red-900/40"}`}>
                               {f.isPaid ? "Paid" : "Pending"}
                             </span>
                           </div>
                           <div className="flex flex-col items-end gap-1 shrink-0 justify-start">
-                            <span className="text-[11.5px] font-black text-black block">
+                            <span className="text-[11.5px] font-black text-slate-200 block">
                               Total: ₹{displayAmount.toLocaleString()}
                             </span>
                             {!f.isPaid && (
@@ -8134,21 +8119,21 @@ export default function MobileBusiness({
                       const associatedVehicle = vehicles.find(v => v.id === m.vehicleId);
                       return (
                         <div key={m.id} className={`p-2.5 rounded-xl text-[10px] font-mono border transition-colors duration-300 relative ${
-                          m.isPaid ? "bg-green-50 border-green-300" : "bg-slate-950 border-slate-850/50"
+                          m.isPaid ? "bg-emerald-950/30 border-emerald-900/50" : "bg-slate-955 border-slate-850/50"
                         }`}>
                           <div className="flex justify-between items-start">
                             <div className="min-w-0 flex-1 pr-4">
                               <div className="flex items-center gap-1.5 flex-wrap">
-                                <span className={`vehicle-number-badge text-[8.5px] px-1.5 py-0.2 rounded font-bold uppercase ${
-                                  m.isPaid ? "bg-green-200 text-green-800" : (m.vehicleId === "All" ? "bg-teal-950 text-teal-400" : "bg-indigo-950 text-indigo-400")
+                                <span className={`vehicle-number-badge text-[8.5px] px-1.5 py-0.2 rounded font-bold uppercase border ${
+                                  m.isPaid ? "bg-emerald-950 text-emerald-400 border-emerald-900/40" : (m.vehicleId === "All" ? "bg-teal-950 text-teal-400 border border-teal-900/20" : "bg-indigo-950 text-indigo-400 border border-indigo-900/20")
                                 }`}>
                                   {m.vehicleId === "All" ? "GENERAL" : `${m.vehicleId}`}
                                 </span>
                                 {associatedVehicle && (
-                                  <span className={`text-[8.5px] font-semibold truncate max-w-[100px] ${m.isPaid ? "text-green-700" : "text-slate-400"}`}>({associatedVehicle.vehicleName})</span>
+                                  <span className={`text-[8.5px] font-semibold truncate max-w-[100px] ${m.isPaid ? "text-emerald-400" : "text-slate-400"}`}>({associatedVehicle.vehicleName})</span>
                                 )}
-                                <span className={`text-[8.5px] ${m.isPaid ? "text-green-600" : "text-slate-500"}`}>{m.date}</span>
-                                <span className={`text-[8px] font-bold px-1.5 py-0.2 rounded border ${m.isPaid ? "bg-black text-emerald-400 border-emerald-900/50" : "bg-red-950 text-rose-200 border-red-900/40"}`}>
+                                <span className={`text-[8.5px] ${m.isPaid ? "text-slate-450" : "text-slate-500"}`}>{m.date}</span>
+                                <span className={`text-[8px] font-bold px-1.5 py-0.2 rounded border ${m.isPaid ? "bg-emerald-950 text-emerald-400 border-emerald-900/50" : "bg-red-950 text-rose-200 border-red-900/40"}`}>
                                   {m.isPaid ? "Paid" : "Pending"}
                                 </span>
                               </div>
@@ -8491,7 +8476,7 @@ export default function MobileBusiness({
                         {/* Status tag indicator */}
                         <span className={`text-[8.5px] font-mono font-bold uppercase px-2 py-0.5 rounded border ${
                           hasPayment?.status === "Paid" 
-                            ? "bg-black text-emerald-400 border-emerald-900/50" 
+                            ? "bg-emerald-950 text-emerald-400 border-emerald-900/50" 
                             : "bg-red-950 text-rose-200 border-red-900/40"
                         }`}>
                           {hasPayment?.status || "Pending"}
@@ -9496,23 +9481,23 @@ export default function MobileBusiness({
 
                 return (
                   <div key={b.id} className={`p-3.5 rounded-2xl space-y-3 shadow-md border transition-colors duration-300 ${
-                    b.status === "Paid" ? "bg-green-50 border-green-300" : "bg-slate-900 border-slate-850"
+                    b.status === "Paid" ? "bg-emerald-950/30 border-emerald-900/50" : "bg-slate-900 border-slate-850"
                   }`}>
                     <div className="flex justify-between items-start">
                       <div>
                         <div className="flex items-center gap-1.5">
                           <span className={`text-[8px] font-mono px-1.5 py-0.5 rounded border font-extrabold uppercase tracking-widest ${
-                            b.status === "Paid" ? "bg-green-200 text-green-800 border-green-300" : "bg-slate-950 text-indigo-400 border-indigo-900"
+                            b.status === "Paid" ? "bg-emerald-950 text-emerald-400 border border-emerald-900/40" : "bg-slate-950 text-indigo-400 border-indigo-900/20"
                           }`}>
                             {b.invoiceNo}
                           </span>
                           <h4 className="text-xs font-black text-red-500 truncate max-w-[170px]">{b.clientName}</h4>
                         </div>
-                        <p className={`text-[8px] font-mono mt-1 ${b.status === "Paid" ? "text-green-750" : "text-slate-500"}`}>Date: {formatDateToDMY(b.billDate)} | Due: {formatDateToDMY(b.dueDate)}</p>
+                        <p className={`text-[8px] font-mono mt-1 ${b.status === "Paid" ? "text-slate-455" : "text-slate-500"}`}>Date: {formatDateToDMY(b.billDate)} | Due: {formatDateToDMY(b.dueDate)}</p>
                       </div>
 
                       <span className={`text-[8.5px] font-mono font-bold uppercase px-2 py-0.5 rounded border ${
-                        b.status === "Paid" ? "bg-black text-emerald-400 border-emerald-900/50" : "bg-red-950 text-rose-200 border-red-900/40"
+                        b.status === "Paid" ? "bg-emerald-950 text-emerald-400 border-emerald-900/50" : "bg-red-950 text-rose-200 border-red-900/40"
                       }`}>
                         {b.status || "Pending"}
                       </span>

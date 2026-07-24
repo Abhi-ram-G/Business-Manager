@@ -1219,7 +1219,7 @@ export default function MobileDashboard({
                         <td className="py-2.5 text-center">
                           <span className={`px-1.5 py-0.5 rounded text-[8px] font-bold border ${
                             b.status === "Paid" 
-                              ? "bg-emerald-950/60 text-emerald-400 border-emerald-900/30" 
+                              ? "bg-emerald-950 text-emerald-400 border-emerald-900/30" 
                               : "bg-amber-950/60 text-amber-400 border-amber-900/30"
                           }`}>
                             {b.status}
@@ -1258,7 +1258,7 @@ export default function MobileDashboard({
                           <td className="py-2.5 text-center">
                             <span className={`px-1.5 py-0.5 rounded text-[8px] font-bold border ${
                               s.status === "Paid"
-                                ? "bg-emerald-950/60 text-emerald-400 border-emerald-900/30"
+                                ? "bg-emerald-950 text-emerald-400 border-emerald-900/30"
                                 : "bg-amber-950/60 text-amber-400 border-amber-900/30"
                             }`}>
                               {s.status}
@@ -1359,7 +1359,7 @@ export default function MobileDashboard({
                         <td className="py-2.5 text-center">
                           <span className={`px-1.5 py-0.5 rounded text-[8px] font-bold border ${
                             l.status === "Paid"
-                              ? "bg-emerald-950/60 text-emerald-400 border-emerald-900/30"
+                              ? "bg-emerald-950 text-emerald-400 border-emerald-900/30"
                               : "bg-amber-950/60 text-amber-400 border-amber-900/30"
                           }`}>
                             {l.status}
