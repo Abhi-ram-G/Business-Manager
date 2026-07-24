@@ -32,6 +32,7 @@ import {
   toLoanGivenApiPayload,
   toLoanReceivedApiPayload,
 } from "../lib/sharedApi";
+import { translateText } from "../utils/translate";
 
 interface MobileFinanceProps {
   apiBaseUrl: string;
@@ -42,6 +43,7 @@ interface MobileFinanceProps {
   vehicles?: Vehicle[];
   triggerOnlineSync: (op: string) => void;
   onSharedDataChanged?: () => Promise<void> | void;
+  language?: "en" | "ta";
 }
 
 export default function MobileFinance({
@@ -52,8 +54,10 @@ export default function MobileFinance({
   setLoansReceived,
   vehicles = [],
   triggerOnlineSync,
-  onSharedDataChanged
+  onSharedDataChanged,
+  language = "en"
 }: MobileFinanceProps) {
+  const t = (txt: string) => translateText(txt, language);
   // Toggle between LENT (Given) and BORROWED (Got) and VEHICLE LOANS
   const [activeFinanceTab, setActiveFinanceTab] = useState<"lent" | "borrowed" | "vehicle">(() => {
     return (localStorage.getItem("srs_active_finance_tab") as any) || "lent";
@@ -570,7 +574,7 @@ export default function MobileFinance({
           }`}
         >
           <ArrowUpRight className="w-4 h-4 text-emerald-400 shrink-0" />
-          <span>Amount Lent (Given)</span>
+          <span>{t("Amount Lent (Given)")}</span>
         </button>
         <button
           onClick={() => {
@@ -583,7 +587,7 @@ export default function MobileFinance({
           }`}
         >
           <ArrowDownLeft className="w-4 h-4 text-amber-500 shrink-0" />
-          <span>Amount Got (Borrowed)</span>
+          <span>{t("Amount Got (Borrowed)")}</span>
         </button>
         <button
           onClick={() => {
@@ -597,7 +601,7 @@ export default function MobileFinance({
           }`}
         >
           <Truck className="w-4 h-4 text-indigo-400 shrink-0" />
-          <span>Vehicle Loans</span>
+          <span>{t("Vehicle Loans")}</span>
         </button>
       </div>
 
@@ -606,45 +610,45 @@ export default function MobileFinance({
         {activeFinanceTab === "lent" ? (
           <>
             <div>
-              <span className="text-[8px] font-mono text-slate-500 block uppercase font-bold">Total Given</span>
+              <span className="text-[8px] font-mono text-slate-500 block uppercase font-bold">{t("Total Given")}</span>
               <span className="text-[11.5px] text-slate-300 font-bold block mt-0.5">₹{totalLentSum.toLocaleString()}</span>
             </div>
             <div>
-              <span className="text-[8px] font-mono text-slate-500 block uppercase font-bold text-emerald-450">Interest Ret</span>
+              <span className="text-[8px] font-mono text-slate-500 block uppercase font-bold text-emerald-450">{t("Interest Ret")}</span>
               <span className="text-[11.5px] text-emerald-400 font-bold block mt-0.5">₹{totalLentInterestEarned.toLocaleString()}</span>
             </div>
             <div>
-              <span className="text-[8px] font-mono text-slate-500 block uppercase font-bold text-rose-450">Pending collect</span>
+              <span className="text-[8px] font-mono text-slate-500 block uppercase font-bold text-rose-450">{t("Pending collect")}</span>
               <span className="text-[11.5px] text-rose-400 font-bold block mt-0.5">₹{pendingCollectionSum.toLocaleString()}</span>
             </div>
           </>
         ) : activeFinanceTab === "borrowed" ? (
           <>
             <div>
-              <span className="text-[8px] font-mono text-slate-500 block uppercase font-bold">Total Borrowed</span>
+              <span className="text-[8px] font-mono text-slate-500 block uppercase font-bold">{t("Total Borrowed")}</span>
               <span className="text-[11.5px] text-slate-300 font-bold block mt-0.5">₹{totalBorrowedSum.toLocaleString()}</span>
             </div>
             <div>
-              <span className="text-[8px] font-mono text-slate-500 block uppercase font-bold text-rose-450">Interest Paid</span>
+              <span className="text-[8px] font-mono text-slate-500 block uppercase font-bold text-rose-450">{t("Interest Paid")}</span>
               <span className="text-[11.5px] text-rose-400 font-black block mt-0.5">₹{totalBorrowedInterestPaid.toLocaleString()}</span>
             </div>
             <div>
-              <span className="text-[8px] font-mono text-slate-500 block uppercase font-bold text-amber-450">Outstanding</span>
+              <span className="text-[8px] font-mono text-slate-500 block uppercase font-bold text-amber-450">{t("Outstanding")}</span>
               <span className="text-[11.5px] text-amber-400 font-bold block mt-0.5">₹{outstandingAmountSum.toLocaleString()}</span>
             </div>
           </>
         ) : (
           <>
             <div>
-              <span className="text-[8px] font-mono text-slate-500 block uppercase font-bold">Vehicle Debt</span>
+              <span className="text-[8px] font-mono text-slate-500 block uppercase font-bold">{t("Vehicle Debt")}</span>
               <span className="text-[11.5px] text-slate-300 font-bold block mt-0.5">₹{totalVehicleLoanSum.toLocaleString()}</span>
             </div>
             <div>
-              <span className="text-[8px] font-mono text-slate-500 block uppercase font-bold text-rose-450">Interest Paid</span>
+              <span className="text-[8px] font-mono text-slate-500 block uppercase font-bold text-rose-450">{t("Interest Paid")}</span>
               <span className="text-[11.5px] text-rose-400 font-black block mt-0.5">₹{totalVehicleInterestPaid.toLocaleString()}</span>
             </div>
             <div>
-              <span className="text-[8px] font-mono text-slate-500 block uppercase font-bold text-indigo-450">Outstanding</span>
+              <span className="text-[8px] font-mono text-slate-500 block uppercase font-bold text-indigo-455">{t("Outstanding")}</span>
               <span className="text-[11.5px] text-indigo-400 font-bold block mt-0.5">₹{outstandingVehicleAmountSum.toLocaleString()}</span>
             </div>
           </>

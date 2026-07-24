@@ -305,6 +305,8 @@ function PaymentTrackerSection({
   );
 }
 
+import { translateText } from "../utils/translate";
+
 interface MobileBusinessProps {
   key?: string;
   apiBaseUrl: string;
@@ -330,6 +332,7 @@ interface MobileBusinessProps {
   triggerOnlineSync: (op: string) => void;
   onSharedDataChanged?: () => Promise<void> | void;
   initialSubSection?: "labour" | "bit" | "attendance" | "vehicles" | "salaries";
+  language?: "en" | "ta";
 }
 
 export default function MobileBusiness({
@@ -355,8 +358,10 @@ export default function MobileBusiness({
   isOnline,
   triggerOnlineSync,
   onSharedDataChanged,
-  initialSubSection = "labour"
+  initialSubSection = "labour",
+  language = "en"
 }: MobileBusinessProps) {
+  const t = (txt: string) => translateText(txt, language);
   // Navigation tabs inside Business Section
   const [activeSubSection, setActiveSubSection] = React.useState<"labour" | "bit" | "attendance" | "vehicles" | "salaries">(() => {
     return (localStorage.getItem("srs_active_sub_section") as any) || initialSubSection;
@@ -3558,7 +3563,7 @@ export default function MobileBusiness({
     <div id="mobile-business-root" className="space-y-4">
       
       {/* SECTION METADATA SPLIT SWITCHER HEADER */}
-      <div className="grid grid-cols-3 gap-1.5 bg-slate-950 p-1 rounded-xl border border-slate-850">
+      <div className="grid grid-cols-3 gap-1.5 bg-slate-955 p-1 rounded-xl border border-slate-850">
         <button
           onClick={() => {
             setActiveMainSection("management");
@@ -3568,7 +3573,7 @@ export default function MobileBusiness({
           }`}
         >
           <Briefcase className="w-4 h-4" />
-          <span>Management</span>
+          <span>{t("Management")}</span>
         </button>
         <button
           onClick={() => {
@@ -3579,7 +3584,7 @@ export default function MobileBusiness({
           }`}
         >
           <FileText className="w-4 h-4" />
-          <span>Bill / Invoices</span>
+          <span>{t("Bill / Invoices")}</span>
         </button>
         <button
           onClick={() => {
@@ -3590,7 +3595,7 @@ export default function MobileBusiness({
           }`}
         >
           <Download className="w-4 h-4" />
-          <span>Reports</span>
+          <span>{t("Reports")}</span>
         </button>
       </div>
 
@@ -3612,7 +3617,7 @@ export default function MobileBusiness({
               }`}
             >
               <Users className="w-3.5 h-3.5" />
-              <span>Labour Details</span>
+              <span>{t("Labour Details")}</span>
             </button>
             <button
               onClick={() => {
@@ -3627,7 +3632,7 @@ export default function MobileBusiness({
               }`}
             >
               <Package className="w-3.5 h-3.5" />
-              <span>Bit Hammer Pipe</span>
+              <span>{t("Bit Hammer Pipe")}</span>
             </button>
             <button
               onClick={() => {
@@ -3640,7 +3645,7 @@ export default function MobileBusiness({
               }`}
             >
               <Car className="w-3.5 h-3.5" />
-              <span>Vehicles</span>
+              <span>{t("Vehicles")}</span>
             </button>
           </div>
 
@@ -3656,11 +3661,11 @@ export default function MobileBusiness({
                 className={`py-1.5 rounded text-[8.5px] font-bold uppercase tracking-wider flex items-center justify-center gap-1 transition ${
                   activeSubSection === "labour"
                     ? "bg-indigo-950 text-indigo-400 border border-indigo-900/30 font-extrabold"
-                    : "text-slate-500 hover:text-slate-350 border border-transparent font-medium"
+                    : "text-slate-500 hover:text-slate-355 border border-transparent font-medium"
                 }`}
               >
                 <Users className="w-3 h-3" />
-                <span>Labour</span>
+                <span>{t("Labour")}</span>
               </button>
               <button
                 onClick={() => {
@@ -3671,11 +3676,11 @@ export default function MobileBusiness({
                 className={`py-1.5 rounded text-[8.5px] font-bold uppercase tracking-wider flex items-center justify-center gap-1 transition ${
                   activeSubSection === "attendance"
                     ? "bg-indigo-950 text-indigo-400 border border-indigo-900/30 font-extrabold"
-                    : "text-slate-500 hover:text-slate-350 border border-transparent font-medium"
+                    : "text-slate-500 hover:text-slate-355 border border-transparent font-medium"
                 }`}
               >
                 <Calendar className="w-3 h-3" />
-                <span>Attendance</span>
+                <span>{t("Attendance")}</span>
               </button>
               <button
                 onClick={() => {
@@ -3686,11 +3691,11 @@ export default function MobileBusiness({
                 className={`py-1.5 rounded text-[8.5px] font-bold uppercase tracking-wider flex items-center justify-center gap-1 transition ${
                   activeSubSection === "salaries"
                     ? "bg-indigo-950 text-indigo-400 border border-indigo-900/30 font-extrabold"
-                    : "text-slate-500 hover:text-slate-350 border border-transparent font-medium"
+                    : "text-slate-500 hover:text-slate-355 border border-transparent font-medium"
                 }`}
               >
                 <DollarSign className="w-3 h-3" />
-                <span>Salaries</span>
+                <span>{t("Salaries")}</span>
               </button>
             </div>
           )}

@@ -2911,6 +2911,7 @@ export default function App() {
                             triggerOnlineSync={(op) => triggerLocalAction(op, () => {})}
                             onSharedDataChanged={announceSharedDataChange}
                             initialSubSection={selectedMobileModule === "vehicle" ? "vehicles" : "labour"}
+                            language={language}
                           />
                         )}
 
@@ -2923,6 +2924,7 @@ export default function App() {
                             setLoansReceived={setLoansReceived}
                             vehicles={vehicles}
                             triggerOnlineSync={(op) => triggerLocalAction(op, () => {})}
+                            language={language}
                           />
                         )}
 
@@ -2933,6 +2935,7 @@ export default function App() {
                             setFamilyExpenses={setFamilyExpenses}
                             familyMembers={familyMembers}
                             incomeEntries={incomeEntries}
+                            language={language}
                           />
                         )}
 

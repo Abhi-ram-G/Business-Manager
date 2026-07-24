@@ -23,6 +23,8 @@ import {
 import { FamilyExpense, FamilyMember, IncomeEntry } from "../types";
 import { mapExpenseFromApi, requestJson, toExpenseApiPayload } from "../lib/sharedApi";
 
+import { translateText } from "../utils/translate";
+
 interface MobileFamilyProps {
   apiBaseUrl: string;
   familyExpenses: FamilyExpense[];
@@ -30,6 +32,7 @@ interface MobileFamilyProps {
   familyMembers: FamilyMember[];
   incomeEntries: IncomeEntry[];
   onSharedDataChanged?: () => Promise<void> | void;
+  language?: "en" | "ta";
 }
 
 export default function MobileFamily({
@@ -38,8 +41,10 @@ export default function MobileFamily({
   setFamilyExpenses,
   familyMembers,
   incomeEntries,
-  onSharedDataChanged
+  onSharedDataChanged,
+  language = "en"
 }: MobileFamilyProps) {
+  const t = (txt: string) => translateText(txt, language);
   // Form display and editing states
   const [isExpenseFormOpen, setIsExpenseFormOpen] = useState(false);
   const [editingExpenseId, setEditingExpenseId] = useState<string | null>(null);
@@ -170,16 +175,16 @@ export default function MobileFamily({
       {/* 1. KEY VALUES STRIP */}
       <div className="bg-gradient-to-br from-rose-950/20 to-slate-900 border border-slate-850 p-3 rounded-xl">
         <div className="flex items-center gap-1.5 mb-1.5">
-          <Wallet className="w-4 h-4 text-rose-450" />
-          <span className="text-[9px] uppercase font-mono tracking-wider font-bold text-slate-500">Family Pot Ledger</span>
+          <Wallet className="w-4 h-4 text-rose-455" />
+          <span className="text-[9px] uppercase font-mono tracking-wider font-bold text-slate-500">{t("Family Pot Ledger")}</span>
         </div>
                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
           <div>
-            <span className="text-slate-550 text-[8px] font-mono leading-none block uppercase">TOTAL INCOME SOURCE</span>
+            <span className="text-slate-550 text-[8px] font-mono leading-none block uppercase">{t("TOTAL INCOME SOURCE")}</span>
             <span className="text-emerald-400 font-extrabold mt-0.5 block">₹{totalIncome.toLocaleString()}</span>
           </div>
           <div>
-            <span className="text-slate-550 text-[8px] font-mono leading-none block uppercase">TOTAL OUTGOINGS</span>
+            <span className="text-slate-550 text-[8px] font-mono leading-none block uppercase">{t("CUMULATIVE SPENT")}</span>
             <span className="text-rose-400 font-extrabold mt-0.5 block">₹{totalExpenses.toLocaleString()}</span>
           </div>
         </div>
@@ -187,7 +192,7 @@ export default function MobileFamily({
         {/* Savings Analysis Bar */}
         <div className="mt-3 pt-2.5 border-t border-slate-850/60 text-[9px] font-mono space-y-1">
           <div className="flex justify-between text-slate-400">
-            <span>SAVINGS RATIO ANALYSIS:</span>
+            <span>{t("SAVINGS RATE")}:</span>
             <span className="text-teal-400 font-bold">₹{remainingSavings.toLocaleString()} ({savingsRate}% Left)</span>
           </div>
           <div className="h-2 bg-slate-950 rounded-full overflow-hidden">
@@ -202,34 +207,34 @@ export default function MobileFamily({
       {/* 2. REASON AND DETAILS ENTRY FORM */}
       <div className="space-y-3">
         <div className="flex justify-between items-center px-1">
-          <span className="text-xs font-mono font-bold text-slate-400 uppercase">Expense Logbook</span>
+          <span className="text-xs font-mono font-bold text-slate-400 uppercase">{t("Expense Logbook")}</span>
           <button
             onClick={handleOpenAddExpense}
-            className="bg-rose-600 hover:bg-rose-500 py-1 px-2.5 rounded-lg text-[9px] font-bold text-white uppercase tracking-wider flex items-center gap-0.5 animate-pulse"
+            className="bg-rose-600 hover:bg-rose-500 py-1 px-2.5 rounded-lg text-[9px] font-bold text-white uppercase tracking-wider flex items-center gap-0.5 animate-pulse cursor-pointer"
           >
-            <Plus className="w-3.5 h-3.5" /> Add Expense (+)
+            <Plus className="w-3.5 h-3.5" /> {t("Add Expense")} (+)
           </button>
         </div>
 
         {isExpenseFormOpen && (
           <form onSubmit={handleSaveExpense} className="bg-slate-900 border border-slate-800 p-3 rounded-xl space-y-3 text-xs">
             <span className="text-[10px] font-mono font-black text-rose-400 block uppercase">
-              {editingExpenseId ? "Edit Outflow entry" : "Add Family Expense Outflow"}
+              {editingExpenseId ? t("Edit Outflow entry") : t("Add Family Expense")}
             </span>
 
             <div className="space-y-2 font-mono">
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                 <div>
-                  <label className="text-[9px] text-slate-500 block">FAMILY MEMBER</label>
+                  <label className="text-[9px] text-slate-500 block">{t("FAMILY MEMBER")}</label>
                   <input
                     value={memberValue}
                     onChange={(e) => setMemberValue(e.target.value)}
-                    placeholder="Enter name"
+                    placeholder={t("Enter name")}
                     className="w-full bg-slate-950 border border-slate-800 p-1 text-[10px] text-white rounded"
                   />
                 </div>
                 <div>
-                  <label className="text-[9px] text-slate-500 block">AMOUNT VALUE (₹)</label>
+                  <label className="text-[9px] text-slate-500 block">{t("AMOUNT")} (₹)</label>
                   <input
                     type="number"
                     value={expAmount}
@@ -242,19 +247,19 @@ export default function MobileFamily({
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                 <div>
-                  <label className="text-[9px] text-slate-500 block">REASON SPENT Category</label>
+                  <label className="text-[9px] text-slate-500 block">{t("Category")}</label>
                   <select
                     value={expReason}
                     onChange={(e) => setExpReason(e.target.value as any)}
                     className="w-full bg-slate-950 border border-slate-800 p-1 text-[10px] text-white rounded"
                   >
                     {reasonDropdownOptions.map(r => (
-                      <option key={r} value={r}>{r}</option>
+                      <option key={r} value={r}>{t(r)}</option>
                     ))}
                   </select>
                 </div>
                 <div>
-                  <label className="text-[9px] text-slate-500 block">DATE OF PAY</label>
+                  <label className="text-[9px] text-slate-500 block">{t("Date")}</label>
                   <input
                     type="date"
                     value={expDate}
@@ -266,12 +271,12 @@ export default function MobileFamily({
 
               {expReason === "Other" && (
                 <div>
-                  <label className="text-[9px] text-slate-500 block">OTHER REASON</label>
+                  <label className="text-[9px] text-slate-500 block">{t("OTHER REASON")}</label>
                   <input
                     type="text"
                     value={expOtherReason}
                     onChange={(e) => setExpOtherReason(e.target.value)}
-                    placeholder="Enter reason"
+                    placeholder={t("Enter reason")}
                     className="w-full bg-slate-950 border border-slate-800 p-1 text-[10px] text-white rounded"
                   />
                 </div>
@@ -279,8 +284,8 @@ export default function MobileFamily({
             </div>
 
             <div className="flex gap-2 justify-end pt-1">
-              <button type="button" onClick={() => setIsExpenseFormOpen(false)} className="px-3 bg-slate-950 text-slate-400 py-1 rounded">Cancel</button>
-              <button type="submit" className="px-4 bg-rose-650 text-white font-bold py-1 rounded">Save Expense</button>
+              <button type="button" onClick={() => setIsExpenseFormOpen(false)} className="px-3 bg-slate-950 text-slate-400 py-1 rounded cursor-pointer">{t("Cancel")}</button>
+              <button type="submit" className="px-4 bg-rose-650 text-white font-bold py-1 rounded cursor-pointer">{t("Save")}</button>
             </div>
           </form>
         )}
@@ -290,18 +295,18 @@ export default function MobileFamily({
           {familyExpenses.map(e => (
             <div key={e.id} className="bg-slate-900 border border-slate-850 p-2.5 rounded-xl flex items-center justify-between text-xs transition hover:border-rose-900/40">
               <div className="min-w-0 pr-2">
-                <span className="text-[8.5px] font-mono text-slate-500 block">Member: {e.familyMemberName} • {e.date}</span>
-                <span className="font-bold text-slate-200 block">{e.reason}</span>
+                <span className="text-[8.5px] font-mono text-slate-500 block">{t("Member")}: {e.familyMemberName} • {e.date}</span>
+                <span className="font-bold text-slate-200 block">{t(e.reason)}</span>
               </div>
 
               <div className="flex items-center gap-3">
                 <span className="font-black text-rose-400 font-mono">₹{e.amount}</span>
                 
                 <div className="flex gap-3">
-                  <button onClick={() => handleOpenEditExpense(e)} className="p-1.5 bg-slate-950 text-slate-500 hover:text-white rounded">
+                  <button onClick={() => handleOpenEditExpense(e)} className="p-1.5 bg-slate-955 text-slate-500 hover:text-white rounded cursor-pointer">
                     <Edit className="w-4 h-4" />
                   </button>
-                  <button onClick={() => handleDeleteExpense(e.id, `${e.reason} (₹${e.amount})`)} className="p-1.5 bg-rose-950/20 text-rose-455 rounded">
+                  <button onClick={() => handleDeleteExpense(e.id, `${e.reason} (₹${e.amount})`)} className="p-1.5 bg-rose-955 text-rose-455 rounded cursor-pointer">
                     <Trash2 className="w-4 h-4" />
                   </button>
                 </div>
@@ -313,12 +318,12 @@ export default function MobileFamily({
 
       {/* 4. ANALYTICS REPORTS ACCORDION BOXES */}
       <div className="bg-slate-900 border border-slate-850 rounded-2xl p-3.5 space-y-3">
-        <span className="text-[10px] uppercase font-mono font-black text-slate-400 block tracking-tight">Analytical Outflow Reports</span>
+        <span className="text-[10px] uppercase font-mono font-black text-slate-400 block tracking-tight">{t("Analytical Outflow Reports")}</span>
         
         {/* A. Member Wise Expenses */}
         <div className="space-y-1.5 pt-1 text-[9.5px]">
-          <span className="text-[8.5px] text-slate-500 font-mono font-bold block uppercase tracking-wider">A. MEMBER-WISE EXPENSES:</span>
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-slate-350">
+          <span className="text-[8.5px] text-slate-500 font-mono font-bold block uppercase tracking-wider">{t("A. MEMBER-WISE EXPENSES:")}</span>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-slate-355">
             {memberExpenses.map((m, idx) => (
               <div key={idx} className="bg-slate-950 p-1.5 rounded flex justify-between">
                 <span className="truncate w-14 text-slate-550 font-sans">{m.name}:</span>
@@ -330,21 +335,21 @@ export default function MobileFamily({
 
         {/* B. Monthly Expenses */}
         <div className="space-y-1 text-[9.5px] border-t border-slate-850/60 pt-2.5">
-          <span className="text-[8.5px] text-slate-500 font-mono font-bold block uppercase">B. MONTHLY EXPENSES:</span>
+          <span className="text-[8.5px] text-slate-500 font-mono font-bold block uppercase">{t("B. MONTHLY EXPENSES:")}</span>
           <div className="flex justify-between items-center bg-slate-950 p-2 rounded">
-            <span className="font-semibold text-slate-400">Total Spent (June 2026):</span>
+            <span className="font-semibold text-slate-400">{t("Total Spent (June 2026)")}:</span>
             <span className="text-rose-455 font-black font-mono">₹{monthlyExpensesTotal.toLocaleString()}</span>
           </div>
         </div>
 
         {/* C. Category Wise Expenses */}
         <div className="space-y-1.5 border-t border-slate-850/60 pt-2.5 text-[9.5px]">
-          <span className="text-[8.5px] text-slate-500 font-mono font-bold block uppercase">C. CATEGORY-WISE EXPENSES:</span>
+          <span className="text-[8.5px] text-slate-500 font-mono font-bold block uppercase">{t("C. CATEGORY-WISE EXPENSES:")}</span>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 font-mono">
             {categorySummary.map((c, idx) => (
-              <div key={idx} className="flex justify-between text-slate-350 bg-slate-955 p-1 rounded">
-                <span className="text-slate-500 text-[8.5px]">{c.category}:</span>
-                <span className="font-bold">₹{c.total.toLocaleString()}</span>
+              <div key={idx} className="flex justify-between text-slate-355 bg-slate-955 p-1 rounded">
+                <span className="text-slate-500 text-[8.5px]">{t(c.category)}:</span>
+                <span className="font-bold font-mono">₹{c.total.toLocaleString()}</span>
               </div>
             ))}
           </div>
@@ -359,13 +364,13 @@ export default function MobileFamily({
                 <Trash2 className="w-6 h-6" />
               </div>
               <div>
-                <h3 className="font-bold text-slate-100 text-sm">Delete Expense?</h3>
-                <p className="text-xs text-slate-400">This action cannot be undone.</p>
+                <h3 className="font-bold text-slate-100 text-sm">{t("Delete")}?</h3>
+                <p className="text-xs text-slate-400">{t("This action cannot be undone.")}</p>
               </div>
             </div>
             
             <p className="text-xs text-slate-355 bg-slate-950 p-3 rounded-lg border border-slate-855 font-mono leading-relaxed">
-              Are you sure you want to delete the expense entry <strong className="text-white">'{deleteConfirmation.name}'</strong>?
+              {t("Are you sure you want to delete this expense record?")}
             </p>
 
             <div className="flex gap-2.5">
@@ -374,14 +379,14 @@ export default function MobileFamily({
                 onClick={() => setDeleteConfirmation(null)}
                 className="flex-1 py-2 bg-slate-800 hover:bg-slate-750 text-slate-250 text-xs font-semibold rounded-xl transition cursor-pointer"
               >
-                Cancel
+                {t("Cancel")}
               </button>
               <button
                 type="button"
                 onClick={() => void executeDeleteExpense()}
                 className="flex-1 py-2 bg-rose-600 hover:bg-rose-500 text-white text-xs font-semibold rounded-xl transition cursor-pointer"
               >
-                Delete
+                {t("Delete")}
               </button>
             </div>
           </div>
