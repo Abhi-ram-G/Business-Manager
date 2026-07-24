@@ -5128,40 +5128,69 @@ export default function MobileBusiness({
 
                                       {/* Feet usage history log */}
                                       {selectedHammerForHistory === hammer.id && (
-                                        <div className="bg-slate-950 p-2.5 rounded-xl border border-slate-850 space-y-2 text-[9px] font-mono">
-                                          <span className="font-bold uppercase text-slate-500 tracking-wider">Usage Records</span>
+                                        <div className="bg-slate-950 p-3 rounded-xl border border-slate-850 space-y-3 text-[9.5px] font-mono">
+                                          <span className="font-bold uppercase text-slate-500 tracking-wider block border-b border-slate-900 pb-1.5">Usage History</span>
                                           {(!hammer.usageHistory || hammer.usageHistory.length === 0) && (!hammer.casingUsageHistory || hammer.casingUsageHistory.length === 0) ? (
                                             <p className="text-slate-500 italic">No usage history recorded.</p>
                                           ) : (
-                                            <div className="overflow-x-auto">
-                                              <table className="w-full text-left border-collapse">
-                                                <thead>
-                                                  <tr className="border-b border-slate-850 text-slate-400">
-                                                    <th className="py-1">Date</th>
-                                                    <th className="py-1">Type</th>
-                                                    <th className="py-1">Client</th>
-                                                    <th className="py-1 text-right">Feet</th>
-                                                  </tr>
-                                                </thead>
-                                                <tbody>
-                                                  {(hammer.usageHistory || []).map((rec) => (
-                                                    <tr key={rec.id} className="border-b border-slate-900/60 text-slate-300">
-                                                      <td className="py-1">{rec.date}</td>
-                                                      <td className="py-1 text-indigo-400 font-bold uppercase">Drill</td>
-                                                      <td className="py-1 font-bold">{rec.clientName}</td>
-                                                      <td className="py-1 text-right text-indigo-400 font-bold">{rec.calculatedFeet} ft</td>
-                                                    </tr>
-                                                  ))}
-                                                  {(hammer.casingUsageHistory || []).map((rec) => (
-                                                    <tr key={rec.id} className="border-b border-slate-900/60 text-slate-300">
-                                                      <td className="py-1">{rec.date}</td>
-                                                      <td className="py-1 text-amber-400 font-bold uppercase">Casing</td>
-                                                      <td className="py-1 font-bold">{rec.clientName}</td>
-                                                      <td className="py-1 text-right text-amber-500 font-bold">{rec.calculatedFeet} ft</td>
-                                                    </tr>
-                                                  ))}
-                                                </tbody>
-                                              </table>
+                                            <div className="space-y-3.5">
+                                              {/* Drilling Usage Container */}
+                                              {hammer.usageHistory && hammer.usageHistory.length > 0 && (
+                                                <div className="bg-slate-900/50 p-2.5 rounded-xl border border-slate-850/60 space-y-1.5">
+                                                  <span className="font-extrabold text-indigo-400 uppercase tracking-wider block text-[8px] border-b border-slate-950 pb-1">
+                                                    Drilling Usage Records
+                                                  </span>
+                                                  <div className="overflow-x-auto">
+                                                    <table className="w-full text-left border-collapse">
+                                                      <thead>
+                                                        <tr className="text-slate-505 text-[8px] font-extrabold uppercase tracking-wider">
+                                                          <th className="py-1">Date</th>
+                                                          <th className="py-1">Client</th>
+                                                          <th className="py-1 text-right">Feet</th>
+                                                        </tr>
+                                                      </thead>
+                                                      <tbody>
+                                                        {hammer.usageHistory.map((rec) => (
+                                                          <tr key={rec.id} className="border-t border-slate-900/40 text-slate-300">
+                                                            <td className="py-1">{rec.date}</td>
+                                                            <td className="py-1 font-semibold">{rec.clientName}</td>
+                                                            <td className="py-1 text-right text-indigo-400 font-extrabold">{rec.calculatedFeet} ft</td>
+                                                          </tr>
+                                                        ))}
+                                                      </tbody>
+                                                    </table>
+                                                  </div>
+                                                </div>
+                                              )}
+
+                                              {/* Casing Usage Container */}
+                                              {hammer.casingUsageHistory && hammer.casingUsageHistory.length > 0 && (
+                                                <div className="bg-amber-955/20 p-2.5 rounded-xl border border-amber-900/20 space-y-1.5">
+                                                  <span className="font-extrabold text-amber-500 uppercase tracking-wider block text-[8px] border-b border-amber-950/60 pb-1">
+                                                    Casing Hammer Usage Details
+                                                  </span>
+                                                  <div className="overflow-x-auto">
+                                                    <table className="w-full text-left border-collapse">
+                                                      <thead>
+                                                        <tr className="text-amber-700/80 text-[8px] font-extrabold uppercase tracking-wider">
+                                                          <th className="py-1">Date</th>
+                                                          <th className="py-1">Client</th>
+                                                          <th className="py-1 text-right">Feet</th>
+                                                        </tr>
+                                                      </thead>
+                                                      <tbody>
+                                                        {hammer.casingUsageHistory.map((rec) => (
+                                                          <tr key={rec.id} className="border-t border-amber-950/20 text-amber-100/90">
+                                                            <td className="py-1">{rec.date}</td>
+                                                            <td className="py-1 font-semibold">{rec.clientName}</td>
+                                                            <td className="py-1 text-right text-amber-500 font-extrabold">{rec.calculatedFeet} ft</td>
+                                                          </tr>
+                                                        ))}
+                                                      </tbody>
+                                                    </table>
+                                                  </div>
+                                                </div>
+                                              )}
                                             </div>
                                           )}
                                         </div>
@@ -8413,7 +8442,7 @@ export default function MobileBusiness({
                         className="w-full bg-slate-950 p-1.5 rounded text-slate-200 border border-slate-850 font-mono text-[14px] focus:outline-none focus:border-indigo-500"
                       >
                         <option value="">No Hammer Selected</option>
-                        {hammerEntries.filter(h => h.status !== "unusable" && h.status !== "sold").map((h) => {
+                        {hammerEntries.filter(h => !h.casingType && h.status !== "unusable" && h.status !== "sold").map((h) => {
                           const totalUsed = (h.usageHistory || []).reduce((sum, item) => sum + item.calculatedFeet, 0);
                           return (
                             <option key={h.id} value={h.id}>
@@ -8507,10 +8536,11 @@ export default function MobileBusiness({
                       >
                         <option value="">No 10" Casing Hammer Selected</option>
                         {hammerEntries.filter(h => h.casingType === "10 inch" && h.status !== "unusable" && h.status !== "sold").map((h) => {
-                          const totalUsed = (h.usageHistory || []).reduce((sum, item) => sum + item.calculatedFeet, 0);
+                          const totalDrilling = (h.usageHistory || []).reduce((sum, item) => sum + item.calculatedFeet, 0);
+                          const totalCasing = (h.casingUsageHistory || []).reduce((sum, item) => sum + item.calculatedFeet, 0);
                           return (
                             <option key={h.id} value={h.id}>
-                              {h.hammerNo} • {h.brand} ({totalUsed}/{h.capableFeetDepth} ft used)
+                              {h.hammerNo} • {h.brand} (Drill: {totalDrilling} ft • Casing: {totalCasing} ft)
                             </option>
                           );
                         })}
@@ -8600,10 +8630,11 @@ export default function MobileBusiness({
                       >
                         <option value="">No 7" Casing Hammer Selected</option>
                         {hammerEntries.filter(h => h.casingType === "7 inch" && h.status !== "unusable" && h.status !== "sold").map((h) => {
-                          const totalUsed = (h.usageHistory || []).reduce((sum, item) => sum + item.calculatedFeet, 0);
+                          const totalDrilling = (h.usageHistory || []).reduce((sum, item) => sum + item.calculatedFeet, 0);
+                          const totalCasing = (h.casingUsageHistory || []).reduce((sum, item) => sum + item.calculatedFeet, 0);
                           return (
                             <option key={h.id} value={h.id}>
-                              {h.hammerNo} • {h.brand} ({totalUsed}/{h.capableFeetDepth} ft used)
+                              {h.hammerNo} • {h.brand} (Drill: {totalDrilling} ft • Casing: {totalCasing} ft)
                             </option>
                           );
                         })}
