@@ -4769,17 +4769,15 @@ export default function MobileBusiness({
                                 </span>
                               )}
                               <div className="flex items-center gap-3 mt-1.5">
-                                <button
-                                  type="button"
-                                  onClick={() => handleToggleBitPayment(bit)}
-                                  className={`px-2 py-0.5 rounded text-[8px] font-extrabold transition cursor-pointer border ${
-                                    bit.isPaid
-                                      ? "bg-emerald-950 text-emerald-400 border-emerald-800"
-                                      : "bg-rose-950 text-rose-400 border-rose-900"
-                                  }`}
-                                >
-                                  {bit.isPaid ? "Mark Pending" : "Mark Paid"}
-                                </button>
+                                {!bit.isPaid && (
+                                  <button
+                                    type="button"
+                                    onClick={() => handleToggleBitPayment(bit)}
+                                    className="px-2 py-0.5 rounded text-[8px] font-extrabold transition cursor-pointer border bg-rose-950 text-rose-400 border-rose-900"
+                                  >
+                                    Mark Paid
+                                  </button>
+                                )}
                                 <button
                                   type="button"
                                   onClick={() => handleOpenEditBit(bit)}
@@ -5209,17 +5207,15 @@ export default function MobileBusiness({
                                           </span>
                                           
                                           <div className="flex items-center gap-3">
-                                            <button
-                                              type="button"
-                                              onClick={() => handleToggleHammerPayment(hammer)}
-                                              className={`px-2 py-0.5 rounded text-[8px] font-extrabold transition cursor-pointer border ${
-                                                hammer.isPaid
-                                                  ? "bg-emerald-950 text-emerald-400 border-emerald-800"
-                                                  : "bg-rose-950 text-rose-400 border-rose-900"
-                                              }`}
-                                            >
-                                              {hammer.isPaid ? "Mark Pending" : "Mark Paid"}
-                                            </button>
+                                            {!hammer.isPaid && (
+                                              <button
+                                                type="button"
+                                                onClick={() => handleToggleHammerPayment(hammer)}
+                                                className="px-2 py-0.5 rounded text-[8px] font-extrabold transition cursor-pointer border bg-rose-950 text-rose-400 border-rose-900"
+                                              >
+                                                Mark Paid
+                                              </button>
+                                            )}
                                             <button
                                               type="button"
                                               onClick={() => handleOpenEditHammer(hammer)}
@@ -6000,17 +5996,15 @@ export default function MobileBusiness({
                             </div>
                             <div className="flex flex-col items-end gap-1.5">
                               <div className="flex items-center gap-3">
-                                <button
-                                  type="button"
-                                  onClick={() => handleTogglePipePayment(supplier)}
-                                  className={`px-2 py-0.5 rounded text-[8px] font-extrabold transition cursor-pointer border ${
-                                    supplier.isPaid
-                                      ? "bg-emerald-950 text-emerald-400 border-emerald-800"
-                                      : "bg-rose-950 text-rose-400 border-rose-900"
-                                  }`}
-                                >
-                                  {supplier.isPaid ? "Mark Pending" : "Mark Paid"}
-                                </button>
+                                {!supplier.isPaid && (
+                                  <button
+                                    type="button"
+                                    onClick={() => handleTogglePipePayment(supplier)}
+                                    className="px-2 py-0.5 rounded text-[8px] font-extrabold transition cursor-pointer border bg-rose-950 text-rose-400 border-rose-900"
+                                  >
+                                    Mark Paid
+                                  </button>
+                                )}
                                 <button
                                   type="button"
                                   onClick={() => handleEditPipe(supplier)}
@@ -7359,17 +7353,15 @@ export default function MobileBusiness({
                                 </span>
                               )}
                               <div className="flex gap-3 mt-1.5 items-center">
-                                <button
-                                  type="button"
-                                  onClick={() => handleToggleServicePayment(s)}
-                                  className={`px-2 py-0.5 rounded text-[8px] font-extrabold transition cursor-pointer border ${
-                                    s.isPaid
-                                      ? "bg-emerald-950 text-emerald-400 border-emerald-800"
-                                      : "bg-rose-950 text-rose-400 border-rose-900"
-                                  }`}
-                                >
-                                  {s.isPaid ? "Mark Pending" : "Mark Paid"}
-                                </button>
+                                {!s.isPaid && (
+                                  <button
+                                    type="button"
+                                    onClick={() => handleToggleServicePayment(s)}
+                                    className="px-2 py-0.5 rounded text-[8px] font-extrabold transition cursor-pointer border bg-rose-955 text-rose-400 border-rose-900"
+                                  >
+                                    Mark Paid
+                                  </button>
+                                )}
                                 <button type="button" onClick={() => handleOpenEditService(s)} className="p-1.5 bg-slate-900 border border-slate-800 text-slate-400 hover:text-white rounded">
                                   <Edit className="w-4 h-4" />
                                 </button>
@@ -7588,17 +7580,15 @@ export default function MobileBusiness({
                               </span>
                             )}
                             <div className="flex items-center gap-3 mt-1.5">
-                              <button
-                                type="button"
-                                onClick={() => handleToggleFuelPayment(f)}
-                                className={`px-2 py-0.5 rounded text-[8px] font-extrabold transition cursor-pointer border ${
-                                  f.isPaid
-                                    ? "bg-emerald-950 text-emerald-400 border-emerald-800"
-                                    : "bg-rose-950 text-rose-400 border-rose-900"
-                                }`}
-                              >
-                                {f.isPaid ? "Mark Pending" : "Mark Paid"}
-                              </button>
+                              {!f.isPaid && (
+                                <button
+                                  type="button"
+                                  onClick={() => handleToggleFuelPayment(f)}
+                                  className="px-2 py-0.5 rounded text-[8px] font-extrabold transition cursor-pointer border bg-rose-950 text-rose-400 border-rose-900"
+                                >
+                                  Mark Paid
+                                </button>
+                              )}
                               <button
                                 type="button"
                                 onClick={() => handleOpenEditFuel(f)}
@@ -8000,17 +7990,15 @@ export default function MobileBusiness({
                                 </span>
                               )}
                               <div className="flex gap-3 mt-1.5 items-center">
-                                <button
-                                  type="button"
-                                  onClick={() => handleToggleMaterialPayment(m)}
-                                  className={`px-2 py-0.5 rounded text-[8px] font-extrabold transition cursor-pointer border ${
-                                    m.isPaid
-                                      ? "bg-emerald-950 text-emerald-400 border-emerald-800"
-                                      : "bg-rose-950 text-rose-400 border-rose-900"
-                                  }`}
-                                >
-                                  {m.isPaid ? "Mark Pending" : "Mark Paid"}
-                                </button>
+                                {!m.isPaid && (
+                                  <button
+                                    type="button"
+                                    onClick={() => handleToggleMaterialPayment(m)}
+                                    className="px-2 py-0.5 rounded text-[8px] font-extrabold transition cursor-pointer border bg-rose-950 text-rose-400 border-rose-900"
+                                  >
+                                    Mark Paid
+                                  </button>
+                                )}
                                 <button type="button" onClick={() => handleOpenEditMaterial(m)} className="p-1.5 bg-slate-900 border border-slate-800 text-slate-400 hover:text-white rounded">
                                   <Edit className="w-4 h-4" />
                                 </button>
@@ -8282,17 +8270,15 @@ export default function MobileBusiness({
                       {/* Salary Slip share panel */}
                       <div className="flex gap-2 justify-between items-center text-[9px] font-mono pt-1">
                         <div className="flex items-center gap-2">
-                          <button
-                            type="button"
-                            onClick={() => handleToggleSalaryPayment(lab)}
-                            className={`px-2 py-0.5 rounded text-[8px] font-extrabold transition cursor-pointer border ${
-                              hasPayment?.status === "Paid"
-                                ? "bg-emerald-950 text-emerald-400 border-emerald-800"
-                                : "bg-rose-950 text-rose-400 border-rose-900"
-                            }`}
-                          >
-                            {hasPayment?.status === "Paid" ? "Mark Pending" : "Mark Paid"}
-                          </button>
+                          {hasPayment?.status !== "Paid" && (
+                            <button
+                              type="button"
+                              onClick={() => handleToggleSalaryPayment(lab)}
+                              className="px-2 py-0.5 rounded text-[8px] font-extrabold transition cursor-pointer border bg-rose-950 text-rose-400 border-rose-900"
+                            >
+                              Mark Paid
+                            </button>
+                          )}
                           <button
                             onClick={() => handleOpenSalaryCalc(lab)}
                             className="bg-slate-850 hover:bg-slate-800 text-indigo-400 py-1 px-2 rounded border border-slate-855/60"
@@ -9416,14 +9402,14 @@ export default function MobileBusiness({
                       </button>
 
                       <div className="flex gap-3 font-bold items-center">
-                        <button
-                          type="button"
-                          onClick={() => {
-                            void (async () => {
-                              const nextStatus = b.status === "Paid" ? "Pending" : "Paid";
-                              let updatedFields: Partial<BusinessBill> = { status: nextStatus };
-                              
-                              if (nextStatus === "Paid") {
+                        {b.status !== "Paid" && (
+                          <button
+                            type="button"
+                            onClick={() => {
+                              void (async () => {
+                                const nextStatus = "Paid";
+                                let updatedFields: Partial<BusinessBill> = { status: nextStatus };
+                                
                                 const remaining = Math.max(0, b.amount - (b.customerPaid || 0));
                                 if (remaining > 0) {
                                   const todayStr = new Date().toISOString().split("T")[0];
@@ -9439,53 +9425,49 @@ export default function MobileBusiness({
                                     payments: [...(b.payments || []), newPayment]
                                   };
                                 }
-                              }
 
-                              if (b.source !== "server") {
-                                setBusinessBills((prev) =>
-                                  prev.map((item) => (item.id === b.id ? { ...item, ...updatedFields } : item))
-                                );
-                                triggerOnlineSync(`Marked Invoice ${b.invoiceNo} as ${nextStatus} (local only)`);
-                                return;
-                              }
-                              try {
-                                const payload = toBusinessBillApiPayload({
-                                  ...b,
-                                  ...updatedFields
-                                });
-                                const response = await requestJson(apiBaseUrl, `/api/v1/business/bills/${b.id}`, {
-                                  method: "PUT",
-                                  headers: { "Content-Type": "application/json" },
-                                  body: JSON.stringify(payload),
-                                });
-                                const savedBill = mapBusinessBillFromApi(response);
-                                setBusinessBills((prev) => prev.map((item) => (item.id === b.id ? savedBill : item)));
-                                await onSharedDataChanged?.();
-                                triggerOnlineSync(`Marked Invoice ${savedBill.invoiceNo} as ${nextStatus}`);
-                              } catch (error) {
-                                console.error(error);
-                                const message = error instanceof Error ? error.message.toLowerCase() : "";
-                                if (message.includes("not found") || message.includes("404")) {
+                                if (b.source !== "server") {
                                   setBusinessBills((prev) =>
-                                    prev.map((item) =>
-                                      item.id === b.id ? { ...item, ...updatedFields } : item
-                                    )
+                                    prev.map((item) => (item.id === b.id ? { ...item, ...updatedFields } : item))
                                   );
-                                  triggerOnlineSync(`Marked Invoice ${b.invoiceNo} as ${nextStatus} (local sync)`);
+                                  triggerOnlineSync(`Marked Invoice ${b.invoiceNo} as ${nextStatus} (local only)`);
                                   return;
                                 }
-                                alert("Unable to update bill status right now.");
-                              }
-                            })();
-                          }}
-                          className={`px-2 py-0.5 rounded text-[8px] font-extrabold transition cursor-pointer border ${
-                            b.status === "Paid"
-                              ? "bg-emerald-950 text-emerald-400 border-emerald-800"
-                              : "bg-rose-950 text-rose-400 border-rose-900"
-                          }`}
-                        >
-                          {b.status === "Paid" ? "Mark Pending" : "Mark Paid"}
-                        </button>
+                                try {
+                                  const payload = toBusinessBillApiPayload({
+                                    ...b,
+                                    ...updatedFields
+                                  });
+                                  const response = await requestJson(apiBaseUrl, `/api/v1/business/bills/${b.id}`, {
+                                    method: "PUT",
+                                    headers: { "Content-Type": "application/json" },
+                                    body: JSON.stringify(payload),
+                                  });
+                                  const savedBill = mapBusinessBillFromApi(response);
+                                  setBusinessBills((prev) => prev.map((item) => (item.id === b.id ? savedBill : item)));
+                                  await onSharedDataChanged?.();
+                                  triggerOnlineSync(`Marked Invoice ${savedBill.invoiceNo} as ${nextStatus}`);
+                                } catch (error) {
+                                  console.error(error);
+                                  const message = error instanceof Error ? error.message.toLowerCase() : "";
+                                  if (message.includes("not found") || message.includes("404")) {
+                                    setBusinessBills((prev) =>
+                                      prev.map((item) =>
+                                        item.id === b.id ? { ...item, ...updatedFields } : item
+                                      )
+                                    );
+                                    triggerOnlineSync(`Marked Invoice ${b.invoiceNo} as ${nextStatus} (local sync)`);
+                                    return;
+                                  }
+                                  alert("Unable to update bill status right now.");
+                                }
+                              })();
+                            }}
+                            className="px-2 py-0.5 rounded text-[8px] font-extrabold transition cursor-pointer border bg-rose-950 text-rose-400 border-rose-900"
+                          >
+                            Mark Paid
+                          </button>
+                        )}
                         <button
                           type="button"
                           onClick={() => handleEditBillClick(b)}
