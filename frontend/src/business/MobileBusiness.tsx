@@ -55,6 +55,7 @@ import {
   mapPipeFromApi,
   mapServiceFromApi,
   mapMaterialFromApi,
+  mapSalaryPaymentFromApi,
   requestJson,
   toBusinessBillApiPayload,
   toBitApiPayload,
@@ -65,6 +66,7 @@ import {
   toFuelApiPayload,
   toServiceApiPayload,
   toMaterialApiPayload,
+  toSalaryPaymentApiPayload,
 } from "../lib/sharedApi";
 import borewellLogo from "../assets/images/borewell_machine_logo_1782797350175.jpg";
 
@@ -2430,6 +2432,231 @@ export default function MobileBusiness({
     setDeleteConfirmation({ id, name, type: "bit" });
   };
 
+  const handleToggleBitPayment = async (bit: BitEntry) => {
+    const nextPaid = !bit.isPaid;
+    const nextPayments = nextPaid
+      ? [{ id: `pay-init-${Date.now()}`, date: bit.dateEntry || "2026-06-18", amount: bit.rate }]
+      : [];
+    const updated: BitEntry = {
+      ...bit,
+      isPaid: nextPaid,
+      payments: nextPayments,
+    };
+    try {
+      const saved = await persistBit(updated, "PUT");
+      setBitEntries((prev) => prev.map((entry) => (entry.id === bit.id ? saved : entry)));
+      await onSharedDataChanged?.();
+      triggerOnlineSync(`Marked Bit ${bit.bitNo} as ${nextPaid ? "Paid" : "Pending"}`);
+    } catch (e) {
+      setBitEntries((prev) => prev.map((entry) => (entry.id === bit.id ? updated : entry)));
+      await onSharedDataChanged?.();
+      triggerOnlineSync(`Marked Bit ${bit.bitNo} as ${nextPaid ? "Paid" : "Pending"} (local fallback)`);
+    }
+  };
+
+  const handleToggleHammerPayment = async (hammer: HammerEntry) => {
+    const nextPaid = !hammer.isPaid;
+    const nextPayments = nextPaid
+      ? [{ id: `pay-init-${Date.now()}`, date: hammer.dateEntry || "2026-06-18", amount: hammer.rate }]
+      : [];
+    const updated: HammerEntry = {
+      ...hammer,
+      isPaid: nextPaid,
+      payments: nextPayments,
+    };
+    try {
+      const response = await requestJson(
+        apiBaseUrl,
+        `/api/v1/business/hammers/${hammer.id}`,
+        {
+          method: "PUT",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(toHammerApiPayload(updated)),
+        }
+      );
+      const saved = mapHammerFromApi(response);
+      setHammerEntries((prev) => prev.map((h) => (h.id === hammer.id ? saved : h)));
+      await onSharedDataChanged?.();
+      triggerOnlineSync(`Marked Hammer ${hammer.hammerNo} as ${nextPaid ? "Paid" : "Pending"}`);
+    } catch (e) {
+      setHammerEntries((prev) => prev.map((h) => (h.id === hammer.id ? updated : h)));
+      await onSharedDataChanged?.();
+      triggerOnlineSync(`Marked Hammer ${hammer.hammerNo} as ${nextPaid ? "Paid" : "Pending"} (local fallback)`);
+    }
+  };
+
+  const handleTogglePipePayment = async (pipe: PipeEntry) => {
+    const nextPaid = !pipe.isPaid;
+    const nextPayments = nextPaid
+      ? [{ id: `pay-init-${Date.now()}`, date: pipe.dateEntry || "2026-06-18", amount: pipe.grandPrice }]
+      : [];
+    const updated: PipeEntry = {
+      ...pipe,
+      isPaid: nextPaid,
+      payments: nextPayments,
+    };
+    try {
+      const response = await requestJson(
+        apiBaseUrl,
+        `/api/v1/business/pipes/${pipe.id}`,
+        {
+          method: "PUT",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(toPipeApiPayload(updated)),
+        }
+      );
+      const saved = mapPipeFromApi(response);
+      setPipeEntries((prev) => prev.map((p) => (p.id === pipe.id ? saved : p)));
+      await onSharedDataChanged?.();
+      triggerOnlineSync(`Marked Pipe Supplier ${pipe.companyName} as ${nextPaid ? "Paid" : "Pending"}`);
+    } catch (e) {
+      setPipeEntries((prev) => prev.map((p) => (p.id === pipe.id ? updated : p)));
+      await onSharedDataChanged?.();
+      triggerOnlineSync(`Marked Pipe Supplier ${pipe.companyName} as ${nextPaid ? "Paid" : "Pending"} (local fallback)`);
+    }
+  };
+
+  const handleToggleServicePayment = async (srv: ServiceRecord) => {
+    const nextPaid = !srv.isPaid;
+    const nextPayments = nextPaid
+      ? [{ id: `pay-init-${Date.now()}`, date: srv.date || "2026-06-18", amount: srv.cost }]
+      : [];
+    const updated: ServiceRecord = {
+      ...srv,
+      isPaid: nextPaid,
+      payments: nextPayments,
+    };
+    try {
+      const response = await requestJson(
+        apiBaseUrl,
+        `/api/v1/business/services/${srv.id}`,
+        {
+          method: "PUT",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(toServiceApiPayload(updated)),
+        }
+      );
+      const saved = mapServiceFromApi(response);
+      setServices((prev) => prev.map((s) => (s.id === srv.id ? saved : s)));
+      await onSharedDataChanged?.();
+      triggerOnlineSync(`Marked Service ${srv.serviceType} as ${nextPaid ? "Paid" : "Pending"}`);
+    } catch (e) {
+      setServices((prev) => prev.map((s) => (s.id === srv.id ? updated : s)));
+      await onSharedDataChanged?.();
+      triggerOnlineSync(`Marked Service ${srv.serviceType} as ${nextPaid ? "Paid" : "Pending"} (local fallback)`);
+    }
+  };
+
+  const handleToggleMaterialPayment = async (mat: MaterialPurchase) => {
+    const nextPaid = !mat.isPaid;
+    const nextPayments = nextPaid
+      ? [{ id: `pay-init-${Date.now()}`, date: mat.date || "2026-06-18", amount: mat.totalAmount }]
+      : [];
+    const updated: MaterialPurchase = {
+      ...mat,
+      isPaid: nextPaid,
+      payments: nextPayments,
+    };
+    try {
+      const response = await requestJson(
+        apiBaseUrl,
+        `/api/v1/business/materials/${mat.id}`,
+        {
+          method: "PUT",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(toMaterialApiPayload(updated)),
+        }
+      );
+      const saved = mapMaterialFromApi(response);
+      setMaterials((prev) => prev.map((m) => (m.id === mat.id ? saved : m)));
+      await onSharedDataChanged?.();
+      triggerOnlineSync(`Marked Material ${mat.materialName} as ${nextPaid ? "Paid" : "Pending"}`);
+    } catch (e) {
+      setMaterials((prev) => prev.map((m) => (m.id === mat.id ? updated : m)));
+      await onSharedDataChanged?.();
+      triggerOnlineSync(`Marked Material ${mat.materialName} as ${nextPaid ? "Paid" : "Pending"} (local fallback)`);
+    }
+  };
+
+  const handleToggleFuelPayment = async (fuel: FuelEntry) => {
+    const nextPaid = !fuel.isPaid;
+    const nextPayments = nextPaid
+      ? [{ id: `pay-init-${Date.now()}`, date: fuel.dateTime?.split(" ")[0] || "2026-06-18", amount: fuel.totalAmount }]
+      : [];
+    const updated: FuelEntry = {
+      ...fuel,
+      isPaid: nextPaid,
+      payments: nextPayments,
+    };
+    try {
+      const response = await requestJson(
+        apiBaseUrl,
+        `/api/v1/vehicles/fuel/${fuel.id}`,
+        {
+          method: "PUT",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(toFuelApiPayload(updated)),
+        }
+      );
+      const saved = mapFuelFromApi(response);
+      setFuelEntries((prev) => prev.map((f) => (f.id === fuel.id ? saved : f)));
+      await onSharedDataChanged?.();
+      triggerOnlineSync(`Marked Fuel Entry as ${nextPaid ? "Paid" : "Pending"}`);
+    } catch (e) {
+      setFuelEntries((prev) => prev.map((f) => (f.id === fuel.id ? updated : f)));
+      await onSharedDataChanged?.();
+      triggerOnlineSync(`Marked Fuel Entry as ${nextPaid ? "Paid" : "Pending"} (local fallback)`);
+    }
+  };
+
+  const handleToggleSalaryPayment = async (lab: Labour) => {
+    const totalAdv = lab.advanceEntries?.reduce((sum, item) => sum + item.amount, 0) || 0;
+    const existing = salaryPayments.find(p => p.labourId === lab.id);
+    
+    let nextStatus: "Paid" | "Pending" = "Paid";
+    if (existing) {
+      nextStatus = existing.status === "Paid" ? "Pending" : "Paid";
+    }
+    
+    const updated: SalaryPayment = {
+      id: existing?.id || `pay-${Date.now()}`,
+      labourId: lab.id,
+      date: existing?.date || new Date().toISOString().split("T")[0],
+      amountCalculated: lab.salaryPerMonth ?? 0,
+      advanceDeducted: existing?.advanceDeducted ?? totalAdv,
+      bonus: existing?.bonus ?? 0,
+      netPaid: existing?.netPaid ?? ((lab.salaryPerMonth ?? 0) - totalAdv),
+      status: nextStatus,
+      salaryOption: existing?.salaryOption || "Deduct",
+    };
+
+    try {
+      const response = await requestJson(
+        apiBaseUrl,
+        existing ? `/api/v1/labours/salary-payments/${existing.id}` : "/api/v1/labours/salary-payments",
+        {
+          method: existing ? "PUT" : "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(toSalaryPaymentApiPayload(updated)),
+        }
+      );
+      const saved = mapSalaryPaymentFromApi(response);
+      setSalaryPayments((prev) => {
+        const filtered = prev.filter((p) => p.labourId !== lab.id);
+        return [...filtered, saved];
+      });
+      await onSharedDataChanged?.();
+      triggerOnlineSync(`Marked Salary for ${lab.fullName} as ${nextStatus}`);
+    } catch (e) {
+      setSalaryPayments((prev) => {
+        const filtered = prev.filter((p) => p.labourId !== lab.id);
+        return [...filtered, updated];
+      });
+      await onSharedDataChanged?.();
+      triggerOnlineSync(`Marked Salary for ${lab.fullName} as ${nextStatus} (local fallback)`);
+    }
+  };
+
   // --- ACTIONS FUEL CRUD ---
   const handleOpenAddFuel = () => {
     setEditingFuelId(null);
@@ -4544,8 +4771,19 @@ export default function MobileBusiness({
                               <div className="flex items-center gap-3 mt-1.5">
                                 <button
                                   type="button"
+                                  onClick={() => handleToggleBitPayment(bit)}
+                                  className={`px-2 py-0.5 rounded text-[8px] font-extrabold transition cursor-pointer border ${
+                                    bit.isPaid
+                                      ? "bg-emerald-950 text-emerald-400 border-emerald-800"
+                                      : "bg-rose-950 text-rose-400 border-rose-900"
+                                  }`}
+                                >
+                                  {bit.isPaid ? "Mark Pending" : "Mark Paid"}
+                                </button>
+                                <button
+                                  type="button"
                                   onClick={() => handleOpenEditBit(bit)}
-                                  className="p-1.5 bg-slate-950 text-slate-400 hover:text-white border border-slate-800 rounded"
+                                  className="p-1.5 bg-slate-950 text-slate-400 hover:text-white border border-slate-800 rounded font-mono text-[9px]"
                                   title="Edit bit"
                                 >
                                   <Edit className="w-4 h-4" />
@@ -4553,7 +4791,7 @@ export default function MobileBusiness({
                                 <button
                                   type="button"
                                   onClick={() => handleDeleteBit(bit.id, bit.bitNo)}
-                                  className="p-1.5 bg-rose-950/40 text-rose-455 border border-rose-900/40 rounded"
+                                  className="p-1.5 bg-rose-950/40 text-rose-455 border border-rose-900/40 rounded font-mono text-[9px]"
                                   title="Delete bit"
                                 >
                                   <Trash2 className="w-4 h-4" />
@@ -4973,6 +5211,17 @@ export default function MobileBusiness({
                                           <div className="flex items-center gap-3">
                                             <button
                                               type="button"
+                                              onClick={() => handleToggleHammerPayment(hammer)}
+                                              className={`px-2 py-0.5 rounded text-[8px] font-extrabold transition cursor-pointer border ${
+                                                hammer.isPaid
+                                                  ? "bg-emerald-950 text-emerald-400 border-emerald-800"
+                                                  : "bg-rose-950 text-rose-400 border-rose-900"
+                                              }`}
+                                            >
+                                              {hammer.isPaid ? "Mark Pending" : "Mark Paid"}
+                                            </button>
+                                            <button
+                                              type="button"
                                               onClick={() => handleOpenEditHammer(hammer)}
                                               className="p-1.5 bg-slate-950 text-slate-400 hover:text-white border border-slate-800 rounded-lg"
                                               title="Edit Hammer"
@@ -4982,7 +5231,7 @@ export default function MobileBusiness({
                                             <button
                                               type="button"
                                               onClick={() => handleDeleteHammer(hammer.id, hammer.hammerNo)}
-                                              className="p-1.5 bg-rose-950/40 text-rose-450 border border-rose-900/40 rounded-lg"
+                                              className="p-1.5 bg-rose-950/40 text-rose-455 border border-rose-900/40 rounded-lg"
                                               title="Delete Hammer"
                                             >
                                               <Trash2 className="w-4 h-4" />
@@ -5024,7 +5273,7 @@ export default function MobileBusiness({
                                             <button
                                               type="button"
                                               onClick={() => handleSetHammerStatus(hammer, null, true)}
-                                              className="bg-red-650 hover:bg-red-600 text-white font-black px-2 py-0.5 rounded font-mono text-[8px]"
+                                              className="bg-red-600 hover:bg-red-700 text-white font-black px-2 py-0.5 rounded font-mono text-[8px]"
                                             >
                                               Unusable
                                             </button>
@@ -5041,7 +5290,7 @@ export default function MobileBusiness({
                                           <button
                                             type="button"
                                             onClick={() => handleSetHammerStatus(hammer, null, true)}
-                                            className="bg-red-650/80 hover:bg-red-600 text-white font-bold px-2.5 py-0.5 rounded text-[8px] font-mono uppercase"
+                                            className="bg-red-600 hover:bg-red-750 text-white font-bold px-2.5 py-0.5 rounded text-[8px] font-mono uppercase cursor-pointer"
                                           >
                                             Make Unusable
                                           </button>
@@ -5055,7 +5304,7 @@ export default function MobileBusiness({
                                                 setHammerSellDate(new Date().toISOString().split("T")[0]);
                                                 setHammerSellRate(hammer.rate);
                                               }}
-                                              className="bg-emerald-650 hover:bg-emerald-600 text-white font-bold px-2.5 py-0.5 rounded text-[8px] font-mono uppercase"
+                                              className="bg-emerald-600 hover:bg-emerald-700 text-white font-bold px-2.5 py-0.5 rounded text-[8px] font-mono uppercase cursor-pointer"
                                             >
                                               Sell
                                             </button>
@@ -5073,7 +5322,7 @@ export default function MobileBusiness({
                                               setHammerSellDate(new Date().toISOString().split("T")[0]);
                                               setHammerSellRate(hammer.rate);
                                             }}
-                                            className="bg-emerald-650 hover:bg-emerald-600 text-white font-bold px-2.5 py-0.5 rounded text-[8.5px] font-mono uppercase"
+                                            className="bg-emerald-600 hover:bg-emerald-700 text-white font-bold px-2.5 py-0.5 rounded text-[8.5px] font-mono uppercase cursor-pointer"
                                           >
                                             Sell
                                           </button>
@@ -5118,7 +5367,7 @@ export default function MobileBusiness({
                                             <button
                                               type="button"
                                               onClick={() => handleSellHammer(hammer)}
-                                              className="px-2.5 py-0.5 bg-green-650 hover:bg-green-600 text-white font-extrabold rounded uppercase tracking-wider"
+                                              className="px-2.5 py-0.5 bg-green-600 hover:bg-green-700 text-white font-extrabold rounded uppercase tracking-wider cursor-pointer"
                                             >
                                               Sold Out
                                             </button>
@@ -5165,14 +5414,14 @@ export default function MobileBusiness({
 
                                               {/* Casing Usage Container */}
                                               {hammer.casingUsageHistory && hammer.casingUsageHistory.length > 0 && (
-                                                <div className="bg-amber-955/20 p-2.5 rounded-xl border border-amber-900/20 space-y-1.5">
-                                                  <span className="font-extrabold text-amber-500 uppercase tracking-wider block text-[8px] border-b border-amber-950/60 pb-1">
+                                                <div className="bg-slate-900/50 p-2.5 rounded-xl border border-slate-850/60 space-y-1.5">
+                                                  <span className="font-extrabold text-amber-500 uppercase tracking-wider block text-[8px] border-b border-slate-950 pb-1">
                                                     Casing Hammer Usage Details
                                                   </span>
                                                   <div className="overflow-x-auto">
                                                     <table className="w-full text-left border-collapse">
                                                       <thead>
-                                                        <tr className="text-amber-700/80 text-[8px] font-extrabold uppercase tracking-wider">
+                                                        <tr className="text-slate-500 text-[8px] font-extrabold uppercase tracking-wider">
                                                           <th className="py-1">Date</th>
                                                           <th className="py-1">Client</th>
                                                           <th className="py-1 text-right">Feet</th>
@@ -5180,7 +5429,7 @@ export default function MobileBusiness({
                                                       </thead>
                                                       <tbody>
                                                         {hammer.casingUsageHistory.map((rec) => (
-                                                          <tr key={rec.id} className="border-t border-amber-950/20 text-amber-100/90">
+                                                          <tr key={rec.id} className="border-t border-slate-900/40 text-slate-300">
                                                             <td className="py-1">{rec.date}</td>
                                                             <td className="py-1 font-semibold">{rec.clientName}</td>
                                                             <td className="py-1 text-right text-amber-500 font-extrabold">{rec.calculatedFeet} ft</td>
@@ -5753,6 +6002,17 @@ export default function MobileBusiness({
                               <div className="flex items-center gap-3">
                                 <button
                                   type="button"
+                                  onClick={() => handleTogglePipePayment(supplier)}
+                                  className={`px-2 py-0.5 rounded text-[8px] font-extrabold transition cursor-pointer border ${
+                                    supplier.isPaid
+                                      ? "bg-emerald-950 text-emerald-400 border-emerald-800"
+                                      : "bg-rose-950 text-rose-400 border-rose-900"
+                                  }`}
+                                >
+                                  {supplier.isPaid ? "Mark Pending" : "Mark Paid"}
+                                </button>
+                                <button
+                                  type="button"
                                   onClick={() => handleEditPipe(supplier)}
                                   className="p-1.5 bg-slate-950 text-slate-400 hover:text-white border border-slate-850 rounded"
                                   title="Edit Supplier"
@@ -5762,10 +6022,10 @@ export default function MobileBusiness({
                                 <button
                                   type="button"
                                   onClick={() => handleDeletePipe(supplier.id, supplier.companyName)}
-                                  className="p-1 bg-rose-950/40 text-rose-450 border border-rose-900/40 rounded"
+                                  className="p-1.5 bg-rose-950/40 text-rose-455 border border-rose-900/40 rounded"
                                   title="Delete Supplier"
                                 >
-                                  <Trash2 className="w-3 h-3" />
+                                  <Trash2 className="w-4 h-4" />
                                 </button>
                               </div>
                             </div>
@@ -7098,12 +7358,23 @@ export default function MobileBusiness({
                                   Pending: ₹{Math.max(0, s.cost - (s.payments || []).reduce((sum, p) => sum + p.amount, 0)).toLocaleString()}
                                 </span>
                               )}
-                              <div className="flex gap-1.5 mt-1.5">
-                                <button type="button" onClick={() => handleOpenEditService(s)} className="p-1 px-1.5 bg-slate-900 border border-slate-800 text-slate-400 hover:text-white rounded">
-                                  <Edit className="w-2.5 h-2.5" />
+                              <div className="flex gap-3 mt-1.5 items-center">
+                                <button
+                                  type="button"
+                                  onClick={() => handleToggleServicePayment(s)}
+                                  className={`px-2 py-0.5 rounded text-[8px] font-extrabold transition cursor-pointer border ${
+                                    s.isPaid
+                                      ? "bg-emerald-950 text-emerald-400 border-emerald-800"
+                                      : "bg-rose-950 text-rose-400 border-rose-900"
+                                  }`}
+                                >
+                                  {s.isPaid ? "Mark Pending" : "Mark Paid"}
                                 </button>
-                                <button type="button" onClick={() => handleDeleteService(s.id)} className="p-1 px-1.5 bg-rose-950/40 border border-rose-900/40 text-rose-455 rounded">
-                                  <Trash2 className="w-2.5 h-2.5" />
+                                <button type="button" onClick={() => handleOpenEditService(s)} className="p-1.5 bg-slate-900 border border-slate-800 text-slate-400 hover:text-white rounded">
+                                  <Edit className="w-4 h-4" />
+                                </button>
+                                <button type="button" onClick={() => handleDeleteService(s.id)} className="p-1.5 bg-rose-950/40 border border-rose-900/40 text-rose-455 rounded">
+                                  <Trash2 className="w-4 h-4" />
                                 </button>
                               </div>
                             </div>
@@ -7319,6 +7590,17 @@ export default function MobileBusiness({
                             <div className="flex items-center gap-3 mt-1.5">
                               <button
                                 type="button"
+                                onClick={() => handleToggleFuelPayment(f)}
+                                className={`px-2 py-0.5 rounded text-[8px] font-extrabold transition cursor-pointer border ${
+                                  f.isPaid
+                                    ? "bg-emerald-950 text-emerald-400 border-emerald-800"
+                                    : "bg-rose-950 text-rose-400 border-rose-900"
+                                }`}
+                              >
+                                {f.isPaid ? "Mark Pending" : "Mark Paid"}
+                              </button>
+                              <button
+                                type="button"
                                 onClick={() => handleOpenEditFuel(f)}
                                 className="p-1.5 rounded bg-slate-900 border border-slate-800 text-slate-400 hover:text-white hover:bg-slate-800"
                                 title="Edit fuel entry"
@@ -7328,7 +7610,7 @@ export default function MobileBusiness({
                               <button
                                 type="button"
                                 onClick={() => handleDeleteFuel(f)}
-                                className="p-1.5 rounded bg-rose-950/40 border border-rose-900/40 text-rose-400 hover:text-rose-300"
+                                className="p-1.5 rounded bg-rose-950/40 border border-rose-900/40 text-rose-455 hover:text-rose-350"
                                 title="Delete fuel entry"
                               >
                                 <Trash2 className="w-4 h-4" />
@@ -7717,7 +7999,18 @@ export default function MobileBusiness({
                                   Pending: ₹{Math.max(0, m.totalAmount - (m.payments || []).reduce((sum, p) => sum + p.amount, 0)).toLocaleString()}
                                 </span>
                               )}
-                              <div className="flex gap-3 mt-1.5">
+                              <div className="flex gap-3 mt-1.5 items-center">
+                                <button
+                                  type="button"
+                                  onClick={() => handleToggleMaterialPayment(m)}
+                                  className={`px-2 py-0.5 rounded text-[8px] font-extrabold transition cursor-pointer border ${
+                                    m.isPaid
+                                      ? "bg-emerald-950 text-emerald-400 border-emerald-800"
+                                      : "bg-rose-950 text-rose-400 border-rose-900"
+                                  }`}
+                                >
+                                  {m.isPaid ? "Mark Pending" : "Mark Paid"}
+                                </button>
                                 <button type="button" onClick={() => handleOpenEditMaterial(m)} className="p-1.5 bg-slate-900 border border-slate-800 text-slate-400 hover:text-white rounded">
                                   <Edit className="w-4 h-4" />
                                 </button>
@@ -7988,12 +8281,25 @@ export default function MobileBusiness({
 
                       {/* Salary Slip share panel */}
                       <div className="flex gap-2 justify-between items-center text-[9px] font-mono pt-1">
-                        <button
-                          onClick={() => handleOpenSalaryCalc(lab)}
-                          className="bg-slate-850 hover:bg-slate-800 text-indigo-400 py-1 px-2.5 rounded border border-slate-800"
-                        >
-                          Modify / Calculate Slip
-                        </button>
+                        <div className="flex items-center gap-2">
+                          <button
+                            type="button"
+                            onClick={() => handleToggleSalaryPayment(lab)}
+                            className={`px-2 py-0.5 rounded text-[8px] font-extrabold transition cursor-pointer border ${
+                              hasPayment?.status === "Paid"
+                                ? "bg-emerald-950 text-emerald-400 border-emerald-800"
+                                : "bg-rose-950 text-rose-400 border-rose-900"
+                            }`}
+                          >
+                            {hasPayment?.status === "Paid" ? "Mark Pending" : "Mark Paid"}
+                          </button>
+                          <button
+                            onClick={() => handleOpenSalaryCalc(lab)}
+                            className="bg-slate-850 hover:bg-slate-800 text-indigo-400 py-1 px-2 rounded border border-slate-855/60"
+                          >
+                            Modify / Calculate Slip
+                          </button>
+                        </div>
                         
                         <div className="flex gap-1.5">
                           <button
